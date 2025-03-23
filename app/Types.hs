@@ -47,6 +47,17 @@ data Operation
     | BitwiseAnd Expression Expression
     | BitwiseXor Expression Expression
     | BitwiseNot Expression
+    -- ASSIGNMENT OPERATORS
+    | AddAssign Expression Expression
+    | SubAssign Expression Expression
+    | MulAssign Expression Expression
+    | DivAssign Expression Expression
+    | IntDivAssign Expression Expression
+    | ModAssign Expression Expression
+    | BitwiseOrAssign Expression Expression
+    | BitwiseAndAssign Expression Expression
+    | BitwiseXorAssign Expression Expression
+    | Assign Expression Expression
     deriving (Eq, Show)
 
 
@@ -62,6 +73,7 @@ data Declaration
     = Variable Expression (Maybe TypeName) (Maybe Expression)
     -- TODO incomplete function type
     | Function Type Type
+    | Assignment Expression
     deriving (Eq, Show)
 
 data Statement = Decl Declaration | Expr Expression deriving (Eq, Show)

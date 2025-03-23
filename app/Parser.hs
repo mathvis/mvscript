@@ -18,6 +18,9 @@ whitespace = void $ many $ oneOf " \n\t"
 lexeme :: Parser a -> Parser a
 lexeme p = p <* whitespace
 
+endLine :: Parser a -> Parser a
+endLine p = p <* char ';'
+
 parseStatement :: Parser Statement
 parseStatement = (Decl <$> parseDeclaration) <|> (Expr <$> parseExpr) 
 
@@ -34,7 +37,7 @@ parseTerm :: Parser Expression
 parseTerm = parseUnary <|> parseAtom
 
 parseDeclaration :: Parser Declaration
-parseDeclaration = parseVarInitialization <|> parseVarDeclaration
+parseDeclaration = parseVarInitialization <|> parseVarDeclaration <|> parseAssign
 
 parseNum :: Parser Expression
 parseNum = Type <$> (try parseFloat <|> parseInt)
@@ -115,5 +118,20 @@ parseUnary =
         <|> (char '!' *> pure (Operation . Not))
         <|> (char '~' *> pure (Operation . BitwiseNot))) <*> parseTerm
 
+parseAssign :: Parser Declaration
+parseAssign =
+    parseVarIdentifier >>= \leftTerm ->
+    endLine ((lexeme $
+        (string "=" *> pure (\lhs rhs -> Assignment $ Operation (Assign lhs rhs)))
+        <|> (string "+=" *> pure (\lhs rhs -> Assignment $ Operation (AddAssign lhs rhs)))
+        <|> (string "-=" *> pure (\lhs rhs -> Assignment $ Operation (SubAssign lhs rhs)))
+        <|> (string "*=" *> pure (\lhs rhs -> Assignment $ Operation (MulAssign lhs rhs)))
+        <|> try (string "/=" *> pure (\lhs rhs -> Assignment $ Operation (DivAssign lhs rhs)))
+        <|> try (string "//=" *> pure (\lhs rhs -> Assignment $ Operation (IntDivAssign lhs rhs)))
+        <|> (string "%=" *> pure (\lhs rhs -> Assignment $ Operation (ModAssign lhs rhs)))
+        <|> (string "|=" *> pure (\lhs rhs -> Assignment $ Operation (BitwiseOrAssign lhs rhs)))
+        <|> (string "&=" *> pure (\lhs rhs -> Assignment $ Operation (BitwiseAndAssign lhs rhs)))
+        <|> (string "^=" *> pure (\lhs rhs -> Assignment $ Operation (BitwiseXorAssign lhs rhs)))
+    ) <*> pure leftTerm <*> parseTerm)
 
 -- parseFunctionDefinition
