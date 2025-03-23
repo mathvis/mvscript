@@ -23,32 +23,32 @@ data Type
     deriving (Eq, Show)
 
 data Operation
-    -- BINARY ARITHMETIC
-    = Add Expression Expression
+    = -- BINARY ARITHMETIC
+      Add Expression Expression
     | Subtract Expression Expression
     | Multiply Expression Expression
     | IntDivide Expression Expression
     | Divide Expression Expression
     | Modulo Expression Expression
-    -- UNARY ARITHMETIC
-    | Negation Expression
-    -- COMPARISON OPERATORS
-    | GreaterThan Expression Expression
+    | -- UNARY ARITHMETIC
+      Negation Expression
+    | -- COMPARISON OPERATORS
+      GreaterThan Expression Expression
     | LessThan Expression Expression
     | GreaterThanEq Expression Expression
     | LessThanEq Expression Expression
     | Equals Expression Expression
     | NotEquals Expression Expression
-    -- LOGIC OPERATORS
-    | Or Expression Expression
+    | -- LOGIC OPERATORS
+      Or Expression Expression
     | And Expression Expression
     | Not Expression
     | BitwiseOr Expression Expression
     | BitwiseAnd Expression Expression
     | BitwiseXor Expression Expression
     | BitwiseNot Expression
-    -- ASSIGNMENT OPERATORS
-    | AddAssign Expression Expression
+    | -- ASSIGNMENT OPERATORS
+      AddAssign Expression Expression
     | SubAssign Expression Expression
     | MulAssign Expression Expression
     | DivAssign Expression Expression
@@ -60,7 +60,6 @@ data Operation
     | Assign Expression Expression
     deriving (Eq, Show)
 
-
 data Expression
     = Type Type
     | Parentheses Expression
@@ -68,12 +67,10 @@ data Expression
     | VarIdentifier String
     deriving (Eq, Show)
 
-
 data Declaration
     = Variable Expression (Maybe TypeName) (Maybe Expression)
-    -- TODO incomplete function type
-    | Function Type Type
     | Assignment Expression
     deriving (Eq, Show)
 
-data Statement = Decl Declaration | Expr Expression deriving (Eq, Show)
+data Statement = Decl Declaration | Expr Expression | Comment String deriving (Eq, Show)
+

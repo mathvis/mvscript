@@ -1,8 +1,7 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
-{-# HLINT ignore "Use <$>" #-}
 {-# HLINT ignore "Use $>" #-}
 {-# HLINT ignore "Move brackets to avoid $" #-}
+{-# HLINT ignore "Redundant bracket" #-}
 module Parser where
 
 import Control.Applicative (liftA2)
@@ -22,7 +21,7 @@ endLine :: Parser a -> Parser a
 endLine p = p <* char ';'
 
 parseStatement :: Parser Statement
-parseStatement = (Decl <$> parseDeclaration) <|> (Expr <$> parseExpr) 
+parseStatement = (Decl <$> parseDeclaration) <|> (Expr <$> parseExpr) <|> (Comment <$> parseComment)
 
 parseExpr :: Parser Expression
 parseExpr = chainl1 parseTerm parseBinaryOperator
@@ -121,17 +120,19 @@ parseUnary =
 parseAssign :: Parser Declaration
 parseAssign =
     parseVarIdentifier >>= \leftTerm ->
-    endLine ((lexeme $
-        (string "=" *> pure (\lhs rhs -> Assignment $ Operation (Assign lhs rhs)))
+    endLine ((lexeme (
+        try (string "//=" *> pure (\lhs rhs -> Assignment $ Operation (IntDivAssign lhs rhs)))
         <|> (string "+=" *> pure (\lhs rhs -> Assignment $ Operation (AddAssign lhs rhs)))
         <|> (string "-=" *> pure (\lhs rhs -> Assignment $ Operation (SubAssign lhs rhs)))
         <|> (string "*=" *> pure (\lhs rhs -> Assignment $ Operation (MulAssign lhs rhs)))
-        <|> try (string "/=" *> pure (\lhs rhs -> Assignment $ Operation (DivAssign lhs rhs)))
-        <|> try (string "//=" *> pure (\lhs rhs -> Assignment $ Operation (IntDivAssign lhs rhs)))
+        <|> (string "/=" *> pure (\lhs rhs -> Assignment $ Operation (DivAssign lhs rhs)))
         <|> (string "%=" *> pure (\lhs rhs -> Assignment $ Operation (ModAssign lhs rhs)))
         <|> (string "|=" *> pure (\lhs rhs -> Assignment $ Operation (BitwiseOrAssign lhs rhs)))
         <|> (string "&=" *> pure (\lhs rhs -> Assignment $ Operation (BitwiseAndAssign lhs rhs)))
         <|> (string "^=" *> pure (\lhs rhs -> Assignment $ Operation (BitwiseXorAssign lhs rhs)))
+        <|> (string "=" *> pure (\lhs rhs -> Assignment $ Operation (Assign lhs rhs))))
     ) <*> pure leftTerm <*> parseTerm)
 
--- parseFunctionDefinition
+parseComment :: Parser String
+parseComment = (lexeme $ string "#" *> many anyChar)
+
