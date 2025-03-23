@@ -2,6 +2,7 @@
 
 {-# HLINT ignore "Use <$>" #-}
 {-# HLINT ignore "Use $>" #-}
+{-# HLINT ignore "Move brackets to avoid $" #-}
 module Parser where
 
 import Control.Applicative (liftA2)
@@ -21,13 +22,16 @@ parseStatement :: Parser Statement
 parseStatement = (Decl <$> parseDeclaration) <|> (Expr <$> parseExpr) 
 
 parseExpr :: Parser Expression
-parseExpr = chainl1 parseTerm parseOperator
+parseExpr = chainl1 parseTerm parseBinaryOperator
 
 parseType :: Parser Expression
 parseType = parseString <|> parseNum <|> parseBool
 
+parseAtom :: Parser Expression
+parseAtom = parseType <|> parseParens <|> parseVarIdentifier
+
 parseTerm :: Parser Expression
-parseTerm = parseType <|> parseParens <|> parseVarIdentifier
+parseTerm = parseUnary <|> parseAtom
 
 parseDeclaration :: Parser Declaration
 parseDeclaration = parseVarInitialization <|> parseVarDeclaration
@@ -74,8 +78,6 @@ parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parse
         parseVectorTName = lexeme $ VectorT <$ string "vector"
         parseMatrixTName = lexeme $ MatrixT <$ string "matrix"
 
-    
-
 parseVarInitialization :: Parser Declaration
 parseVarInitialization = 
     Variable <$> (lexeme (string "let ") *> parseVarIdentifier)
@@ -85,14 +87,15 @@ parseVarInitialization =
 parseParens :: Parser Expression
 parseParens = Parentheses <$> (lexeme (char '(') *> parseExpr <* lexeme (char ')'))
 
-parseOperator :: Parser (Expression -> Expression -> Expression)
-parseOperator =
+parseBinaryOperator :: Parser (Expression -> Expression -> Expression)
+parseBinaryOperator =
     lexeme $
         (char '+' *> pure (\lhs rhs -> Operation (Add lhs rhs)))
             <|> (char '-' *> pure (\lhs rhs -> Operation (Subtract lhs rhs)))
             <|> (char '*' *> pure (\lhs rhs -> Operation (Multiply lhs rhs)))
             <|> (char '/' *> pure (\lhs rhs -> Operation (Divide lhs rhs)))
             <|> (string "//" *> pure (\lhs rhs -> Operation (IntDivide lhs rhs)))
+            <|> (char '%' *> pure (\lhs rhs -> Operation (Modulo lhs rhs)))
             <|> (char '>' *> pure (\lhs rhs -> Operation (GreaterThan lhs rhs)))
             <|> (char '<' *> pure (\lhs rhs -> Operation (LessThan lhs rhs)))
             <|> (string "==" *> pure (\lhs rhs -> Operation (Equals lhs rhs)))
@@ -104,5 +107,13 @@ parseOperator =
             <|> (string "&" *> pure (\lhs rhs -> Operation (BitwiseAnd lhs rhs)))
             <|> (string "|" *> pure (\lhs rhs -> Operation (BitwiseOr lhs rhs)))
             <|> (string "^" *> pure (\lhs rhs -> Operation (BitwiseXor lhs rhs)))
+
+parseUnary :: Parser Expression 
+parseUnary =
+    (lexeme $
+        (char '-' *> pure (Operation . Negation))
+        <|> (char '!' *> pure (Operation . Not))
+        <|> (char '~' *> pure (Operation . BitwiseNot))) <*> parseTerm
+
 
 -- parseFunctionDefinition

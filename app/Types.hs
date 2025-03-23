@@ -23,23 +23,30 @@ data Type
     deriving (Eq, Show)
 
 data Operation
+    -- BINARY ARITHMETIC
     = Add Expression Expression
     | Subtract Expression Expression
     | Multiply Expression Expression
     | IntDivide Expression Expression
     | Divide Expression Expression
+    | Modulo Expression Expression
+    -- UNARY ARITHMETIC
+    | Negation Expression
+    -- COMPARISON OPERATORS
     | GreaterThan Expression Expression
     | LessThan Expression Expression
     | GreaterThanEq Expression Expression
     | LessThanEq Expression Expression
     | Equals Expression Expression
     | NotEquals Expression Expression
+    -- LOGIC OPERATORS
     | Or Expression Expression
     | And Expression Expression
+    | Not Expression
     | BitwiseOr Expression Expression
     | BitwiseAnd Expression Expression
     | BitwiseXor Expression Expression
-    -- TODO add NOT
+    | BitwiseNot Expression
     deriving (Eq, Show)
 
 
