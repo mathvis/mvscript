@@ -1,4 +1,4 @@
-let a: int = "abc";
+let a = "abc";
 let b = 123;
 let c = 123.123;
 let d = true;
