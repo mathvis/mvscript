@@ -69,7 +69,7 @@ data Expression
 
 data Declaration
     = Variable Expression (Maybe TypeName) (Maybe Expression)
-    | Assignment Expression
+    | Assignment Operation
     deriving (Eq, Show)
 
 data Statement = Decl Declaration | Expr Expression | Comment String deriving (Eq, Show)

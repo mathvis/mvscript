@@ -10,6 +10,7 @@ import Data.Char
 import Data.Text as T
 import Text.ParserCombinators.Parsec
 import Types
+import Misc
 
 whitespace :: Parser ()
 whitespace = void $ many $ oneOf " \n\t"
@@ -82,9 +83,9 @@ parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parse
 
 parseVarInitialization :: Parser Declaration
 parseVarInitialization = 
-    Variable <$> (lexeme (string "let ") *> parseVarIdentifier)
+    inferVariableType <$> (Variable <$> (lexeme (string "let ") *> parseVarIdentifier)
             <*> optionMaybe (lexeme (char ':') *> parseTypeName)
-            <*> (lexeme (char '=') *> parseExpr <* lexeme (char ';') >>= \expr -> return (Just expr))
+            <*> (lexeme (char '=') *> parseExpr <* lexeme (char ';') >>= \expr -> return (Just expr)))
 
 parseParens :: Parser Expression
 parseParens = Parentheses <$> (lexeme (char '(') *> parseExpr <* lexeme (char ')'))
@@ -121,16 +122,16 @@ parseAssign :: Parser Declaration
 parseAssign =
     parseVarIdentifier >>= \leftTerm ->
     endLine ((lexeme (
-        try (string "//=" *> pure (\lhs rhs -> Assignment $ Operation (IntDivAssign lhs rhs)))
-        <|> (string "+=" *> pure (\lhs rhs -> Assignment $ Operation (AddAssign lhs rhs)))
-        <|> (string "-=" *> pure (\lhs rhs -> Assignment $ Operation (SubAssign lhs rhs)))
-        <|> (string "*=" *> pure (\lhs rhs -> Assignment $ Operation (MulAssign lhs rhs)))
-        <|> (string "/=" *> pure (\lhs rhs -> Assignment $ Operation (DivAssign lhs rhs)))
-        <|> (string "%=" *> pure (\lhs rhs -> Assignment $ Operation (ModAssign lhs rhs)))
-        <|> (string "|=" *> pure (\lhs rhs -> Assignment $ Operation (BitwiseOrAssign lhs rhs)))
-        <|> (string "&=" *> pure (\lhs rhs -> Assignment $ Operation (BitwiseAndAssign lhs rhs)))
-        <|> (string "^=" *> pure (\lhs rhs -> Assignment $ Operation (BitwiseXorAssign lhs rhs)))
-        <|> (string "=" *> pure (\lhs rhs -> Assignment $ Operation (Assign lhs rhs))))
+        try (string "//=" *> pure (\lhs rhs -> Assignment (IntDivAssign lhs rhs)))
+        <|> (string "+=" *> pure (\lhs rhs -> Assignment (AddAssign lhs rhs)))
+        <|> (string "-=" *> pure (\lhs rhs -> Assignment (SubAssign lhs rhs)))
+        <|> (string "*=" *> pure (\lhs rhs -> Assignment (MulAssign lhs rhs)))
+        <|> (string "/=" *> pure (\lhs rhs -> Assignment (DivAssign lhs rhs)))
+        <|> (string "%=" *> pure (\lhs rhs -> Assignment (ModAssign lhs rhs)))
+        <|> (string "|=" *> pure (\lhs rhs -> Assignment (BitwiseOrAssign lhs rhs)))
+        <|> (string "&=" *> pure (\lhs rhs -> Assignment (BitwiseAndAssign lhs rhs)))
+        <|> (string "^=" *> pure (\lhs rhs -> Assignment (BitwiseXorAssign lhs rhs)))
+        <|> (string "=" *> pure (\lhs rhs -> Assignment (Assign lhs rhs))))
     ) <*> pure leftTerm <*> parseTerm)
 
 parseComment :: Parser String
