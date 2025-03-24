@@ -10,7 +10,7 @@ import Data.Char
 import Data.Text as T
 import Text.ParserCombinators.Parsec
 import Types
-import Misc
+import TypeCheck
 
 whitespace :: Parser ()
 whitespace = void $ many $ oneOf " \n\t"
@@ -83,7 +83,7 @@ parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parse
 
 parseVarInitialization :: Parser Declaration
 parseVarInitialization = 
-    inferVariableType <$> (Variable <$> (lexeme (string "let ") *> parseVarIdentifier)
+    (checkType . inferVariableType) <$> (Variable <$> (lexeme (string "let ") *> parseVarIdentifier)
             <*> optionMaybe (lexeme (char ':') *> parseTypeName)
             <*> (lexeme (char '=') *> parseExpr <* lexeme (char ';') >>= \expr -> return (Just expr)))
 

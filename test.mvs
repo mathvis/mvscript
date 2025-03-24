@@ -1,3 +1,6 @@
-let a = "abc";
+let a: int = "abc";
+let b = 123;
+let c = 123.123;
+let d = true;
 a = 0;
 # abc 
