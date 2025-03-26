@@ -1,6 +1,5 @@
 module TypeCheck where
 import Types 
-import Text.ParserCombinators.Parsec
 
 valueToType :: Type -> TypeName
 valueToType (String _) = StringT
@@ -23,3 +22,4 @@ checkType (Variable exp (Just expectedType) (Just (Type val))) =
             then Variable exp (Just expectedType) (Just (Type val))
             else error $ "Type mismatch: expected " ++ show expectedType ++ " but got " ++ show actualType
 checkType _ = error "Declaration is not a variable declaration"
+

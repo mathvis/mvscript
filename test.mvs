@@ -1,6 +1,5 @@
-let a = "abc";
-let b = 123;
-let c = 123.123;
+let a = Vector(5, 4, 3);
+let b = Point(6, 1, 3, 5, 2);
+let c = Matrix([5, 4, 3], [3, 1, 2], [4, 5, 3]);
 let d = true;
-a = 0;
-# abc 
+let d = false;

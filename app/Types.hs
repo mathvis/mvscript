@@ -17,9 +17,10 @@ data Type
     | Int Integer
     | Float Float
     | Bool Bool
-    | Vector [Double]
-    | Point [Double]
-    | Matrix [[Double]]
+    | Array [Expression]
+    | Vector [Expression]
+    | Point [Expression]
+    | Matrix [Expression]
     deriving (Eq, Show)
 
 data Operation
@@ -74,3 +75,5 @@ data Declaration
 
 data Statement = Decl Declaration | Expr Expression | Comment String deriving (Eq, Show)
 
+reservedKeywords :: [String]
+reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false"]
