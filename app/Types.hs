@@ -10,6 +10,8 @@ data TypeName
     | VectorT
     | PointT
     | MatrixT
+    | ArrayT TypeName
+    | VoidT
     deriving (Eq, Show)
 
 data Type
@@ -66,14 +68,17 @@ data Expression
     | Parentheses Expression
     | Operation Operation
     | VarIdentifier String
+    | FunctionIdentifier String
+    | FunctionCall Expression [Expression]
     deriving (Eq, Show)
 
 data Declaration
     = Variable Expression (Maybe TypeName) (Maybe Expression)
     | Assignment Operation
+    | FunctionDef Expression [(Expression, TypeName)] TypeName (Maybe Statement)
     deriving (Eq, Show)
 
-data Statement = Decl Declaration | Expr Expression | Comment String deriving (Eq, Show)
+data Statement = Decl Declaration | Expr Expression | Comment String | Block [Statement] deriving (Eq, Show)
 
 reservedKeywords :: [String]
-reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false"]
+reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false", "func"]

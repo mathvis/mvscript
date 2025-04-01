@@ -1,6 +1,7 @@
 module TypeCheck where
 import Types 
 
+--TODO type checking for arrays
 valueToType :: Type -> TypeName
 valueToType (String _) = StringT
 valueToType (Int _) = IntT

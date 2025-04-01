@@ -27,7 +27,7 @@ rword :: String -> Parser ()
 rword w = (lexeme . try) (string w *> notFollowedBy (letter <|> digit))
 
 parseStatement :: Parser Statement
-parseStatement = (Decl <$> parseDeclaration) <|> (Expr <$> parseExpr) <|> (Comment <$> parseComment)
+parseStatement =  (Expr <$> parseExpr) <|> (Decl <$> parseDeclaration) <|> (Comment <$> parseComment) <|> parseBlock 
 
 parseExpr :: Parser Expression
 parseExpr = chainl1 parseTerm parseBinaryOperator
@@ -36,13 +36,13 @@ parseType :: Parser Expression
 parseType = parseNum <|> parseBool <|> parseArray <|> parseString <|> parseVector <|> parsePoint <|> parseMatrix
 
 parseAtom :: Parser Expression
-parseAtom = try parseType <|> parseParens <|> try parseVarIdentifier
+parseAtom = try parseFunctionCall <|> try parseType <|> parseParens <|> parseVarIdentifier
 
 parseTerm :: Parser Expression
-parseTerm = parseUnary <|> parseAtom
+parseTerm = parseAtom <|> parseUnary
 
 parseDeclaration :: Parser Declaration
-parseDeclaration = parseVarInitialization <|> parseVarDeclaration <|> parseAssign
+parseDeclaration = parseVarInitialization <|> parseVarDeclaration <|> parseAssign <|> try parseFunctionForwardDeclaration <|> parseFunctionDeclaration
 
 parseNum :: Parser Expression
 parseNum = Type <$> (try parseFloat <|> parseInt)
@@ -94,15 +94,16 @@ parseVarDeclaration =
         <*> (lexeme (char ';') *> pure Nothing)
 
 parseTypeName :: Parser TypeName
-parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parseBoolTName <|> parseVectorTName <|> parseMatrixTName <|> parsePointTName
-  where
-    parseIntTName = lexeme $ IntT <$ string "int"
-    parseFloatTName = lexeme $ FloatT <$ string "float"
-    parseBoolTName = lexeme $ BoolT <$ string "bool"
-    parseStringTName = lexeme $ StringT <$ string "string"
-    parsePointTName = lexeme $ PointT <$ string "point"
-    parseVectorTName = lexeme $ VectorT <$ string "vector"
-    parseMatrixTName = lexeme $ MatrixT <$ string "matrix"
+parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parseBoolTName <|> parseVectorTName <|> parseMatrixTName <|> parsePointTName <|> parseArrayTName 
+    where
+        parseIntTName = lexeme $ IntT <$ string "int"
+        parseFloatTName = lexeme $ FloatT <$ string "float"
+        parseBoolTName = lexeme $ BoolT <$ string "bool"
+        parseStringTName = lexeme $ StringT <$ string "string"
+        parsePointTName = lexeme $ PointT <$ string "point"
+        parseVectorTName = lexeme $ VectorT <$ string "vector"
+        parseMatrixTName = lexeme $ MatrixT <$ string "matrix"
+        parseArrayTName = lexeme $ ArrayT <$> (char '[' *> parseTypeName <* char ']')
 
 parseVarInitialization :: Parser Declaration
 parseVarInitialization =
@@ -166,6 +167,43 @@ parseAssign =
                 <*> pure leftTerm
                 <*> parseTerm
             )
+
+parseFunctionIdentifier :: Parser Expression
+parseFunctionIdentifier = FunctionIdentifier <$> identifier
+  where
+    identifier =
+        (lexeme . try) $ do
+            name <- (:) <$> firstChar <*> many nonFirstChar
+            if Prelude.elem name reservedKeywords
+                then fail $ "Cannot use reserved keyword '" ++ name ++ "' as a function identifier"
+                else return name
+    firstChar = letter <|> char '_'
+    nonFirstChar = firstChar <|> digit
+
+parseFunctionArguments :: Parser [(Expression, TypeName)]
+parseFunctionArguments = sepBy parseFunctionArgument (lexeme $ char ',')
+    where
+        parseFunctionArgument = (,) <$> lexeme (parseVarIdentifier <* char ':') <*> parseTypeName
+
+parseFunctionReturnType :: Parser TypeName
+parseFunctionReturnType = parseTypeName <|> parseVoid
+    where
+        parseVoid = lexeme $ VoidT <$ string ""
+
+parseFunctionForwardDeclaration :: Parser Declaration
+parseFunctionForwardDeclaration = (endLine . lexeme) $ FunctionDef <$> ((rword "func") *> parseFunctionIdentifier) <*> (lexeme (char '(' *> parseFunctionArguments <* char ')')) <*> (parseFunctionReturnType) <*> pure Nothing
+
+parseFunctionDeclaration :: Parser Declaration
+parseFunctionDeclaration = lexeme $ FunctionDef <$> ((rword "func") *> parseFunctionIdentifier) <*> (lexeme (char '(' *> parseFunctionArguments <* char ')')) <*> (parseFunctionReturnType) <*> (Just <$> parseBlock)
+
+parseFunctionCallArguments :: Parser [Expression]
+parseFunctionCallArguments = lexeme (sepBy parseExpr (lexeme $ char ','))
+
+parseFunctionCall :: Parser Expression
+parseFunctionCall = (endLine . lexeme) $ FunctionCall <$> parseFunctionIdentifier <*> between (lexeme $ char '(') (lexeme $ char ')') parseFunctionCallArguments
+
+parseBlock :: Parser Statement
+parseBlock = Block <$> (lexeme (char '{') *> many parseStatement <* lexeme (char '}'))
 
 parseComment :: Parser String
 parseComment = (lexeme $ string "#" *> many anyChar)
