@@ -23,6 +23,9 @@ lexeme p = p <* whitespace
 endLine :: Parser a -> Parser a
 endLine p = p <* char ';'
 
+betweenParentheses :: Parser a -> Parser a
+betweenParentheses = between (lexeme $ char '(') (lexeme $ char ')') 
+
 rword :: String -> Parser ()
 rword w = (lexeme . try) (string w *> notFollowedBy (letter <|> digit))
 
@@ -36,7 +39,7 @@ parseType :: Parser Expression
 parseType = parseNum <|> parseBool <|> parseArray <|> parseString <|> parseVector <|> parsePoint <|> parseMatrix
 
 parseAtom :: Parser Expression
-parseAtom = try parseFunctionCall <|> try parseType <|> parseParens <|> parseVarIdentifier
+parseAtom = try parseFunctionCall <|> try parseLambdaApplication <|> parseLambda <|> try parseType <|> parseParens <|> parseVarIdentifier
 
 parseTerm :: Parser Expression
 parseTerm = parseAtom <|> parseUnary
@@ -201,6 +204,15 @@ parseFunctionCallArguments = lexeme (sepBy parseExpr (lexeme $ char ','))
 
 parseFunctionCall :: Parser Expression
 parseFunctionCall = (endLine . lexeme) $ FunctionCall <$> parseFunctionIdentifier <*> between (lexeme $ char '(') (lexeme $ char ')') parseFunctionCallArguments
+
+parseLambda :: Parser Expression
+parseLambda = LambdaFunc <$> betweenParentheses parseFunctionArguments <*> (lexeme (char ':') *> (Just <$> parseStatement)) 
+
+parseLambdaApplication :: Parser Expression
+parseLambdaApplication =
+    LambdaApplication
+        <$> betweenParentheses parseLambda
+        <*> (betweenParentheses parseExpr)
 
 parseBlock :: Parser Statement
 parseBlock = Block <$> (lexeme (char '{') *> many parseStatement <* lexeme (char '}'))

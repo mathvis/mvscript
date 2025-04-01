@@ -70,6 +70,8 @@ data Expression
     | VarIdentifier String
     | FunctionIdentifier String
     | FunctionCall Expression [Expression]
+    | LambdaFunc [(Expression, TypeName)] (Maybe Statement) 
+    | LambdaApplication Expression Expression
     deriving (Eq, Show)
 
 data Declaration
