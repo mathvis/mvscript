@@ -14,6 +14,7 @@ import Text.ParserCombinators.Parsec
 import TypeCheck
 import Types
 
+-- AUXILIARY PARSERS
 whitespace :: Parser ()
 whitespace = void $ many $ oneOf " \n\t"
 
@@ -29,8 +30,9 @@ betweenParentheses = between (lexeme $ char '(') (lexeme $ char ')')
 rword :: String -> Parser ()
 rword w = (lexeme . try) (string w *> notFollowedBy (letter <|> digit))
 
+-- MAIN TYPE PARSERS
 parseStatement :: Parser Statement
-parseStatement =  (Expr <$> parseExpr) <|> (Decl <$> parseDeclaration) <|> (Comment <$> parseComment) <|> parseBlock 
+parseStatement =  (Expr <$> parseExpr) <|> (Decl <$> parseDeclaration) <|> (Comment <$> parseComment) <|> parseBlock NoType
 
 parseExpr :: Parser Expression
 parseExpr = chainl1 parseTerm parseBinaryOperator
@@ -47,6 +49,7 @@ parseTerm = parseAtom <|> parseUnary
 parseDeclaration :: Parser Declaration
 parseDeclaration = parseVarInitialization <|> parseVarDeclaration <|> parseAssign <|> try parseFunctionForwardDeclaration <|> parseFunctionDeclaration
 
+-- DATA TYPE PARSERS
 parseNum :: Parser Expression
 parseNum = Type <$> (try parseFloat <|> parseInt)
 
@@ -77,6 +80,7 @@ parsePoint = Type . Point <$> ((rword "Point") *> (char '(') *> (sepBy parseExpr
 parseMatrix :: Parser Expression
 parseMatrix = Type . Matrix <$> ((rword "Matrix") *> (char '(') *> (sepBy parseArray (lexeme (string ", "))) <* char ')')
 
+-- VARIABLE PARSERS
 parseVarIdentifier :: Parser Expression
 parseVarIdentifier = VarIdentifier <$> identifier
   where
@@ -117,6 +121,7 @@ parseVarInitialization =
                 <*> (lexeme (char '=') *> parseExpr <* lexeme (char ';') >>= \expr -> return (Just expr))
             )
 
+-- OPERATION RELATED PARSERS
 parseParens :: Parser Expression
 parseParens = Parentheses <$> (lexeme (char '(') *> parseExpr <* lexeme (char ')'))
 
@@ -171,6 +176,7 @@ parseAssign =
                 <*> parseTerm
             )
 
+-- FUNCTION RELATED PARSERS
 parseFunctionIdentifier :: Parser Expression
 parseFunctionIdentifier = FunctionIdentifier <$> identifier
   where
@@ -197,7 +203,7 @@ parseFunctionForwardDeclaration :: Parser Declaration
 parseFunctionForwardDeclaration = (endLine . lexeme) $ FunctionDef <$> ((rword "func") *> parseFunctionIdentifier) <*> (lexeme (char '(' *> parseFunctionArguments <* char ')')) <*> (parseFunctionReturnType) <*> pure Nothing
 
 parseFunctionDeclaration :: Parser Declaration
-parseFunctionDeclaration = lexeme $ FunctionDef <$> ((rword "func") *> parseFunctionIdentifier) <*> (lexeme (char '(' *> parseFunctionArguments <* char ')')) <*> (parseFunctionReturnType) <*> (Just <$> parseBlock)
+parseFunctionDeclaration = lexeme $ FunctionDef <$> ((rword "func") *> parseFunctionIdentifier) <*> (lexeme (char '(' *> parseFunctionArguments <* char ')')) <*> (parseFunctionReturnType) <*> (Just <$> parseBlock FunctionBlock)
 
 parseFunctionCallArguments :: Parser [Expression]
 parseFunctionCallArguments = lexeme (sepBy parseExpr (lexeme $ char ','))
@@ -214,8 +220,11 @@ parseLambdaApplication =
         <$> betweenParentheses parseLambda
         <*> (betweenParentheses parseExpr)
 
-parseBlock :: Parser Statement
-parseBlock = Block <$> (lexeme (char '{') *> many parseStatement <* lexeme (char '}'))
+parseBlock :: BlockType -> Parser Statement
+parseBlock blocktype = Block blocktype <$> (lexeme (char '{') *> many parseStatement <* lexeme (char '}'))
 
+-- COMMENT PARSERS
 parseComment :: Parser String
 parseComment = (lexeme $ string "#" *> many anyChar)
+
+-- CONTROL FLOW PARSERS

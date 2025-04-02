@@ -81,7 +81,9 @@ data Declaration
     | FunctionDef Expression [(Expression, TypeName)] TypeName (Maybe Statement)
     deriving (Eq, Show)
 
-data Statement = Decl Declaration | Expr Expression | Comment String | Block [Statement] deriving (Eq, Show)
+data BlockType = NoType | If | Else | FunctionBlock deriving (Eq, Show)
+
+data Statement = Decl Declaration | Expr Expression | Comment String | Block BlockType [Statement] deriving (Eq, Show)
 
 reservedKeywords :: [String]
 reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false", "func"]
