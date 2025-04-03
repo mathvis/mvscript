@@ -19,6 +19,7 @@ def run_test(filename: str) -> bool:
     name: str = filename.rstrip(".in")
 
     system(f'cabal run mvscript "test/{filename}" | tail -n +2 > test/{name}.myout')
+    print(listdir("./test"))
 
     result = parse_diff_output(
         subprocess.getoutput(f"diff ./test/test01.myout ./test/test01.out")
