@@ -21,15 +21,24 @@ maintainer:         joaonovo05@protonmail.com
 -- category:
 extra-source-files: CHANGELOG.md
 
+test-suite mvscript-tests
+    type: exitcode-stdio-1.0
+    main-is: ParserTest.hs
+    hs-source-dirs:   test
+    build-depends:    base, parsec, text, containers, mvscript-lib, sydtest
+    Build-tool-depends: HTF:htfpp
+
+library mvscript-lib
+    exposed-modules: Parser, Types, TypeCheck
+    hs-source-dirs: lib
+    build-depends:    base, parsec, text, containers
+    default-language: Haskell2010
+
 executable mvscript
     main-is:          Main.hs
 
-    -- Modules included in this executable, other than Main.
-    other-modules: Parser, Types, TypeCheck
-   
-
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
-    build-depends:    base, parsec, text, containers
+    build-depends:    base, parsec, text, containers, mvscript-lib
     hs-source-dirs:   app
     default-language: Haskell2010
