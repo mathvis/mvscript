@@ -13,7 +13,7 @@ def parse_diff_output(output: str) -> str:
 def run_test(filename: str) -> bool:
     name: str = filename.rstrip(".in")
 
-    system(f'cabal run mvscript "test/{filename}" > test/{name}.myout')
+    system(f'cabal run mvscript "test/{filename}" &> test/{name}.myout')
 
     result = parse_diff_output(
         subprocess.getoutput(f"diff ./test/test01.myout ./test/test01.out")

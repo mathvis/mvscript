@@ -1,2 +1,3 @@
 let a: int = 0;
 let a = 0;
+let a: string = 0;
