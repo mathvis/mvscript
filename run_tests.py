@@ -10,6 +10,7 @@ def parse_diff_output(output: str) -> str:
     if output == "":
         return output
     lines: list[str] = output.splitlines()
+    print(lines)
     i = lines.index("---")
     return f"Expected:\n\t{"\n".join(list(map(lambda l: l.lstrip('< '), lines[1:i])))}\nGot:\n\t{"\n".join(list(map(lambda l: l.lstrip('> '), lines[i + 1 :])))}"
 
