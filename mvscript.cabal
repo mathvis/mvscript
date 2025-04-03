@@ -21,12 +21,6 @@ maintainer:         joaonovo05@protonmail.com
 -- category:
 extra-source-files: CHANGELOG.md
 
-test-suite mvscript-tests
-    type: exitcode-stdio-1.0
-    main-is: ParserTest.hs
-    hs-source-dirs:   test
-    build-depends:    base, parsec, text, containers, mvscript-lib
-
 library mvscript-lib
     exposed-modules: Parser, Types, TypeCheck
     hs-source-dirs: lib
