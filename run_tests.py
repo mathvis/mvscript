@@ -18,7 +18,7 @@ def parse_diff_output(output: str) -> str:
 def run_test(filename: str) -> bool:
     name: str = filename.rstrip(".in")
 
-    system(f'cabal run mvscript "test/{filename}" | tail -n +2 > test/{name}.myout')
+    system(f'cabal run mvscript "test/{filename}" > test/{name}.myout')
     print(listdir("./test"))
 
     result = parse_diff_output(
