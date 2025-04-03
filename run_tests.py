@@ -19,6 +19,8 @@ def run_test(filename: str) -> bool:
         stderr=open(f"test/{name}.myout", "a"),
     )
 
+    system("cat ./test/test01.myout")
+    system("cat ./test/test01.out")
     result = parse_diff_output(
         subprocess.getoutput(f"diff ./test/test01.myout ./test/test01.out")
     )
