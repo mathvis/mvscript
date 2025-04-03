@@ -6,3 +6,4 @@ Type mismatch: expected StringT but got IntT
 
 HasCallStack backtrace:
   error, called at lib/TypeCheck.hs:24:18 in mvscript-0.1.0.0-inplace-mvscript-lib:TypeCheck
+
