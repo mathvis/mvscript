@@ -9,7 +9,7 @@ module Parser where
 import Control.Applicative (liftA2)
 import Control.Monad
 import Data.Char
-import Data.Text as T
+import Data.Text as T (unpack, pack)
 import Text.ParserCombinators.Parsec
 import TypeCheck
 import Types
@@ -32,7 +32,7 @@ rword w = (lexeme . try) (string w *> notFollowedBy (letter <|> digit))
 
 -- MAIN TYPE PARSERS
 parseStatement :: Parser Statement
-parseStatement =  (Expr <$> parseExpr) <|> (Decl <$> parseDeclaration) <|> (Comment <$> parseComment) <|> parseBlock NoType
+parseStatement = (Expr <$> try parseExpr) <|> (Decl <$> parseDeclaration) <|> (Comment <$> parseComment) <|> parseBlock NoType
 
 parseExpr :: Parser Expression
 parseExpr = chainl1 parseTerm parseBinaryOperator
@@ -41,13 +41,13 @@ parseType :: Parser Expression
 parseType = parseNum <|> parseBool <|> parseArray <|> parseString <|> parseVector <|> parsePoint <|> parseMatrix
 
 parseAtom :: Parser Expression
-parseAtom = try parseFunctionCall <|> try parseLambdaApplication <|> parseLambda <|> try parseType <|> parseParens <|> parseVarIdentifier
+parseAtom = try parseLambda <|> parseLambdaApplication <|> try parseFunctionCall <|> try parseType <|> parseParens <|> parseVarIdentifier
 
 parseTerm :: Parser Expression
 parseTerm = parseAtom <|> parseUnary
 
 parseDeclaration :: Parser Declaration
-parseDeclaration = parseVarInitialization <|> parseVarDeclaration <|> parseAssign <|> try parseFunctionForwardDeclaration <|> parseFunctionDeclaration
+parseDeclaration = try parseVarInitialization <|> try parseVarDeclaration <|> parseAssign <|> try parseFunctionForwardDeclaration <|> parseFunctionDeclaration
 
 -- DATA TYPE PARSERS
 parseNum :: Parser Expression
@@ -173,7 +173,7 @@ parseAssign =
                     )
               )
                 <*> pure leftTerm
-                <*> parseTerm
+                <*> parseExpr
             )
 
 -- FUNCTION RELATED PARSERS
@@ -212,7 +212,7 @@ parseFunctionCall :: Parser Expression
 parseFunctionCall = (endLine . lexeme) $ FunctionCall <$> parseFunctionIdentifier <*> between (lexeme $ char '(') (lexeme $ char ')') parseFunctionCallArguments
 
 parseLambda :: Parser Expression
-parseLambda = LambdaFunc <$> betweenParentheses parseFunctionArguments <*> (lexeme (char ':') *> (Just <$> parseStatement)) 
+parseLambda = LambdaFunc <$> betweenParentheses parseFunctionArguments <*> (lexeme (char ':') *> (Just <$> (parseBlock FunctionBlock <|> parseStatement))) 
 
 parseLambdaApplication :: Parser Expression
 parseLambdaApplication =

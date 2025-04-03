@@ -1,0 +1,3 @@
+let a: vector = Vector(0);
+let a: matrix = Matrix([0, 1]);
+let a: point = Point(0);
