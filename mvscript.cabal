@@ -25,8 +25,7 @@ test-suite mvscript-tests
     type: exitcode-stdio-1.0
     main-is: ParserTest.hs
     hs-source-dirs:   test
-    build-depends:    base, parsec, text, containers, mvscript-lib, sydtest
-    Build-tool-depends: HTF:htfpp
+    build-depends:    base, parsec, text, containers, mvscript-lib
 
 library mvscript-lib
     exposed-modules: Parser, Types, TypeCheck
