@@ -16,10 +16,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-haskell@v1
-      with:
-        ghc-version: '8.10.3'
-        cabal-version: '3.2'
+
+    - name: Setup Haskell
+      uses: haskell-actions/setup@v2.7.10
 
     - name: Set up Python
       uses: actions/setup-python@v5
