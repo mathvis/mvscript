@@ -1,5 +1,6 @@
 Decl (Variable (VarIdentifier "a") (Just IntT) (Just (Type (Int 0))))
 Decl (Variable (VarIdentifier "a") (Just IntT) (Just (Type (Int 0))))
-mvscript: Type mismatch: expected StringT but got IntT
-CallStack (from HasCallStack):
+mvscript: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
+Type mismatch: expected StringT but got IntT
+HasCallStack backtrace:
   error, called at lib/TypeCheck.hs:24:18 in mvscript-0.1.0.0-inplace-mvscript-lib:TypeCheck
