@@ -1,1 +1,2 @@
 Decl (Variable (VarIdentifier "a") (Just IntT) (Just (Type (Int 0))))
+Decl (Variable (VarIdentifier "a") (Just IntT) (Just (Type (Int 0))))
