@@ -1,2 +1,3 @@
 dist-newstyle/
 run_tests_local.py
+test/*.local
