@@ -1,0 +1,1 @@
+Decl (IfBlock (Operation (GreaterThan (VarIdentifier "a") (0))) (VarIdentifier "b") Nothing)

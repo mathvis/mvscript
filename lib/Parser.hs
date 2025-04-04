@@ -24,6 +24,9 @@ lexeme p = p <* whitespace
 endLine :: Parser a -> Parser a
 endLine p = p <* char ';'
 
+newLine :: Parser a -> Parser a
+newLine p = p <* optional (char '\n')
+
 betweenParentheses :: Parser a -> Parser a
 betweenParentheses = between (lexeme $ char '(') (lexeme $ char ')') 
 
@@ -32,7 +35,7 @@ rword w = (lexeme . try) (string w *> notFollowedBy (letter <|> digit))
 
 -- MAIN TYPE PARSERS
 parseStatement :: Parser Statement
-parseStatement = (Expr <$> try parseExpr) <|> (Decl <$> parseDeclaration) <|> (Comment <$> parseComment) <|> parseBlock NoType
+parseStatement = ((Expr <$> try parseExpr) <|> (Decl <$> parseDeclaration) <|> (Comment <$> parseComment) <|> parseBlock NoType)
 
 parseExpr :: Parser Expression
 parseExpr = chainl1 parseTerm parseBinaryOperator
@@ -47,7 +50,7 @@ parseTerm :: Parser Expression
 parseTerm = parseAtom <|> parseUnary
 
 parseDeclaration :: Parser Declaration
-parseDeclaration = try parseVarInitialization <|> try parseVarDeclaration <|> parseAssign <|> try parseFunctionForwardDeclaration <|> parseFunctionDeclaration
+parseDeclaration = try parseVarInitialization <|> try parseVarDeclaration <|> parseAssign <|> try parseFunctionForwardDeclaration <|> parseFunctionDeclaration <|> parseIf
 
 -- DATA TYPE PARSERS
 parseNum :: Parser Expression
@@ -221,10 +224,15 @@ parseLambdaApplication =
         <*> (betweenParentheses parseExpr)
 
 parseBlock :: BlockType -> Parser Statement
-parseBlock blocktype = Block blocktype <$> (lexeme (char '{') *> many parseStatement <* lexeme (char '}'))
+parseBlock blocktype = Block blocktype <$> ((newLine . lexeme) (char '{') *> many ((newLine . lexeme) parseStatement) <* lexeme (char '}'))
 
 -- COMMENT PARSERS
 parseComment :: Parser String
 parseComment = (lexeme $ string "#" *> many anyChar)
 
 -- CONTROL FLOW PARSERS
+
+parseElse :: Parser Declaration
+parseElse = lexeme $ ElseBlock <$> (rword "else" *> (parseBlock Else <|> parseStatement))
+
+parseIf = lexeme $ IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> (endLine parseStatement)) <*> optionMaybe parseElse            

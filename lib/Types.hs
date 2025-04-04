@@ -79,6 +79,8 @@ data Declaration
     = Variable Expression (Maybe TypeName) (Maybe Expression)
     | Assignment Operation
     | FunctionDef Expression [(Expression, TypeName)] TypeName (Maybe Statement)
+    | IfBlock Expression Statement (Maybe Declaration)
+    | ElseBlock Statement
     deriving (Eq, Show)
 
 data BlockType = NoType | If | Else | FunctionBlock deriving (Eq, Show)
