@@ -72,13 +72,13 @@ parseArray :: Parser Expression
 parseArray = Type . Array <$> lexeme (char '[' *> (sepBy parseExpr (lexeme (string ","))) <* char ']')
 
 parseVector :: Parser Expression
-parseVector = Type . Vector <$> ((rword "Vector") *> (char '(') *> (sepBy parseExpr (lexeme (string ", "))) <* char ')')
+parseVector = Type . Vector <$> (rword "Vector" *> char '(' *> (sepBy parseExpr (lexeme (string ", "))) <* char ')')
 
 parsePoint :: Parser Expression
-parsePoint = Type . Point <$> ((rword "Point") *> (char '(') *> (sepBy parseExpr (lexeme (string ", "))) <* char ')')
+parsePoint = Type . Point <$> (rword "Point" *> char '(' *> (sepBy parseExpr (lexeme (string ", "))) <* char ')')
 
 parseMatrix :: Parser Expression
-parseMatrix = Type . Matrix <$> ((rword "Matrix") *> (char '(') *> (sepBy parseArray (lexeme (string ", "))) <* char ')')
+parseMatrix = Type . Matrix <$> (rword "Matrix" *> (char '(') *> (sepBy parseArray (lexeme (string ", "))) <* char ')')
 
 -- VARIABLE PARSERS
 parseVarIdentifier :: Parser Expression
@@ -209,7 +209,7 @@ parseFunctionCallArguments :: Parser [Expression]
 parseFunctionCallArguments = lexeme (sepBy parseExpr (lexeme $ char ','))
 
 parseFunctionCall :: Parser Expression
-parseFunctionCall = (endLine . lexeme) $ FunctionCall <$> parseFunctionIdentifier <*> between (lexeme $ char '(') (lexeme $ char ')') parseFunctionCallArguments
+parseFunctionCall = lexeme $ FunctionCall <$> parseFunctionIdentifier <*> between (lexeme $ char '(') (lexeme $ char ')') parseFunctionCallArguments
 
 parseLambda :: Parser Expression
 parseLambda = LambdaFunc <$> betweenParentheses parseFunctionArguments <*> (lexeme (char ':') *> (Just <$> (parseBlock FunctionBlock <|> parseStatement))) 
