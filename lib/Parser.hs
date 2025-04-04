@@ -13,6 +13,7 @@ import Data.Text as T (unpack, pack)
 import Text.ParserCombinators.Parsec
 import TypeCheck
 import Types
+import Eval
 
 -- AUXILIARY PARSERS
 whitespace :: Parser ()
@@ -235,4 +236,5 @@ parseComment = (lexeme $ string "#" *> many anyChar)
 parseElse :: Parser Declaration
 parseElse = lexeme $ ElseBlock <$> (rword "else" *> (parseBlock Else <|> parseStatement))
 
-parseIf = lexeme $ IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> (endLine parseStatement)) <*> optionMaybe parseElse            
+parseIf :: Parser Declaration
+parseIf = collapseControlFlow <$> (lexeme $ IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> (endLine parseStatement)) <*> optionMaybe parseElse)

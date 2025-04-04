@@ -81,6 +81,7 @@ data Declaration
     | FunctionDef Expression [(Expression, TypeName)] TypeName (Maybe Statement)
     | IfBlock Expression Statement (Maybe Declaration)
     | ElseBlock Statement
+    | CollapsedControlFlow Statement
     deriving (Eq, Show)
 
 data BlockType = NoType | If | Else | FunctionBlock deriving (Eq, Show)
