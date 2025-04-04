@@ -1,1 +1,1 @@
-Decl (IfBlock (Operation (GreaterThan (VarIdentifier "a") (0))) (VarIdentifier "b") Nothing)
+Decl (IfBlock (Operation (GreaterThan (VarIdentifier "a") (Type (Int 0)))) (Expr (VarIdentifier "b")) Nothing)
