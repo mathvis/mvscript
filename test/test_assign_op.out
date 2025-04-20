@@ -1,2 +1,0 @@
-Decl (Variable (VarIdentifier "a") (Just StringT) (Just (Type (String "test"))))
-Decl (Assignment (Assign (VarIdentifier "a") (Operation (Add (Type (String "test")) (VarIdentifier "a")))))

@@ -1,0 +1,1 @@
+Decl (FunctionDef (FunctionIdentifier "a") [(VarIdentifier "b",IntT),(VarIdentifier "c",StringT)] IntT (Just (Block FunctionBlock [Decl (Variable (VarIdentifier "a") (Just IntT) (Just (Type (Int 0))))])))

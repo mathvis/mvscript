@@ -13,17 +13,18 @@ def parse_diff_output(output: str) -> str:
         return output
 
 
-def run_test(filename: str) -> bool:
-    name: str = filename.rstrip(".in")
+def run_test(name: str) -> bool:
 
     subprocess.run(
-        ["cabal", "run", "mvscript", f"test/{filename}"],
-        stdout=open(f"test/{name}.myout", "w"),
-        stderr=open(f"test/{name}.myout", "a"),
+        ["cabal", "run", "mvscript", f"test/{name}/{name}.in"],
+        stdout=open(f"test/{name}/{name}.myout", "w"),
+        stderr=open(f"test/{name}/{name}.myout", "a"),
     )
 
     result = parse_diff_output(
-        subprocess.getoutput(f"diff ./test/{name}.myout ./test/{name}.out")
+        subprocess.getoutput(
+            f"diff ./test/{name}/{name}.myout ./test/{name}/{name}.out"
+        )
     )
     if result == "":
         print("TEST PASSED!")
@@ -34,7 +35,7 @@ def run_test(filename: str) -> bool:
 
 def run_tests():
     system("cabal build > /dev/null")
-    files = list(filter(lambda x: x.endswith(".in"), listdir("./test")))
+    files = listdir("./test")
     count: int = 0
     for file in files:
         if run_test(file):

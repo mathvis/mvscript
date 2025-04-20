@@ -14,44 +14,27 @@ import Text.ParserCombinators.Parsec
 import TypeCheck
 import Types
 import Eval
-
--- AUXILIARY PARSERS
-whitespace :: Parser ()
-whitespace = void $ many $ oneOf " \n\t"
-
-lexeme :: Parser a -> Parser a
-lexeme p = p <* whitespace
-
-endLine :: Parser a -> Parser a
-endLine p = p <* char ';'
-
-newLine :: Parser a -> Parser a
-newLine p = p <* optional (char '\n')
-
-betweenParentheses :: Parser a -> Parser a
-betweenParentheses = between (lexeme $ char '(') (lexeme $ char ')') 
-
-rword :: String -> Parser ()
-rword w = (lexeme . try) (string w *> notFollowedBy (letter <|> digit))
+import Misc
 
 -- MAIN TYPE PARSERS
 parseStatement :: Parser Statement
-parseStatement = ((Expr <$> try parseExpr) <|> (Decl <$> parseDeclaration) <|> (Comment <$> parseComment) <|> parseBlock NoType)
+parseStatement = ((Decl <$> try parseDeclaration) <|> (Expr <$> try parseExpr) <|> (Comment <$> parseComment) <|> parseBlock NoType)
 
+-- START OF THE CASCADING OPERATION PARSER
 parseExpr :: Parser Expression
-parseExpr = chainl1 parseTerm parseBinaryOperator
+parseExpr = parseOr
 
 parseType :: Parser Expression
 parseType = parseNum <|> parseBool <|> parseArray <|> parseString <|> parseVector <|> parsePoint <|> parseMatrix
 
 parseAtom :: Parser Expression
-parseAtom = try parseLambda <|> parseLambdaApplication <|> try parseFunctionCall <|> try parseType <|> parseParens <|> parseVarIdentifier
+parseAtom = try parseLambda <|> try parseLambdaApplication <|> try parseFunctionCall <|> try parseType <|> try parseParens <|> parseVarIdentifier
 
 parseTerm :: Parser Expression
-parseTerm = parseAtom <|> parseUnary
+parseTerm = try parseUnary <|> try parseAtom
 
 parseDeclaration :: Parser Declaration
-parseDeclaration = try parseVarInitialization <|> try parseVarDeclaration <|> parseAssign <|> try parseFunctionForwardDeclaration <|> parseFunctionDeclaration <|> parseIf
+parseDeclaration = try parseVarInitialization <|> try parseVarDeclaration <|> try parseAssign <|> try parseFunctionForwardDeclaration <|> parseFunctionDeclaration <|> parseIf
 
 -- DATA TYPE PARSERS
 parseNum :: Parser Expression
@@ -127,29 +110,7 @@ parseVarInitialization =
 
 -- OPERATION RELATED PARSERS
 parseParens :: Parser Expression
-parseParens = Parentheses <$> (lexeme (char '(') *> parseExpr <* lexeme (char ')'))
-
-parseBinaryOperator :: Parser (Expression -> Expression -> Expression)
-parseBinaryOperator =
-    lexeme $
-        (char '+' *> pure (\lhs rhs -> Operation (Add lhs rhs)))
-            <|> (char '-' *> pure (\lhs rhs -> Operation (Subtract lhs rhs)))
-            <|> (char '*' *> pure (\lhs rhs -> Operation (Multiply lhs rhs)))
-            <|> (char '/' *> pure (\lhs rhs -> Operation (Divide lhs rhs)))
-            <|> (string "//" *> pure (\lhs rhs -> Operation (IntDivide lhs rhs)))
-            <|> (char '%' *> pure (\lhs rhs -> Operation (Modulo lhs rhs)))
-            <|> (char '>' *> pure (\lhs rhs -> Operation (GreaterThan lhs rhs)))
-            <|> (char '<' *> pure (\lhs rhs -> Operation (LessThan lhs rhs)))
-            <|> (string "==" *> pure (\lhs rhs -> Operation (Equals lhs rhs)))
-            <|> (string "!=" *> pure (\lhs rhs -> Operation (NotEquals lhs rhs)))
-            <|> (string ">=" *> pure (\lhs rhs -> Operation (GreaterThanEq lhs rhs)))
-            <|> (string "<=" *> pure (\lhs rhs -> Operation (LessThanEq lhs rhs)))
-            <|> (string "&&" *> pure (\lhs rhs -> Operation (And lhs rhs)))
-            <|> (string "||" *> pure (\lhs rhs -> Operation (Or lhs rhs)))
-            <|> (string "&" *> pure (\lhs rhs -> Operation (BitwiseAnd lhs rhs)))
-            <|> (string "|" *> pure (\lhs rhs -> Operation (BitwiseOr lhs rhs)))
-            <|> (string "^" *> pure (\lhs rhs -> Operation (BitwiseXor lhs rhs)))
-
+parseParens = Parentheses <$> betweenParentheses parseExpr
 parseUnary :: Parser Expression
 parseUnary =
     ( lexeme $
@@ -161,24 +122,24 @@ parseUnary =
 
 parseAssign :: Parser Declaration
 parseAssign =
-    parseVarIdentifier >>= \leftTerm ->
-        endLine
-            ( ( lexeme
-                    ( try (string "//=" *> pure (\lhs rhs -> Assignment (IntDivAssign lhs rhs)))
-                        <|> (string "+=" *> pure (\lhs rhs -> Assignment (AddAssign lhs rhs)))
-                        <|> (string "-=" *> pure (\lhs rhs -> Assignment (SubAssign lhs rhs)))
-                        <|> (string "*=" *> pure (\lhs rhs -> Assignment (MulAssign lhs rhs)))
-                        <|> (string "/=" *> pure (\lhs rhs -> Assignment (DivAssign lhs rhs)))
-                        <|> (string "%=" *> pure (\lhs rhs -> Assignment (ModAssign lhs rhs)))
-                        <|> (string "|=" *> pure (\lhs rhs -> Assignment (BitwiseOrAssign lhs rhs)))
-                        <|> (string "&=" *> pure (\lhs rhs -> Assignment (BitwiseAndAssign lhs rhs)))
-                        <|> (string "^=" *> pure (\lhs rhs -> Assignment (BitwiseXorAssign lhs rhs)))
-                        <|> (string "=" *> pure (\lhs rhs -> Assignment (Assign lhs rhs)))
-                    )
-              )
-                <*> pure leftTerm
-                <*> parseExpr
-            )
+ parseVarIdentifier >>= \leftTerm ->
+     endLine
+         ( ( lexeme
+                 ( try (string "//=" *> pure (\lhs rhs -> Assignment (IntDivAssign lhs rhs)))
+                     <|> try (string "+=" *> pure (\lhs rhs -> Assignment (AddAssign lhs rhs)))
+                     <|> try (string "-=" *> pure (\lhs rhs -> Assignment (SubAssign lhs rhs)))
+                     <|> try (string "*=" *> pure (\lhs rhs -> Assignment (MulAssign lhs rhs)))
+                     <|> try (string "/=" *> pure (\lhs rhs -> Assignment (DivAssign lhs rhs)))
+                     <|> try (string "%=" *> pure (\lhs rhs -> Assignment (ModAssign lhs rhs)))
+                     <|> try (string "|=" *> pure (\lhs rhs -> Assignment (BitwiseOrAssign lhs rhs)))
+                     <|> try (string "&=" *> pure (\lhs rhs -> Assignment (BitwiseAndAssign lhs rhs)))
+                     <|> try (string "^=" *> pure (\lhs rhs -> Assignment (BitwiseXorAssign lhs rhs)))
+                     <|> try (string "=" *> pure (\lhs rhs -> Assignment (Assign lhs rhs)))
+                 )
+           )
+             <*> pure leftTerm
+             <*> parseExpr
+         )
 
 -- FUNCTION RELATED PARSERS
 parseFunctionIdentifier :: Parser Expression
@@ -238,3 +199,58 @@ parseElse = lexeme $ ElseBlock <$> (rword "else" *> (parseBlock Else <|> parseSt
 
 parseIf :: Parser Declaration
 parseIf = collapseControlFlow <$> (lexeme $ IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> (endLine parseStatement)) <*> optionMaybe parseElse)
+
+-- OPERATION PARSERS
+parseOr :: Parser Expression
+
+parseOr = chainl1 parseAnd parseOrOp
+    where    
+        parseOrOp = lexeme $ try $ string "||" *> pure (\lhs rhs -> Operation (Or lhs rhs))
+
+parseAnd :: Parser Expression
+parseAnd = chainl1 parseComparison parseAndOp
+    where
+        parseAndOp = lexeme $ try $ string "&&" *> pure (\lhs rhs -> Operation (And lhs rhs))
+
+parseComparison :: Parser Expression
+parseComparison = chainl1 parseBitwiseOr parseComparisonOp
+    where
+        parseComparisonOp = lexeme $
+            try (string ">=" *> pure (\lhs rhs -> Operation (GreaterThanEq lhs rhs)))
+            <|> try (string "<=" *> pure (\lhs rhs -> Operation (LessThanEq lhs rhs)))
+            <|> try (string "==" *> pure (\lhs rhs -> Operation (Equals lhs rhs)))
+            <|> try (string "!=" *> pure (\lhs rhs -> Operation (NotEquals lhs rhs)))
+            <|> try (char '>' *> pure (\lhs rhs -> Operation (GreaterThan lhs rhs)))
+            <|> try (char '<' *> pure (\lhs rhs -> Operation (LessThan lhs rhs)))
+
+
+parseBitwiseOr :: Parser Expression
+parseBitwiseOr = chainl1 parseBitwiseXor parseBitwiseOrOp
+    where
+        parseBitwiseOrOp = lexeme $ try $ string "b|" *> pure (\lhs rhs -> Operation (BitwiseOr lhs rhs))
+
+parseBitwiseXor :: Parser Expression
+parseBitwiseXor = chainl1 parseBitwiseAnd parseBitwiseXorOp
+    where
+        parseBitwiseXorOp = lexeme $ try $ char '^' *> pure (\lhs rhs -> Operation (BitwiseXor lhs rhs))
+
+parseBitwiseAnd :: Parser Expression
+parseBitwiseAnd = chainl1 parseAddSub parseBitwiseAndOp
+    where
+        parseBitwiseAndOp = lexeme $ try $ string "b&" *> pure (\lhs rhs -> Operation (BitwiseAnd lhs rhs))
+
+parseAddSub :: Parser Expression
+parseAddSub = chainl1 parseMulDivMod parseAddSubOp
+    where
+        parseAddSubOp = lexeme $ 
+            try (char '+' *> pure (\lhs rhs -> Operation (Add lhs rhs)))
+            <|> try (char '-' *> pure (\lhs rhs -> Operation (Subtract lhs rhs)))
+
+parseMulDivMod :: Parser Expression
+parseMulDivMod = chainl1 parseTerm parseMulDivModOp -- parseTerm parses unary negation, giving it the highest priority
+    where
+        parseMulDivModOp = lexeme $       
+            try (char '*' *> pure (\lhs rhs -> Operation (Multiply lhs rhs)))
+            <|> try (string "//" *> pure (\lhs rhs -> Operation (IntDivide lhs rhs)))
+            <|> try (char '/' *> pure (\lhs rhs -> Operation (Divide lhs rhs)))
+            <|> try (char '%' *> pure (\lhs rhs -> Operation (Modulo lhs rhs)))
