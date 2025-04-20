@@ -1,28 +1,28 @@
+{-# LANGUAGE RankNTypes #-}
 module Eval where
 
 import Types
 import Control.Applicative
 
 evaluateLogic :: Expression -> Expression
-evaluateLogic (Operation (GreaterThan (Type (Int lhs)) (Type (Int rhs)))) = Type (Bool (lhs > rhs))
-evaluateLogic (Operation (GreaterThan (Type (Float lhs)) (Type (Float rhs)))) = Type (Bool (lhs > rhs))
-evaluateLogic (Operation (GreaterThan (Type (String lhs)) (Type (String rhs)))) = Type (Bool (lhs > rhs))
-evaluateLogic (Operation (LessThan (Type (Int lhs)) (Type (Int rhs)))) = Type (Bool (lhs < rhs))
-evaluateLogic (Operation (LessThan (Type (Float lhs)) (Type (Float rhs)))) = Type (Bool (lhs < rhs))
-evaluateLogic (Operation (LessThan (Type (String lhs)) (Type (String rhs)))) = Type (Bool (lhs < rhs))
-evaluateLogic (Operation (GreaterThanEq (Type (Int lhs)) (Type (Int rhs)))) = Type (Bool (lhs >= rhs))
-evaluateLogic (Operation (GreaterThanEq (Type (Float lhs)) (Type (Float rhs)))) = Type (Bool (lhs >= rhs))
-evaluateLogic (Operation (GreaterThanEq (Type (String lhs)) (Type (String rhs)))) = Type (Bool (lhs >= rhs))
-evaluateLogic (Operation (LessThanEq (Type (Int lhs)) (Type (Int rhs)))) = Type (Bool (lhs <= rhs))
-evaluateLogic (Operation (LessThanEq (Type (Float lhs)) (Type (Float rhs)))) = Type (Bool (lhs <= rhs))
-evaluateLogic (Operation (LessThanEq (Type (String lhs)) (Type (String rhs)))) = Type (Bool (lhs <= rhs))
-evaluateLogic (Operation (Equals (Type (Int lhs)) (Type (Int rhs)))) = Type (Bool (lhs == rhs))
-evaluateLogic (Operation (Equals (Type (Float lhs)) (Type (Float rhs)))) = Type (Bool (lhs == rhs))
-evaluateLogic (Operation (Equals (Type (String lhs)) (Type (String rhs)))) = Type (Bool (lhs == rhs))
-evaluateLogic (Operation (NotEquals (Type (Int lhs)) (Type (Int rhs)))) = Type (Bool (lhs /= rhs))
-evaluateLogic (Operation (NotEquals (Type (Float lhs)) (Type (Float rhs)))) = Type (Bool (lhs /= rhs))
-evaluateLogic (Operation (NotEquals (Type (String lhs)) (Type (String rhs)))) = Type (Bool (lhs /= rhs))
+evaluateLogic (Operation op) = case op of
+    GreaterThan lhs rhs -> compareValues (>) lhs rhs
+    LessThan lhs rhs -> compareValues (<) lhs rhs
+    GreaterThanEq lhs rhs -> compareValues (>=) lhs rhs
+    LessThanEq lhs rhs -> compareValues (<=) lhs rhs
+    Equals lhs rhs -> compareValues (==) lhs rhs
+    NotEquals lhs rhs -> compareValues (/=) lhs rhs
 evaluateLogic other = other
+
+compareValues :: (forall a. Ord a => a -> a -> Bool) -> Expression -> Expression -> Expression
+compareValues op (Type val1) (Type val2) = Type (Bool (compareValuesTyped op val1 val2))
+compareValues _ lhs rhs = Operation undefined
+
+compareValuesTyped :: (forall a. Ord a => a -> a -> Bool) -> Type -> Type -> Bool
+compareValuesTyped op (Int x) (Int y) = op x y 
+compareValuesTyped op (Float x) (Float y) = op x y 
+compareValuesTyped op (String x) (String y) = op x y 
+compareValuesTyped _ _ _ = undefined
 
 collapseControlFlow :: Declaration -> Declaration
 collapseControlFlow (IfBlock condition statement elseBlock) = case evaluateLogic condition of
