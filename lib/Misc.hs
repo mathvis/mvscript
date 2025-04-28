@@ -20,10 +20,10 @@ betweenParentheses = between (lexeme $ char '(') (lexeme $ char ')')
 rword :: String -> Parser ()
 rword w = (lexeme . try) (string w *> notFollowedBy (letter <|> digit))
 
-toInt' :: (Real a) => a -> Integer
+toInt' :: (Num a, Real a) => a -> Integer
 toInt' = round . realToFrac
 
-intDiv :: Real a => a -> a -> Integer
+intDiv :: (Num a, Real a) => a -> a -> Integer
 intDiv x y = div (toInt' x) (toInt' y)
 
 realToBool :: Real a => a -> Bool
