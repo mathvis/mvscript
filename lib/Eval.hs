@@ -4,7 +4,7 @@ module Eval where
 import Types
 import Control.Applicative
 import Misc
-import Data.Bits ((.|.), (.&.))
+import Data.Bits ((.|.), (.&.), Bits (xor, complement))
 
 compareValues :: (forall a. Ord a => a -> a -> Bool) -> Expression -> Expression -> Expression
 compareValues op (Type val1) (Type val2) = Type (Bool (compareValuesTyped op val1 val2))
@@ -30,12 +30,12 @@ evaluateOperations (Operation op) = case op of
     Subtract (Type x) (Type y) -> applyOperator (-) (Type x) (Type y)
     Multiply (Type x) (Type y) -> applyOperator (*) (Type x) (Type y)
     IntDivide (Type x) (Type y) -> applyOperator (\x y -> fromIntegral (intDiv x y)) (Type x) (Type y)
-    -- Divide (Type x) (Type y) -> applyOperator (/) (Type x) (Type y)
-    -- Modulo (Type x) (Type y) -> applyOperator mod (Type x) (Type y)
-    -- BitwiseOr (Type x) (Type y) -> applyOperator (.|.) (Type x) (Type y)
-    -- BitwiseAnd (Type x) (Type y) -> applyOperator (.&.) (Type x) (Type y)
-    -- BitwiseXor (Type x) (Type y) -> _
-    -- BitwiseNot (Type x) -> _
+    Divide (Type (Float x)) (Type (Float y)) -> Type (Float (x / y))
+    Modulo (Type (Int x)) (Type (Int y)) -> Type (Int (mod x y))
+    BitwiseOr (Type (Int x)) (Type (Int y)) -> Type (Int (x .|. y))
+    BitwiseAnd (Type (Int x)) (Type (Int y)) -> Type (Int (x .&. y))
+    BitwiseXor (Type (Int x)) (Type (Int y)) -> Type (Int (xor x y))
+    BitwiseNot (Type (Int x))  -> Type (Int (complement x))
     Negation (Type x) -> applyOperator (-) (Type (Int 0)) (Type x)
     GreaterThan (Type x) (Type y)-> compareValues (>) (Type x) (Type y)
     LessThan (Type x) (Type y) -> compareValues (<) (Type x) (Type y)
