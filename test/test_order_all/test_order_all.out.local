@@ -1,1 +1,2 @@
-Expr (Operation (Or (Operation (And (Operation (GreaterThan (Operation (BitwiseXor (Operation (BitwiseAnd (Operation (Add (Type (Int 1)) (Operation (Multiply (Type (Int 2)) (Type (Int 3)))))) (Type (Int 1)))) (Type (Int 2)))) (Type (Int 5)))) (Type (Int 3)))) (Type (Int 2))))
+Expr (Operation (BitwiseXor (Operation (BitwiseAnd (Type (Int 7)) (Type (Int 1)))) (Type (Int 2))))
+Expr (Type (Bool False))

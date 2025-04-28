@@ -203,17 +203,17 @@ parseIf = collapseControlFlow <$> (lexeme $ IfBlock <$> (rword "if" *> betweenPa
 -- OPERATION PARSERS
 parseOr :: Parser Expression
 
-parseOr = chainl1 parseAnd parseOrOp
+parseOr = evaluateOperations <$> chainl1 parseAnd parseOrOp
     where    
         parseOrOp = lexeme $ try $ string "||" *> pure (\lhs rhs -> Operation (Or lhs rhs))
 
 parseAnd :: Parser Expression
-parseAnd = chainl1 parseComparison parseAndOp
+parseAnd = evaluateOperations <$> chainl1 parseComparison parseAndOp
     where
         parseAndOp = lexeme $ try $ string "&&" *> pure (\lhs rhs -> Operation (And lhs rhs))
 
 parseComparison :: Parser Expression
-parseComparison = chainl1 parseBitwiseOr parseComparisonOp
+parseComparison = evaluateOperations <$> chainl1 parseBitwiseOr parseComparisonOp
     where
         parseComparisonOp = lexeme $
             try (string ">=" *> pure (\lhs rhs -> Operation (GreaterThanEq lhs rhs)))
@@ -225,29 +225,29 @@ parseComparison = chainl1 parseBitwiseOr parseComparisonOp
 
 
 parseBitwiseOr :: Parser Expression
-parseBitwiseOr = chainl1 parseBitwiseXor parseBitwiseOrOp
+parseBitwiseOr = evaluateOperations <$> chainl1 parseBitwiseXor parseBitwiseOrOp
     where
         parseBitwiseOrOp = lexeme $ try $ string "b|" *> pure (\lhs rhs -> Operation (BitwiseOr lhs rhs))
 
 parseBitwiseXor :: Parser Expression
-parseBitwiseXor = chainl1 parseBitwiseAnd parseBitwiseXorOp
+parseBitwiseXor = evaluateOperations <$> chainl1 parseBitwiseAnd parseBitwiseXorOp
     where
         parseBitwiseXorOp = lexeme $ try $ char '^' *> pure (\lhs rhs -> Operation (BitwiseXor lhs rhs))
 
 parseBitwiseAnd :: Parser Expression
-parseBitwiseAnd = chainl1 parseAddSub parseBitwiseAndOp
+parseBitwiseAnd = evaluateOperations <$> chainl1 parseAddSub parseBitwiseAndOp
     where
         parseBitwiseAndOp = lexeme $ try $ string "b&" *> pure (\lhs rhs -> Operation (BitwiseAnd lhs rhs))
 
 parseAddSub :: Parser Expression
-parseAddSub = chainl1 parseMulDivMod parseAddSubOp
+parseAddSub = evaluateOperations <$> chainl1 parseMulDivMod parseAddSubOp
     where
         parseAddSubOp = lexeme $ 
             try (char '+' *> pure (\lhs rhs -> Operation (Add lhs rhs)))
             <|> try (char '-' *> pure (\lhs rhs -> Operation (Subtract lhs rhs)))
 
 parseMulDivMod :: Parser Expression
-parseMulDivMod = chainl1 parseTerm parseMulDivModOp -- parseTerm parses unary negation, giving it the highest priority
+parseMulDivMod = evaluateOperations <$> chainl1 parseTerm parseMulDivModOp -- parseTerm parses unary negation, giving it the highest priority
     where
         parseMulDivModOp = lexeme $       
             try (char '*' *> pure (\lhs rhs -> Operation (Multiply lhs rhs)))

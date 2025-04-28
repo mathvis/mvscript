@@ -1,1 +1,1 @@
-Expr (Operation (Add (Type (Int 3)) (Operation (Multiply (Type (Int 3)) (Type (Int 3))))))
+Expr (Type (Int 12))
