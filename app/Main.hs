@@ -29,6 +29,5 @@ main =
         (filename:flags) <- getArgs
         fileContents <- readFile filename
         config <- readFile "config.toml"
-        mapM_ print $ parseConfig config
         mapM_ print $ parseFile fileContents
         
