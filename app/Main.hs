@@ -8,18 +8,19 @@ import Data.Map
 import Data.List
 import ConfigTypes
 import ConfigParser
+import qualified Data.Map as Map
 
 parseFile :: String -> [Statement]
 parseFile file =
     do
-        case parse (many parseStatement) "MVScript" file of
+        case runParser (many parseStatement) (defaultConfig, Map.empty, Map.empty) "MVScript" file of
             Left e -> error ("Error while parsing: " ++ show e)
             Right parsed -> parsed
 
 parseConfig :: String -> [Table]
 parseConfig config =
     do
-        case parse (many parseTable) "config" config of
+        case runParser (many parseTable) (defaultConfig, Map.empty, Map.empty) "config" config of
             Left e -> error ("Error while parsing: " ++ show e)
             Right parsed -> parsed
 

@@ -1,7 +1,9 @@
 module Types where
 
 import Data.Text as T
-import Data.Map 
+import Text.ParserCombinators.Parsec
+import Data.Map
+import Text.Parsec
 
 data TypeName
     = StringT
@@ -90,3 +92,25 @@ data Statement = Decl Declaration | Expr Expression | Comment String | Block Blo
 
 reservedKeywords :: [String]
 reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false", "func"]
+
+data Configuration = Configuration {
+    debug :: Bool,
+    collapseOperations :: Bool
+}
+
+defaultConfig :: Configuration
+defaultConfig = Configuration {
+    debug = False,
+    collapseOperations = False
+}
+
+data FunctionData = FunctionData {
+    returnType :: Maybe TypeName,
+    arguments :: [(T.Text, TypeName)],
+    functionBody :: [Statement]
+}
+
+type SymbolTable = Map T.Text TypeName
+type FunctionSymbolTable = Map T.Text FunctionData
+
+type MVParser = Parsec String (Configuration, SymbolTable, FunctionSymbolTable)

@@ -1,23 +1,24 @@
 module Misc where
 import Text.ParserCombinators.Parsec
 import Control.Monad
+import Types
 
-whitespace :: Parser ()
+whitespace :: MVParser ()
 whitespace = void $ many $ oneOf " \n\t"
 
-lexeme :: Parser a -> Parser a
+lexeme :: MVParser a -> MVParser a
 lexeme p = p <* whitespace
 
-endLine :: Parser a -> Parser a
+endLine :: MVParser a -> MVParser a
 endLine p = p <* char ';'
 
-newLine :: Parser a -> Parser a
+newLine :: MVParser a -> MVParser a
 newLine p = p <* optional (char '\n')
 
-betweenParentheses :: Parser a -> Parser a
+betweenParentheses :: MVParser a -> MVParser a
 betweenParentheses = between (lexeme $ char '(') (lexeme $ char ')') 
 
-rword :: String -> Parser ()
+rword :: String -> MVParser ()
 rword w = (lexeme . try) (string w *> notFollowedBy (letter <|> digit))
 
 toInt' :: (Num a, Real a) => a -> Integer
