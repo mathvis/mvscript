@@ -11,12 +11,26 @@ import ConfigParser
 import qualified Data.Map as Map
 import Config
 
-parseFile :: String -> [Table] -> [Statement]
-parseFile file configTables =
+parseFile :: String -> ParserState -> [Statement]
+parseFile file state =
     do
-        case runParser (many parseStatement) (setConfig defaultParserState configTables) "MVScript" file of
+        case runParser (many parseStatement) state "MVScript" file of
             Left e -> error ("Error while parsing: " ++ show e)
             Right parsed -> parsed
+
+parseFileDebug :: String -> ParserState -> [(Statement, ParserState)]
+parseFileDebug file state =
+        case runParser parseStatementsState state "MVScript" file of
+            Left e -> error ("Error while parsing: " ++ show e)
+            Right parsed -> parsed
+    where
+        parseStatementsState :: MVParser [(Statement, ParserState)]
+        parseStatementsState = do
+            option [] $ do
+                stmt <- parseStatement
+                currentState <- getState
+                rest <- parseStatementsState
+                return ((stmt, currentState):rest)
 
 parseConfig :: String -> [Table]
 parseConfig config =
@@ -30,7 +44,9 @@ main =
     do
         (filename:flags) <- getArgs
         config <- readFile "config.toml"
-        let configTables = parseConfig config
         fileContents <- readFile filename
-        mapM_ print $ parseFile fileContents configTables
-        
+        let state = setConfig defaultParserState (parseConfig config)
+        if getDebugValue (getTable (parseConfig config) "debug") then
+            mapM_ print $ parseFileDebug fileContents state
+        else
+            mapM_ print $ parseFile fileContents state        
