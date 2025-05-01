@@ -1,3 +1,5 @@
 [debug]
 enabled = true
 
+[parsing]
+collapse-operations = true

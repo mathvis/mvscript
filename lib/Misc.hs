@@ -34,3 +34,4 @@ realToBool _ = True
 boolToInt :: Bool -> Integer
 boolToInt True = 1
 boolToInt False = 0
+

@@ -4,6 +4,8 @@ import Data.Text as T
 import Text.ParserCombinators.Parsec
 import Data.Map
 import Text.Parsec
+import qualified Data.Map as Map
+import Prelude hiding (fst)
 
 data TypeName
     = StringT
@@ -96,7 +98,7 @@ reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","
 data Configuration = Configuration {
     debug :: Bool,
     collapseOperations :: Bool
-}
+} deriving Show
 
 defaultConfig :: Configuration
 defaultConfig = Configuration {
@@ -108,9 +110,22 @@ data FunctionData = FunctionData {
     returnType :: Maybe TypeName,
     arguments :: [(T.Text, TypeName)],
     functionBody :: [Statement]
-}
+} deriving Show
 
 type SymbolTable = Map T.Text TypeName
 type FunctionSymbolTable = Map T.Text FunctionData
 
-type MVParser = Parsec String (Configuration, SymbolTable, FunctionSymbolTable)
+data ParserState = ParserState {
+    config :: Configuration,
+    st :: SymbolTable,
+    fst :: FunctionSymbolTable
+} deriving Show
+
+defaultParserState :: ParserState
+defaultParserState = ParserState {
+    config = defaultConfig,
+    st = Map.empty,
+    fst = Map.empty
+}
+
+type MVParser = Parsec String ParserState
