@@ -31,7 +31,6 @@ main =
         (filename:flags) <- getArgs
         config <- readFile "config.toml"
         let configTables = parseConfig config
-        print (setConfig defaultParserState configTables)
         fileContents <- readFile filename
         mapM_ print $ parseFile fileContents configTables
         
