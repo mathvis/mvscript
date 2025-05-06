@@ -1,0 +1,2 @@
+Decl (IfBlock (Operation (GreaterThan (Type (Int 3)) (Type (Int 0)))) (Block If []) Nothing)
+Expr (Operation (Add (Type (Int 1)) (Type (Int 2))))

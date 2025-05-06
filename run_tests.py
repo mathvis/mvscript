@@ -16,7 +16,7 @@ def parse_diff_output(output: str) -> str:
 def run_test(name: str) -> bool:
 
     subprocess.run(
-        ["cabal", "run", "mvscript", f"test/{name}/{name}.in"],
+        ["cabal", "run", "mvscript", f"test/{name}/{name}.in", f"test/{name}/config.toml"],
         stdout=open(f"test/{name}/{name}.myout", "w"),
         stderr=open(f"test/{name}/{name}.myout", "a"),
     )
