@@ -97,13 +97,15 @@ reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","
 
 data Configuration = Configuration {
     debug :: Bool,
-    collapseOperations :: Bool
+    collapseOperations :: Bool,
+    collapseControlFlow :: Bool
 } deriving Show
 
 defaultConfig :: Configuration
 defaultConfig = Configuration {
     debug = False,
-    collapseOperations = False
+    collapseOperations = False,
+    collapseControlFlow = True
 }
 
 data FunctionData = FunctionData {
@@ -128,4 +130,13 @@ defaultParserState = ParserState {
     fst = Map.empty
 }
 
-type MVParser = Parsec String ParserState
+type MVParser a = Parsec String ParserState a
+
+getConfig :: MVParser Configuration
+getConfig = config <$> getState
+
+getSymbolTable :: MVParser SymbolTable
+getSymbolTable = st <$> getState
+
+getFunctionSymbolTable :: MVParser FunctionSymbolTable
+getFunctionSymbolTable = fst <$> getState

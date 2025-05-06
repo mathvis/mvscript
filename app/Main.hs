@@ -10,6 +10,7 @@ import ConfigTypes
 import ConfigParser
 import qualified Data.Map as Map
 import Config
+import Data.Maybe
 
 parseFile :: String -> ParserState -> [Statement]
 parseFile file state =
@@ -43,10 +44,10 @@ main :: IO ()
 main =
     do
         (filename:flags) <- getArgs
-        config <- readFile "config.toml"
+        configFile <- readFile (fromMaybe "config.toml" (listToMaybe flags)) 
         fileContents <- readFile filename
-        let state = setConfig defaultParserState (parseConfig config)
-        if getDebugValue (getTable (parseConfig config) "debug") then
+        let state = setConfig defaultParserState (parseConfig configFile)
+        if debug (config state) then
             mapM_ print $ parseFileDebug fileContents state
         else
             mapM_ print $ parseFile fileContents state        

@@ -4,6 +4,7 @@ module Eval where
 import Types
 import Control.Applicative
 import Misc
+import Text.Parsec
 import Data.Bits ((.|.), (.&.), Bits (xor, complement))
 
 compareValues :: (forall a. Ord a => a -> a -> Bool) -> Expression -> Expression -> Expression
@@ -16,35 +17,44 @@ compareValuesTyped op (Float x) (Float y) = op x y
 compareValuesTyped op (String x) (String y) = op x y 
 compareValuesTyped _ _ _ = undefined
 
-collapseControlFlow :: Declaration -> Declaration
-collapseControlFlow (IfBlock condition statement elseBlock) = case evaluateOperations condition of
-    Type (Bool True) -> CollapsedControlFlow statement
-    Type (Bool False) -> case elseBlock of
-        Just (ElseBlock block) -> CollapsedControlFlow block
-        _ -> CollapsedControlFlow (Block NoType [])
-    _ -> IfBlock condition statement elseBlock
+evaluateControlFlow :: MVParser Bool -> Declaration -> MVParser Declaration
+evaluateControlFlow collapse (IfBlock condition statement elseBlock) = do
+    shouldCollapse <- collapse
+    if shouldCollapse then do
+        bool <- evaluateOperations collapse condition 
+        case bool of
+            Type (Bool True) -> return $ CollapsedControlFlow statement
+            Type (Bool False) -> case elseBlock of
+                Just (ElseBlock block) -> return $ CollapsedControlFlow block
+                _ -> return $ CollapsedControlFlow (Block NoType [])
+            _ -> return $ IfBlock condition statement elseBlock
+    else return (IfBlock condition statement elseBlock)
 
-evaluateOperations :: Expression -> Expression
-evaluateOperations (Operation op) = case op of
-    Add (Type x) (Type y) -> applyOperator (+) (Type x) (Type y)
-    Subtract (Type x) (Type y) -> applyOperator (-) (Type x) (Type y)
-    Multiply (Type x) (Type y) -> applyOperator (*) (Type x) (Type y)
-    IntDivide (Type x) (Type y) -> applyOperator (\x y -> fromIntegral (intDiv x y)) (Type x) (Type y)
-    Divide (Type (Float x)) (Type (Float y)) -> Type (Float (x / y))
-    Modulo (Type (Int x)) (Type (Int y)) -> Type (Int (mod x y))
-    BitwiseOr (Type (Int x)) (Type (Int y)) -> Type (Int (x .|. y))
-    BitwiseAnd (Type (Int x)) (Type (Int y)) -> Type (Int (x .&. y))
-    BitwiseXor (Type (Int x)) (Type (Int y)) -> Type (Int (xor x y))
-    BitwiseNot (Type (Int x))  -> Type (Int (complement x))
-    Negation (Type x) -> applyOperator (-) (Type (Int 0)) (Type x)
-    GreaterThan (Type x) (Type y)-> compareValues (>) (Type x) (Type y)
-    LessThan (Type x) (Type y) -> compareValues (<) (Type x) (Type y)
-    GreaterThanEq (Type x) (Type y) -> compareValues (>=) (Type x) (Type y)
-    LessThanEq (Type x) (Type y) -> compareValues (<=) (Type x) (Type y)
-    Equals (Type x) (Type y) -> compareValues (==) (Type x) (Type y)
-    NotEquals (Type x) (Type y) -> compareValues (/=) (Type x) (Type y)
-    _ -> evaluateLogic (Operation op)
-evaluateOperations other = other
+evaluateOperations :: MVParser Bool -> Expression -> MVParser Expression
+evaluateOperations collapse expr@(Operation op) = do
+    shouldCollapse <- collapse
+    if shouldCollapse
+        then case op of
+            Add (Type x) (Type y) -> return $ applyOperator (+) (Type x) (Type y)
+            Subtract (Type x) (Type y) -> return $ applyOperator (-) (Type x) (Type y)
+            Multiply (Type x) (Type y) -> return $ applyOperator (*) (Type x) (Type y)
+            IntDivide (Type x) (Type y) -> return $ applyOperator (\x y -> fromIntegral (intDiv x y)) (Type x) (Type y)
+            Divide (Type (Float x)) (Type (Float y)) -> return $ Type (Float (x / y))
+            Modulo (Type (Int x)) (Type (Int y)) -> return $ Type (Int (mod x y))
+            BitwiseOr (Type (Int x)) (Type (Int y)) -> return $ Type (Int (x .|. y))
+            BitwiseAnd (Type (Int x)) (Type (Int y)) -> return $ Type (Int (x .&. y))
+            BitwiseXor (Type (Int x)) (Type (Int y)) -> return $ Type (Int (xor x y))
+            BitwiseNot (Type (Int x)) -> return $ Type (Int (complement x))
+            Negation (Type x) -> return $ applyOperator (-) (Type (Int 0)) (Type x)
+            GreaterThan (Type x) (Type y) -> return $ compareValues (>) (Type x) (Type y)
+            LessThan (Type x) (Type y) -> return $ compareValues (<) (Type x) (Type y)
+            GreaterThanEq (Type x) (Type y) -> return $ compareValues (>=) (Type x) (Type y)
+            LessThanEq (Type x) (Type y) -> return $ compareValues (<=) (Type x) (Type y)
+            Equals (Type x) (Type y) -> return $ compareValues (==) (Type x) (Type y)
+            NotEquals (Type x) (Type y) -> return $ compareValues (/=) (Type x) (Type y)
+            _ -> return $ evaluateLogic (Operation op)
+        else return expr
+evaluateOperations _ other = return other
 
 evaluateLogic :: Expression -> Expression
 evaluateLogic (Operation op) = case op of

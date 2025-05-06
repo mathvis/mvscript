@@ -199,22 +199,20 @@ parseElse :: MVParser Declaration
 parseElse = lexeme $ ElseBlock <$> (rword "else" *> (parseBlock Else <|> parseStatement))
 
 parseIf :: MVParser Declaration
-parseIf = collapseControlFlow <$> (lexeme $ IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> (endLine parseStatement)) <*> optionMaybe parseElse)
-
+parseIf =  (lexeme $ IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> (endLine parseStatement)) <*> optionMaybe parseElse) >>= evaluateControlFlow (collapseControlFlow <$> getConfig)
 -- OPERATION PARSERS
 parseOr :: MVParser Expression
-
-parseOr = evaluateOperations <$> chainl1 parseAnd parseOrOp
+parseOr = chainl1 parseAnd parseOrOp >>= evaluateOperations (collapseOperations <$> getConfig)
     where    
         parseOrOp = lexeme $ try $ string "||" *> pure (\lhs rhs -> Operation (Or lhs rhs))
 
 parseAnd :: MVParser Expression
-parseAnd = evaluateOperations <$> chainl1 parseComparison parseAndOp
+parseAnd =  chainl1 parseComparison parseAndOp >>= evaluateOperations (collapseOperations <$> getConfig)
     where
         parseAndOp = lexeme $ try $ string "&&" *> pure (\lhs rhs -> Operation (And lhs rhs))
 
 parseComparison :: MVParser Expression
-parseComparison = evaluateOperations <$> chainl1 parseBitwiseOr parseComparisonOp
+parseComparison = chainl1 parseBitwiseOr parseComparisonOp >>= evaluateOperations (collapseOperations <$> getConfig)
     where
         parseComparisonOp = lexeme $
             try (string ">=" *> pure (\lhs rhs -> Operation (GreaterThanEq lhs rhs)))
@@ -226,29 +224,29 @@ parseComparison = evaluateOperations <$> chainl1 parseBitwiseOr parseComparisonO
 
 
 parseBitwiseOr :: MVParser Expression
-parseBitwiseOr = evaluateOperations <$> chainl1 parseBitwiseXor parseBitwiseOrOp
+parseBitwiseOr =  chainl1 parseBitwiseXor parseBitwiseOrOp >>= evaluateOperations (collapseOperations <$> getConfig)
     where
         parseBitwiseOrOp = lexeme $ try $ string "b|" *> pure (\lhs rhs -> Operation (BitwiseOr lhs rhs))
 
 parseBitwiseXor :: MVParser Expression
-parseBitwiseXor = evaluateOperations <$> chainl1 parseBitwiseAnd parseBitwiseXorOp
+parseBitwiseXor = chainl1 parseBitwiseAnd parseBitwiseXorOp >>= evaluateOperations (collapseOperations <$> getConfig)
     where
         parseBitwiseXorOp = lexeme $ try $ char '^' *> pure (\lhs rhs -> Operation (BitwiseXor lhs rhs))
 
 parseBitwiseAnd :: MVParser Expression
-parseBitwiseAnd = evaluateOperations <$> chainl1 parseAddSub parseBitwiseAndOp
+parseBitwiseAnd = chainl1 parseAddSub parseBitwiseAndOp >>= evaluateOperations (collapseOperations <$> getConfig)
     where
         parseBitwiseAndOp = lexeme $ try $ string "b&" *> pure (\lhs rhs -> Operation (BitwiseAnd lhs rhs))
 
 parseAddSub :: MVParser Expression
-parseAddSub = evaluateOperations <$> chainl1 parseMulDivMod parseAddSubOp
+parseAddSub = chainl1 parseMulDivMod parseAddSubOp >>= evaluateOperations (collapseOperations <$> getConfig)
     where
         parseAddSubOp = lexeme $ 
             try (char '+' *> pure (\lhs rhs -> Operation (Add lhs rhs)))
             <|> try (char '-' *> pure (\lhs rhs -> Operation (Subtract lhs rhs)))
 
 parseMulDivMod :: MVParser Expression
-parseMulDivMod = evaluateOperations <$> chainl1 parseTerm parseMulDivModOp -- parseTerm parses unary negation, giving it the highest priority
+parseMulDivMod = chainl1 parseTerm parseMulDivModOp >>= evaluateOperations (collapseOperations <$> getConfig) 
     where
         parseMulDivModOp = lexeme $       
             try (char '*' *> pure (\lhs rhs -> Operation (Multiply lhs rhs)))
