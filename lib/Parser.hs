@@ -102,12 +102,11 @@ parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parse
 
 parseVarInitialization :: MVParser Declaration
 parseVarInitialization =
-    (checkType . inferVariableType)
-        <$> ( Variable
+        ( Variable
                 <$> ((rword "let") *> parseVarIdentifier)
                 <*> optionMaybe (lexeme (char ':') *> parseTypeName)
                 <*> (lexeme (char '=') *> parseExpr <* lexeme (char ';') >>= \expr -> return (Just expr))
-            ) >>= \decl -> modifyState (addVariableToTable decl) >> return decl
+            ) >>= (\decl -> modifyState (addVariableToTable decl) >> return decl) . checkType . inferVariableType
 
 -- OPERATION RELATED PARSERS
 parseParens :: MVParser Expression
