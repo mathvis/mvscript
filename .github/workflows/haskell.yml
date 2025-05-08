@@ -25,17 +25,17 @@ jobs:
       with:
         python-version: '3.13'
 
-    - name: Cache
+    - name: Cache Cabal store
       uses: actions/cache@v3
-      env:
-        cache-name: cache-cabal
       with:
-        path: ~/.cabal
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
+        path: |
+          ~/.cabal/store
+          ~/.cabal/packages
+          dist-newstyle
+        key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-cabal-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze') }}
         restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+          ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-cabal-
+          ${{ runner.os }}-ghc-
 
     - name: Install dependencies
       run: |
@@ -46,3 +46,11 @@ jobs:
       run: cabal build --enable-tests --enable-benchmarks all
     - name: Run tests
       run: python run_tests.py
+    - name: Cache build artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          dist-newstyle
+        key: ${{ runner.os }}-build-artifacts-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-build-artifacts-
