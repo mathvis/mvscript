@@ -34,3 +34,4 @@ updateVariableUninitialized (Assignment (Assign (VarIdentifier name) (Type typ))
             Just vData -> vData{isInitialized=True, variableType=Just (valueToType typ)} 
             Nothing -> error ("Variable " ++ T.unpack name ++ " is not defined.")
 -- TODO make it work with statements like a = b + 1;
+updateVariableUninitialized _ state = state
