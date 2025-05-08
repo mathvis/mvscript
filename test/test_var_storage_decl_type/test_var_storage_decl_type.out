@@ -1,0 +1,1 @@
+(Decl (Variable (VarIdentifier "a") (Just IntT) Nothing),ParserState {config = Configuration {debug = True, collapseOperations = True, collapseControlFlow = True}, st = fromList [("a",VariableData {variableType = Just IntT, inScope = True, isInitialized = False, isConstant = False})], fst = fromList []})
