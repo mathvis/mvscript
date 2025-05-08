@@ -72,8 +72,8 @@ data Expression
     = Type Type
     | Parentheses Expression
     | Operation Operation
-    | VarIdentifier String
-    | FunctionIdentifier String
+    | VarIdentifier T.Text
+    | FunctionIdentifier T.Text
     | FunctionCall Expression [Expression]
     | LambdaFunc [(Expression, TypeName)] (Maybe Statement) 
     | LambdaApplication Expression Expression
@@ -81,6 +81,7 @@ data Expression
 
 data Declaration
     = Variable Expression (Maybe TypeName) (Maybe Expression)
+    | Constant Expression TypeName Expression
     | Assignment Operation
     | FunctionDef Expression [(Expression, TypeName)] TypeName (Maybe Statement)
     | IfBlock Expression Statement (Maybe Declaration)
@@ -93,7 +94,7 @@ data BlockType = NoType | If | Else | FunctionBlock deriving (Eq, Show)
 data Statement = Decl Declaration | Expr Expression | Comment String | Block BlockType [Statement] deriving (Eq, Show)
 
 reservedKeywords :: [String]
-reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false", "func"]
+reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false", "func", "const"]
 
 data Configuration = Configuration {
     debug :: Bool,
@@ -114,7 +115,22 @@ data FunctionData = FunctionData {
     functionBody :: [Statement]
 } deriving Show
 
-type SymbolTable = Map T.Text TypeName
+data VariableData = VariableData {
+    variableType :: Maybe TypeName,
+    inScope :: Bool,
+    isInitialized :: Bool,
+    isConstant :: Bool
+} deriving Show
+
+defaultVariableData :: VariableData
+defaultVariableData = VariableData {
+    variableType = Nothing,
+    inScope = True,
+    isInitialized = False,
+    isConstant = False
+}
+
+type SymbolTable = Map T.Text VariableData
 type FunctionSymbolTable = Map T.Text FunctionData
 
 data ParserState = ParserState {

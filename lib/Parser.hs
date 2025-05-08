@@ -15,6 +15,7 @@ import Types
 import Eval
 import Misc
 import Text.Parsec
+import VariableStorage
 
 -- MAIN TYPE PARSERS
 parseStatement :: MVParser Statement
@@ -69,7 +70,7 @@ parseMatrix = Type . Matrix <$> (rword "Matrix" *> (char '(') *> (sepBy parseArr
 
 -- VARIABLE PARSERS
 parseVarIdentifier :: MVParser Expression
-parseVarIdentifier = VarIdentifier <$> identifier
+parseVarIdentifier = VarIdentifier . T.pack <$> identifier
   where
     identifier =
         (lexeme . try) $ do
@@ -85,7 +86,7 @@ parseVarDeclaration =
     Variable
         <$> ((rword "let") *> parseVarIdentifier)
         <*> optionMaybe (lexeme (char ':') *> parseTypeName)
-        <*> (lexeme (char ';') *> pure Nothing)
+        <*> (lexeme (char ';') *> pure Nothing) >>= \decl -> modifyState (addVariableToTable decl) >> return decl
 
 parseTypeName :: MVParser TypeName
 parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parseBoolTName <|> parseVectorTName <|> parseMatrixTName <|> parsePointTName <|> parseArrayTName 
@@ -106,7 +107,7 @@ parseVarInitialization =
                 <$> ((rword "let") *> parseVarIdentifier)
                 <*> optionMaybe (lexeme (char ':') *> parseTypeName)
                 <*> (lexeme (char '=') *> parseExpr <* lexeme (char ';') >>= \expr -> return (Just expr))
-            )
+            ) >>= \decl -> modifyState (addVariableToTable decl) >> return decl
 
 -- OPERATION RELATED PARSERS
 parseParens :: MVParser Expression
@@ -140,11 +141,11 @@ parseAssign =
            )
              <*> pure leftTerm
              <*> parseExpr
-         )
+         ) >>= \decl -> modifyState (updateVariableUninitialized decl) >> return decl
 
 -- FUNCTION RELATED PARSERS
 parseFunctionIdentifier :: MVParser Expression
-parseFunctionIdentifier = FunctionIdentifier <$> identifier
+parseFunctionIdentifier = FunctionIdentifier . T.pack <$> identifier
   where
     identifier =
         (lexeme . try) $ do
