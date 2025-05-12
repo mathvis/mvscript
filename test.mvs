@@ -1,3 +1,1 @@
-func a(b: int, c: string) {
-	c = "test";
-}
+a = 0;

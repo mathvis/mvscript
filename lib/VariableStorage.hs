@@ -1,5 +1,5 @@
 module VariableStorage where
-import Data.Text as T
+import Data.Text as T hiding (show)
 import Types
 import Data.Map as Map
 import TypeCheck
