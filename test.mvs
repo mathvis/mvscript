@@ -1,2 +1,3 @@
-let a;
-a = 0;
+func a(b: int, c: string) {
+	c = "test";
+}

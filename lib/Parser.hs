@@ -70,7 +70,31 @@ parseMatrix = Type . Matrix <$> (rword "Matrix" *> (char '(') *> (sepBy parseArr
 
 -- VARIABLE PARSERS
 parseVarIdentifier :: MVParser Expression
-parseVarIdentifier = VarIdentifier . T.pack <$> identifier
+parseVarIdentifier = VarIdentifier . T.pack <$> identifier >>= \expr -> modifyState (checkScope expr) >> return expr
+  where
+    identifier =
+        (lexeme . try) $ do
+            name <- (:) <$> firstChar <*> many nonFirstChar
+            if Prelude.elem name reservedKeywords
+                then fail $ "Cannot use reserved keyword '" ++ name ++ "' as an identifier"
+                else return name
+    firstChar = letter <|> char '_'
+    nonFirstChar = firstChar <|> digit
+
+parseArgIdentifier :: MVParser Expression
+parseArgIdentifier = VarIdentifier . T.pack <$> identifier
+  where
+    identifier =
+        (lexeme . try) $ do
+            name <- (:) <$> firstChar <*> many nonFirstChar
+            if Prelude.elem name reservedKeywords
+                then fail $ "Cannot use reserved keyword '" ++ name ++ "' as an identifier"
+                else return name
+    firstChar = letter <|> char '_'
+    nonFirstChar = firstChar <|> digit
+
+parseVarIdentifierDecl :: MVParser Expression
+parseVarIdentifierDecl = VarIdentifier . T.pack <$> identifier
   where
     identifier =
         (lexeme . try) $ do
@@ -84,7 +108,7 @@ parseVarIdentifier = VarIdentifier . T.pack <$> identifier
 parseVarDeclaration :: MVParser Declaration
 parseVarDeclaration =
     Variable
-        <$> ((rword "let") *> parseVarIdentifier)
+        <$> ((rword "let") *> parseVarIdentifierDecl)
         <*> optionMaybe (lexeme (char ':') *> parseTypeName)
         <*> (lexeme (char ';') *> pure Nothing) >>= \decl -> modifyState (addVariableToTable decl) >> return decl
 
@@ -103,7 +127,7 @@ parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parse
 parseVarInitialization :: MVParser Declaration
 parseVarInitialization =
         ( Variable
-                <$> ((rword "let") *> parseVarIdentifier)
+                <$> ((rword "let") *> parseVarIdentifierDecl)
                 <*> optionMaybe (lexeme (char ':') *> parseTypeName)
                 <*> (lexeme (char '=') *> parseExpr <* lexeme (char ';') >>= \expr -> return (Just expr))
             ) >>= (\decl -> modifyState (addVariableToTable decl) >> return decl) . checkType . inferVariableType
@@ -156,9 +180,9 @@ parseFunctionIdentifier = FunctionIdentifier . T.pack <$> identifier
     nonFirstChar = firstChar <|> digit
 
 parseFunctionArguments :: MVParser [(Expression, TypeName)]
-parseFunctionArguments = sepBy parseFunctionArgument (lexeme $ char ',')
+parseFunctionArguments = sepBy parseFunctionArgument (lexeme $ char ',') >>= \args -> modifyState (addArgumentsToTable args) >> return args
     where
-        parseFunctionArgument = (,) <$> lexeme (parseVarIdentifier <* char ':') <*> parseTypeName
+        parseFunctionArgument = (,) <$> lexeme (parseArgIdentifier <* char ':') <*> parseTypeName
 
 parseFunctionReturnType :: MVParser TypeName
 parseFunctionReturnType = parseTypeName <|> parseVoid
@@ -169,7 +193,7 @@ parseFunctionForwardDeclaration :: MVParser Declaration
 parseFunctionForwardDeclaration = (endLine . lexeme) $ FunctionDef <$> ((rword "func") *> parseFunctionIdentifier) <*> (lexeme (char '(' *> parseFunctionArguments <* char ')')) <*> (parseFunctionReturnType) <*> pure Nothing
 
 parseFunctionDeclaration :: MVParser Declaration
-parseFunctionDeclaration = lexeme $ FunctionDef <$> ((rword "func") *> parseFunctionIdentifier) <*> (lexeme (char '(' *> parseFunctionArguments <* char ')')) <*> (parseFunctionReturnType) <*> (Just <$> parseBlock FunctionBlock)
+parseFunctionDeclaration = lexeme $ FunctionDef <$> ((rword "func") *> parseFunctionIdentifier) <*> (lexeme (char '(' *> parseFunctionArguments <* char ')')) <*> (parseFunctionReturnType) <*> (Just <$> parseBlock FunctionBlock) >>= \decl -> modifyState (removeArgumentsFromTable decl) >> return decl
 
 parseFunctionCallArguments :: MVParser [Expression]
 parseFunctionCallArguments = lexeme (sepBy parseExpr (lexeme $ char ','))
@@ -178,14 +202,13 @@ parseFunctionCall :: MVParser Expression
 parseFunctionCall = lexeme $ FunctionCall <$> parseFunctionIdentifier <*> between (lexeme $ char '(') (lexeme $ char ')') parseFunctionCallArguments
 
 parseLambda :: MVParser Expression
-parseLambda = LambdaFunc <$> betweenParentheses parseFunctionArguments <*> (lexeme (char ':') *> (Just <$> (parseBlock FunctionBlock <|> parseStatement))) 
+parseLambda = LambdaFunc <$> betweenParentheses parseFunctionArguments <*> (lexeme (char ':') *> (Just <$> (parseBlock FunctionBlock <|> parseStatement))) >>= \expr -> modifyState (removeArgumentsFromTableLambda expr) >> return expr
 
 parseLambdaApplication :: MVParser Expression
 parseLambdaApplication =
     LambdaApplication
         <$> betweenParentheses parseLambda
-        <*> (betweenParentheses parseExpr)
-
+        <*> (betweenParentheses parseExpr) 
 parseBlock :: BlockType -> MVParser Statement
 parseBlock blocktype = Block blocktype <$> ((newLine . lexeme) (char '{') *> many ((newLine . lexeme) parseStatement) <* lexeme (char '}'))
 
