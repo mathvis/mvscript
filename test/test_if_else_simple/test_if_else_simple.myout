@@ -1,1 +1,2 @@
+Decl (Variable (VarIdentifier "a") (Just IntT) (Just (Type (Int 1))))
 Decl (IfBlock (Operation (GreaterThan (VarIdentifier "a") (Type (Int 0)))) (Block If [Decl (Assignment (AddAssign (VarIdentifier "a") (Type (Int 1))))]) (Just (ElseBlock (Block Else [Decl (Assignment (SubAssign (VarIdentifier "a") (Type (Int 1))))]))))
