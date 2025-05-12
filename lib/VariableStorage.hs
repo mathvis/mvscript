@@ -1,7 +1,7 @@
 module VariableStorage where
-import Data.Text as T hiding (show)
+import Data.Text as T hiding (foldl, show)
 import Types
-import Data.Map as Map
+import Data.Map as Map hiding (foldl)
 import TypeCheck
 
 initialized :: Maybe Expression -> Bool
@@ -32,8 +32,7 @@ addArgumentToTable arg state = state {st=Map.insert name argData currentSt}
         currentSt = st state
 
 addArgumentsToTable :: [(Expression, TypeName)] -> ParserState -> ParserState
-addArgumentsToTable (arg:args) state = addArgumentsToTable args (addArgumentToTable arg state)
-addArgumentsToTable [] state = state
+addArgumentsToTable args state = foldl (flip addArgumentToTable) state args
 
 removeArgumentFromTable :: (Expression, TypeName) -> ParserState -> ParserState
 removeArgumentFromTable (VarIdentifier name, _) state = state {st=Map.delete name (st state)}

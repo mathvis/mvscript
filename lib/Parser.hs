@@ -70,7 +70,7 @@ parseMatrix = Type . Matrix <$> (rword "Matrix" *> (char '(') *> (sepBy parseArr
 
 -- VARIABLE PARSERS
 parseVarIdentifier :: MVParser Expression
-parseVarIdentifier = VarIdentifier . T.pack <$> identifier >>= \expr -> modifyState (checkScope expr) >> return expr
+parseVarIdentifier = identifier >>= (\expr -> modifyState (checkScope expr) >> return expr) . VarIdentifier . T.pack
   where
     identifier =
         (lexeme . try) $ do

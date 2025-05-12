@@ -4,3 +4,4 @@ Variable "a" was not initialized.
 
 HasCallStack backtrace:
   error, called at lib/VariableStorage.hs:69:16 in mvscript-0.1.0.0-inplace-mvscript-lib:VariableStorage
+
