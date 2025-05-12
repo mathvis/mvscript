@@ -1,3 +1,2 @@
-mvscript: Variable "a" was not initialized.
-CallStack (from HasCallStack):
-  error, called at lib/VariableStorage.hs:69:16 in mvscript-0.1.0.0-inplace-mvscript-lib:VariableStorage
+--> test/test_arg_out_of_scope/test_arg_out_of_scope.mvs:4:1
+error: Variable "a" was not initialized.

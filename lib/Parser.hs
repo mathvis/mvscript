@@ -70,7 +70,7 @@ parseMatrix = Type . Matrix <$> (rword "Matrix" *> (char '(') *> (sepBy parseArr
 
 -- VARIABLE PARSERS
 parseVarIdentifier :: MVParser Expression
-parseVarIdentifier = identifier >>= (\expr -> modifyState (checkScope expr) >> return expr) . VarIdentifier . T.pack
+parseVarIdentifier = getPosition >>= \pos -> identifier >>= (\expr -> modifyState (checkScope pos expr) >> return expr) . VarIdentifier . T.pack
   where
     identifier =
         (lexeme . try) $ do
@@ -126,11 +126,11 @@ parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parse
 
 parseVarInitialization :: MVParser Declaration
 parseVarInitialization =
-        ( Variable
+        getPosition >>= \pos -> getState >>= \state -> ( Variable
                 <$> ((rword "let") *> parseVarIdentifierDecl)
                 <*> optionMaybe (lexeme (char ':') *> parseTypeName)
                 <*> (lexeme (char '=') *> parseExpr <* lexeme (char ';') >>= \expr -> return (Just expr))
-            ) >>= (\decl -> modifyState (addVariableToTable decl) >> return decl) . checkType . inferVariableType
+            ) >>= (\decl -> modifyState (addVariableToTable decl) >> return decl) . checkType pos state . inferVariableType pos state
 
 -- OPERATION RELATED PARSERS
 parseParens :: MVParser Expression

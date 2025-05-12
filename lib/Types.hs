@@ -6,6 +6,7 @@ import Data.Map
 import Text.Parsec
 import qualified Data.Map as Map
 import Prelude hiding (fst)
+import Text.Parsec.Pos
 
 data TypeName
     = StringT
@@ -99,14 +100,16 @@ reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","
 data Configuration = Configuration {
     debug :: Bool,
     collapseOperations :: Bool,
-    collapseControlFlow :: Bool
+    collapseControlFlow :: Bool,
+    colors :: Bool
 } deriving Show
 
 defaultConfig :: Configuration
 defaultConfig = Configuration {
     debug = False,
     collapseOperations = False,
-    collapseControlFlow = True
+    collapseControlFlow = True,
+    colors = True
 }
 
 data FunctionData = FunctionData {
@@ -156,3 +159,6 @@ getSymbolTable = st <$> getState
 
 getFunctionSymbolTable :: MVParser FunctionSymbolTable
 getFunctionSymbolTable = fst <$> getState
+
+defaultSourcePos :: SourcePos
+defaultSourcePos = newPos "internal" 0 0

@@ -1,3 +1,0 @@
-Decl (Variable (VarIdentifier "a") (Just VectorT) (Just (Type (Vector [Type (Int 0)]))))
-Decl (Variable (VarIdentifier "a") (Just MatrixT) (Just (Type (Matrix [Type (Array [Type (Int 0),Type (Int 1)])]))))
-Decl (Variable (VarIdentifier "a") (Just PointT) (Just (Type (Point [Type (Int 0)]))))

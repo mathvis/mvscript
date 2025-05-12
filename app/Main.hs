@@ -12,16 +12,16 @@ import qualified Data.Map as Map
 import Config
 import Data.Maybe
 
-parseFile :: String -> ParserState -> [Statement]
-parseFile file state =
+parseFile :: String -> String -> ParserState -> [Statement]
+parseFile filename file state =
     do
-        case runParser (many parseStatement) state "MVScript" file of
+        case runParser (many parseStatement) state filename file of
             Left e -> error ("Error while parsing: " ++ show e)
             Right parsed -> parsed
 
-parseFileDebug :: String -> ParserState -> [(Statement, ParserState)]
-parseFileDebug file state =
-        case runParser parseStatementsState state "MVScript" file of
+parseFileDebug :: String -> String -> ParserState -> [(Statement, ParserState)]
+parseFileDebug filename file state =
+        case runParser parseStatementsState state filename file of
             Left e -> error ("Error while parsing: " ++ show e)
             Right parsed -> parsed
     where
@@ -48,6 +48,6 @@ main =
         fileContents <- readFile filename
         let state = setConfig defaultParserState (parseConfig configFile)
         if debug (config state) then
-            mapM_ print $ parseFileDebug fileContents state
+            mapM_ print $ parseFileDebug filename fileContents state
         else
-            mapM_ print $ parseFile fileContents state        
+            mapM_ print $ parseFile filename fileContents state        

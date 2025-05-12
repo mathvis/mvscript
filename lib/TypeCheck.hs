@@ -1,5 +1,8 @@
 module TypeCheck where
 import Types 
+import Error
+import Prelude hiding (error)
+import Text.Parsec
 
 --TODO type checking for arrays
 valueToType :: Type -> TypeName
@@ -11,16 +14,16 @@ valueToType (Vector _) = VectorT
 valueToType (Point _) = PointT
 valueToType (Matrix _) = MatrixT
 
-inferVariableType :: Declaration -> Declaration
-inferVariableType (Variable exp (Just a) val) = Variable exp (Just a) val
-inferVariableType (Variable exp Nothing (Just (Type val))) = Variable exp (Just $ valueToType val) (Just (Type val))
-inferVariableType decl = error $ "Could not infer type: " ++ show decl
+inferVariableType :: SourcePos -> ParserState -> Declaration -> Declaration
+inferVariableType _ _ (Variable exp (Just a) val) = Variable exp (Just a) val
+inferVariableType _ _ (Variable exp Nothing (Just (Type val))) = Variable exp (Just $ valueToType val) (Just (Type val))
+inferVariableType pos state decl = error state pos $ "Could not infer type: " ++ show decl
 
-checkType :: Declaration -> Declaration
-checkType (Variable exp (Just expectedType) (Just (Type val))) = 
+checkType :: SourcePos -> ParserState -> Declaration -> Declaration
+checkType pos state (Variable exp (Just expectedType) (Just (Type val))) = 
     let actualType = valueToType val in
         if expectedType == actualType
             then Variable exp (Just expectedType) (Just (Type val))
-            else error $ "Type mismatch: expected " ++ show expectedType ++ " but got " ++ show actualType
-checkType _ = error "Declaration is not a variable declaration"
+            else error state pos $ "expected " ++ show expectedType ++ " but got " ++ show actualType
+checkType pos state _ = error state pos "Declaration is not a variable declaration"
 

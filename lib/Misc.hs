@@ -2,6 +2,8 @@ module Misc where
 import Text.ParserCombinators.Parsec
 import Control.Monad
 import Types
+import System.Exit
+import System.IO.Unsafe
 
 whitespace :: MVParser ()
 whitespace = void $ many $ oneOf " \n\t"

@@ -1,1 +1,0 @@
-(Expr (Type (Int 3)),ParserState {config = Configuration {debug = True, collapseOperations = True, collapseControlFlow = True}, st = fromList [], fst = fromList []})

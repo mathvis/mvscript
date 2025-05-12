@@ -1,7 +1,2 @@
-mvscript: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Variable "a" was not initialized.
-
-HasCallStack backtrace:
-  error, called at lib/VariableStorage.hs:69:16 in mvscript-0.1.0.0-inplace-mvscript-lib:VariableStorage
-
+--> test/test_variable_not_initialized/test_variable_not_initialized.mvs:1:1
+error: Variable "a" was not initialized.
