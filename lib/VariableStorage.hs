@@ -67,3 +67,11 @@ checkScope pos (VarIdentifier name) state = case Map.lookup name (st state) of
         error state pos $ "Variable " ++ show name ++ " is out of scope."
     Nothing -> error state pos $ "Variable " ++ show name ++ " was not initialized."
 checkScope pos _ state = error state pos "Could not check scope."
+
+removeVariableFromTableBlock :: Statement -> ParserState -> ParserState
+removeVariableFromTableBlock (Decl (Variable (VarIdentifier name) _ _)) state = state {st=Map.delete name (st state)}
+removeVariableFromTableBlock _ state = state
+
+removeVariablesFromTableBlock :: Statement -> ParserState -> ParserState
+removeVariablesFromTableBlock (Block _ (stmt:stmts)) state = removeVariableFromTableBlock stmt state
+removeVariablesFromTableBlock (Block _ []) state = state
