@@ -1,2 +1,6 @@
---> test/test_arg_out_of_scope/test_arg_out_of_scope.mvs:4:1
 error: Variable "a" was not initialized.
+ --> test/test_arg_out_of_scope/test_arg_out_of_scope.mvs:4:1
+  |
+4 | a -= 1;
+  | ^
+  |
