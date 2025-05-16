@@ -6,3 +6,4 @@ error: expected StringT but got IntT
 3 | let a: string = 0;
   | ^
   |
+hint: Consider changing the variable type or declaring a new variable.

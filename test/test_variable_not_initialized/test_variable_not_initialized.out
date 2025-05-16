@@ -4,3 +4,4 @@ error: Variable "a" was not initialized.
 1 | a = 0;
   | ^
   |
+hint: Consider using the let keyword.

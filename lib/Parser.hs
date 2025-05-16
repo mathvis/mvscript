@@ -205,7 +205,7 @@ parseLambdaApplication =
         <*> betweenParentheses parseExpr
 
 parseBlock :: BlockType -> MVParser Statement
-parseBlock blocktype = ((newLine . lexeme) (char '{') *> many ((newLine . lexeme) parseStatement) <* lexeme (char '}')) >>= (\block -> modifyState (removeVariablesFromTableBlock block) >> return block) . Block blocktype
+parseBlock blocktype = ((newLine . lexeme) (char '{') *> many ((newLine . lexeme) parseStatement) <* lexeme (char '}')) >>= (\block -> modifyState (removeScopeVariables block) >> return block) . Block blocktype
 
 -- COMMENT PARSERS
 parseComment :: MVParser String

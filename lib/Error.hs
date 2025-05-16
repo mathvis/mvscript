@@ -24,6 +24,9 @@ bold str = "\ESC[1m" ++ str ++ "\ESC[0m"
 blue :: String -> String
 blue str = "\ESC[38;2;137;180;250m" ++ str ++ "\ESC[0m" 
 
+lightBlue :: String -> String
+lightBlue str = "\ESC[38;2;148;226;213m" ++ str ++ "\ESC[0m"
+
 red :: String -> String
 red str = "\ESC[38;2;243;139;168m" ++ str ++ "\ESC[0m"
 
@@ -34,8 +37,8 @@ getErrorLine pos = do
     return $ contents !! (sourceLine pos - 1)
     
 
-simpleError :: SourcePos -> String -> a
-simpleError pos msg = unsafePerformIO $ do
+simpleError :: SourcePos -> String -> String -> a
+simpleError pos msg hint = unsafePerformIO $ do
     line <- getErrorLine pos
     putStrLn $ "error: " ++ msg
     putStrLn $ padDigits (sourceLine pos) ++ "--> " ++ sourceName pos ++ ":" ++ show (sourceLine pos) ++ ":" ++ show (sourceColumn pos)
@@ -43,10 +46,11 @@ simpleError pos msg = unsafePerformIO $ do
     putStrLn $ show (sourceLine pos) ++ " | " ++ line 
     putStrLn $ padDigits (sourceLine pos) ++ " |" ++ pad (sourceColumn pos - 4 * countTabs line) ++ "^"
     putStrLn $ padDigits (sourceLine pos) ++ " |"
+    putStrLn $ "hint: " ++ hint
     exitFailure
 
-colorizedError :: SourcePos -> String -> a
-colorizedError pos msg = unsafePerformIO $ do
+colorizedError :: SourcePos -> String -> String -> a
+colorizedError pos msg hint = unsafePerformIO $ do
     line <- getErrorLine pos
     putStrLn $ bold (red "error") ++ bold ": " ++ bold msg
     putStrLn $ padDigits (sourceLine pos) ++ blue "--> " ++ sourceName pos ++ ":" ++ show (sourceLine pos) ++ ":" ++ show (sourceColumn pos)
@@ -54,12 +58,13 @@ colorizedError pos msg = unsafePerformIO $ do
     putStrLn $ blue (show (sourceLine pos) ++ " | ") ++ line 
     putStrLn $ padDigits (sourceLine pos) ++ blue " |" ++ pad (sourceColumn pos - 4 * countTabs line) ++ red "^"
     putStrLn $ padDigits (sourceLine pos) ++ blue " |"
+    putStrLn $ bold (lightBlue "hint") ++ ": " ++ hint
     exitFailure
 
 
-error :: ParserState -> SourcePos -> String -> a
-error state pos msg =
+error :: ParserState -> SourcePos -> String -> String -> a
+error state pos msg hint =
     if colors (config state) then
-        colorizedError pos msg
+        colorizedError pos msg hint
     else
-        simpleError pos msg
+        simpleError pos msg hint

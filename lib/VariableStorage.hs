@@ -16,11 +16,11 @@ createVariableData typename value = defaultVariableData {isInitialized=initializ
 
 createVariableRecord :: Declaration -> ParserState -> (T.Text, VariableData)
 createVariableRecord (Variable (VarIdentifier name) typename val) state = (,) name (createVariableData typename val)
-createVariableRecord _ state = error state defaultSourcePos "Could not create variable record."
+createVariableRecord _ state = error state defaultSourcePos "Could not create variable record." "Internal error."
 
 createArgumentVariableRecord :: (Expression, TypeName) -> ParserState -> (T.Text, VariableData)
 createArgumentVariableRecord (VarIdentifier name, typename) state = (,) name (createVariableData (Just typename) (Just (Type (Int 0))))
-createArgumentVariableRecord _ state = error state defaultSourcePos "Could not create argument record."
+createArgumentVariableRecord _ state = error state defaultSourcePos "Could not create argument record." "Internal error."
 
 addVariableToTable :: Declaration -> ParserState -> ParserState
 addVariableToTable varDeclaration state = state {st=Map.insert name varData currentSt}
@@ -64,14 +64,17 @@ checkScope pos (VarIdentifier name) state = case Map.lookup name (st state) of
     Just varData -> if inScope varData then
         state 
     else
-        error state pos $ "Variable " ++ show name ++ " is out of scope."
-    Nothing -> error state pos $ "Variable " ++ show name ++ " was not initialized."
-checkScope pos _ state = error state pos "Could not check scope."
+        error state pos ("Variable " ++ show name ++ " is out of scope.") "Variable might have been initialized in a stricter scope."
+    Nothing -> error state pos ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
+checkScope pos _ state = error state pos "Could not check scope." "Internal error."
 
-removeVariableFromTableBlock :: Statement -> ParserState -> ParserState
-removeVariableFromTableBlock (Decl (Variable (VarIdentifier name) _ _)) state = state {st=Map.delete name (st state)}
-removeVariableFromTableBlock _ state = state
+removeScope :: VariableData -> VariableData
+removeScope varData = varData {inScope = False}
 
-removeVariablesFromTableBlock :: Statement -> ParserState -> ParserState
-removeVariablesFromTableBlock (Block _ (stmt:stmts)) state = removeVariableFromTableBlock stmt state
-removeVariablesFromTableBlock (Block _ []) state = state
+removeScopeVarBlock :: Statement -> ParserState -> ParserState
+removeScopeVarBlock (Decl (Variable (VarIdentifier name) _ _)) state = state {st=Map.adjust removeScope name (st state)}
+removeScopeVarBlock _ state = state
+
+removeScopeVariables :: Statement -> ParserState -> ParserState
+removeScopeVariables (Block _ (stmt:stmts)) state = removeScopeVarBlock stmt state
+removeScopeVariables (Block _ []) state = state
