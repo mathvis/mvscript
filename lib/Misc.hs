@@ -37,3 +37,12 @@ boolToInt :: Bool -> Integer
 boolToInt True = 1
 boolToInt False = 0
 
+-- TODO type checking for arrays
+valueToType :: Type -> TypeName
+valueToType (String _) = StringT
+valueToType (Int _) = IntT
+valueToType (Float _) = FloatT
+valueToType (Bool _) = BoolT
+valueToType (Vector _) = VectorT
+valueToType (Point _) = PointT
+valueToType (Matrix _) = MatrixT
