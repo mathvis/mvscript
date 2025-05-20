@@ -1,34 +1,36 @@
 {-# LANGUAGE RankNTypes #-}
+
 module Eval where
 
-import Types
 import Control.Applicative
+import Data.Bits (Bits (complement, xor), (.&.), (.|.))
 import Misc
 import Text.Parsec
-import Data.Bits ((.|.), (.&.), Bits (xor, complement))
+import Types
 
 compareValues :: (forall a. Ord a => a -> a -> Bool) -> Expression -> Expression -> Expression
 compareValues op (Type val1) (Type val2) = Type (Bool (compareValuesTyped op val1 val2))
 compareValues _ lhs rhs = Operation undefined
 
 compareValuesTyped :: (forall a. Ord a => a -> a -> Bool) -> Type -> Type -> Bool
-compareValuesTyped op (Int x) (Int y) = op x y 
-compareValuesTyped op (Float x) (Float y) = op x y 
-compareValuesTyped op (String x) (String y) = op x y 
+compareValuesTyped op (Int x) (Int y) = op x y
+compareValuesTyped op (Float x) (Float y) = op x y
+compareValuesTyped op (String x) (String y) = op x y
 compareValuesTyped _ _ _ = undefined
 
 evaluateControlFlow :: MVParser Bool -> Declaration -> MVParser Declaration
 evaluateControlFlow collapse (IfBlock condition statement elseBlock) = do
     shouldCollapse <- collapse
-    if shouldCollapse then do
-        bool <- evaluateOperations collapse condition 
-        case bool of
-            Type (Bool True) -> return $ CollapsedControlFlow statement
-            Type (Bool False) -> case elseBlock of
-                Just (ElseBlock block) -> return $ CollapsedControlFlow block
-                _ -> return $ CollapsedControlFlow (Block NoType [])
-            _ -> return $ IfBlock condition statement elseBlock
-    else return (IfBlock condition statement elseBlock)
+    if shouldCollapse
+        then do
+            bool <- evaluateOperations collapse condition
+            case bool of
+                Type (Bool True) -> return $ CollapsedControlFlow statement
+                Type (Bool False) -> case elseBlock of
+                    Just (ElseBlock block) -> return $ CollapsedControlFlow block
+                    _ -> return $ CollapsedControlFlow (Block NoType [])
+                _ -> return $ IfBlock condition statement elseBlock
+        else return (IfBlock condition statement elseBlock)
 
 evaluateOperations :: MVParser Bool -> Expression -> MVParser Expression
 evaluateOperations collapse expr@(Operation op) = do
@@ -63,7 +65,7 @@ evaluateLogic (Operation op) = case op of
     Not (Type x) -> applyNot (Type x)
     _ -> Operation op
 evaluateLogic other = other
-    
+
 applyOperator :: (forall a. Real a => a -> a -> a) -> Expression -> Expression -> Expression
 applyOperator op (Type (Int val1)) (Type (Int val2)) = Type (Int (op val1 val2))
 applyOperator op (Type (Float val1)) (Type (Float val2)) = Type (Float (op val1 val2))
@@ -80,5 +82,3 @@ applyNot :: Expression -> Expression
 applyNot (Type (Int val1)) = Type (Bool (not (realToBool val1)))
 applyNot (Type (Float val1)) = Type (Bool (not (realToBool val1)))
 applyNot (Type (Bool val1)) = Type (Bool (not val1))
-
-
