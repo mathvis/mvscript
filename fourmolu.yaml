@@ -1,0 +1,6 @@
+indentation: 4
+column-limit: 100
+function-arrows: trailing
+comma-style: trailing
+import-export-style: diff-friendly
+

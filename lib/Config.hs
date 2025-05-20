@@ -17,7 +17,7 @@ setConfig :: ParserState -> [Table] -> ParserState
 setConfig parserState tables =
     parserState
     |> (\ps -> setDebug ps (getTable tables "debug"))
-    |> (\ps -> setCollapseOperations ps (getTable tables "parsing"))
+    |> setCollapseOperations (getTable tables "parsing")
     |> (\ps -> setCollapseControlFlow ps (getTable tables "parsing"))
     |> (\ps -> setColors ps (getTable tables "testing"))
 
@@ -45,8 +45,8 @@ getColorsValue (Table "testing" opts) = case Map.lookup "colors" opts of
     Nothing -> collapseControlFlow defaultConfig
 getColorsValue _ = colors defaultConfig
 
-setCollapseOperations :: ParserState -> Table -> ParserState
-setCollapseOperations (ParserState config st fst) table = ParserState (config {collapseOperations=getCollapseOperationsValue table}) st fst
+setCollapseOperations :: Table -> ParserState -> ParserState
+setCollapseOperations table (ParserState config st fst) = ParserState (config {collapseOperations=getCollapseOperationsValue table}) st fst
 
 setCollapseControlFlow :: ParserState -> Table -> ParserState
 setCollapseControlFlow (ParserState config st fst) table = ParserState (config {collapseControlFlow=getCollapseControlFlowValue table}) st fst

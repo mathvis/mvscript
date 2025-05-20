@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Types where
 
 import Data.Text as T
@@ -7,6 +8,7 @@ import Text.Parsec
 import qualified Data.Map as Map
 import Prelude hiding (fst)
 import Text.Parsec.Pos
+import Data.Data
 
 data TypeName
     = StringT
@@ -102,7 +104,7 @@ data Configuration = Configuration {
     collapseOperations :: Bool,
     collapseControlFlow :: Bool,
     colors :: Bool
-} deriving Show
+} deriving (Data, Show)
 
 defaultConfig :: Configuration
 defaultConfig = Configuration {
