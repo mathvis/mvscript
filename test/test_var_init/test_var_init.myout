@@ -1,6 +1,6 @@
 Decl (Variable (VarIdentifier "a") (Just IntT) (Just (Type (Int 0))))
 Decl (Variable (VarIdentifier "a") (Just IntT) (Just (Type (Int 0))))
-error: expected StringT but got IntT
+error: Expected StringT but got IntT
  --> test/test_var_init/test_var_init.mvs:3:1
   |
 3 | let a: string = 0;
