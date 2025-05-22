@@ -6,28 +6,21 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' 
 
-clone_repository() {
-    REPO_URL="https://github.com/yourusername/mvscript.git"
-    TARGET_DIR="$HOME/.mvscript_build"
+clone_and_enter_repo() {
+    local repo_url="https://github.com/mathvis/mvscript.git"  
+    local temp_dir="$HOME/.mvscript-tmp"
 
-    if [ -d "$TARGET_DIR" ]; then
-        print_status "Removing previous repository clone..."
-        rm -rf "$TARGET_DIR"
+    if [ -d "$temp_dir" ]; then
+        print_status "Using existing temp directory: $temp_dir"
+        cd "$temp_dir" || exit 1
+        git pull origin main
+    else
+        print_status "Cloning project repository..."
+        git clone "$repo_url" "$temp_dir"
+        cd "$temp_dir" || exit 1
     fi
-
-    print_status "Cloning repository from $REPO_URL..."
-    git clone "$REPO_URL" "$TARGET_DIR"
-
-    if [ $? -ne 0 ]; then
-        print_error "Failed to clone repository"
-        exit 1
-    fi
-
-    cd "$TARGET_DIR" || {
-        print_error "Failed to enter project directory"
-        exit 1
-    }
 }
+
 
 
 print_status() {
@@ -330,9 +323,7 @@ main() {
         echo
     fi
     
-    if [ "$verify_only" = false ]; then
-        clone_repository
-    fi
+    clone_and_enter_repo
 
     setup_project
     echo
@@ -344,10 +335,8 @@ main() {
     
     verify_installation
 
-    if [ "$verify_only" = false ]; then
-        print_status "Cleaning up temporary files..."
-        rm -rf "$HOME/.mvscript_build"
-    fi
+    print_status "Cleaning up temporary files..."
+    rm -rf "$HOME/.mvscript_build"
 }
 
 main "$@"
