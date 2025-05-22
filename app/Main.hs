@@ -12,6 +12,8 @@ import System.Environment
 import System.Exit
 import Text.ParserCombinators.Parsec
 import Types
+import System.Directory (getHomeDirectory)
+import System.FilePath ((</>))
 
 parseFile :: String -> String -> ParserState -> [Statement]
 parseFile filename file state =
@@ -44,8 +46,9 @@ parseConfig config =
 main :: IO ()
 main =
     do
+        home <- getHomeDirectory
         (filename : flags) <- getArgs
-        configFile <- readFile (fromMaybe "config.toml" (listToMaybe flags))
+        configFile <- readFile (fromMaybe (home </> ".mvscc/config.toml") (listToMaybe flags))
         fileContents <- readFile filename
         let state = setConfig defaultParserState (parseConfig configFile)
         if debug (config state)

@@ -1,5 +1,5 @@
 [debug]
-enabled = true
+enabled = false
 
 [parsing]
 collapse-operations = true

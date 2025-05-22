@@ -159,7 +159,7 @@ install_executable() {
     
     mkdir -p ~/.local/bin
     mkdir -p ~/.mvscc
-    mv ./config.toml ~/.mvscc/config.toml
+    cp ./config.toml ~/.mvscc/config.toml
     
     cabal install --install-method=copy --overwrite-policy=always --installdir="$HOME/.local/bin"
     
