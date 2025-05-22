@@ -19,7 +19,7 @@ To install the MVScript compiler (mvscc), run the `install.sh` script using `cur
 
 ## Using mvscc
 
-To run the MVScript compiler, run `mvscc <source> [config]`, where `config` is a .toml file. Check the included file in the repository for the available options. A comprehensive guide of every option will be available on the website when version 1.0.0 comes out.
+To run the MVScript compiler, run `mvscc <source> [config]`, where `config` is a .toml file. Check the included file in the repository for the available options. A comprehensive guide of every option will be available on the website when version 1.0.0 comes out. The default file is found in `$HOME/.mvscc/config.toml`
 
 ## Contributing
 
