@@ -6,6 +6,9 @@ A [language reference](https://github.com/mathvis/mvscript-docs) with comprehens
 This project is still very much in an early stage and will definitely contain a lot of bugs, so be patient, and feel free to leave an issue, so that bugs are fixed as fast as possible.
 
 ![CI](https://github.com/mathvis/mvscript/actions/workflows/haskell.yml/badge.svg)
+[![GitHub contributors](https://img.shields.io/github/contributors/mathvis/mvscript)](https://github.com/mathvis/mvscript/graphs/contributors)
+
+
 
 ## Installation
 
