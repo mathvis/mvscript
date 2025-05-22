@@ -6,6 +6,30 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' 
 
+clone_repository() {
+    REPO_URL="https://github.com/yourusername/mvscript.git"
+    TARGET_DIR="$HOME/.mvscript_build"
+
+    if [ -d "$TARGET_DIR" ]; then
+        print_status "Removing previous repository clone..."
+        rm -rf "$TARGET_DIR"
+    fi
+
+    print_status "Cloning repository from $REPO_URL..."
+    git clone "$REPO_URL" "$TARGET_DIR"
+
+    if [ $? -ne 0 ]; then
+        print_error "Failed to clone repository"
+        exit 1
+    fi
+
+    cd "$TARGET_DIR" || {
+        print_error "Failed to enter project directory"
+        exit 1
+    }
+}
+
+
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
@@ -293,7 +317,8 @@ main() {
         verify_installation
         exit 0
     fi
-    
+
+        
     if [ "$skip_system" = false ]; then
         install_system_deps
         echo
@@ -305,6 +330,10 @@ main() {
         echo
     fi
     
+    if [ "$verify_only" = false ]; then
+        clone_repository
+    fi
+
     setup_project
     echo
     
@@ -314,6 +343,11 @@ main() {
     fi
     
     verify_installation
+
+    if [ "$verify_only" = false ]; then
+        print_status "Cleaning up temporary files..."
+        rm -rf "$HOME/.mvscript_build"
+    fi
 }
 
 main "$@"
