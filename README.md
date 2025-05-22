@@ -27,4 +27,4 @@ If you have any ideas or want to work on the project, don't hesitate to leave an
 
 ## License
 
-MVScript and mvscc is released under the [GNU General Public License v3.0](https://github.com/mathvis/mvscript/blob/main/LICENSE)
+MVScript and mvscc are released under the [GNU General Public License v3.0](https://github.com/mathvis/mvscript/blob/main/LICENSE).
