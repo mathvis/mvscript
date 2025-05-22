@@ -162,7 +162,6 @@ setup_project() {
     fi
     
     print_status "Installing Haskell dependencies..."
-    cabal configure
     cabal build --dependencies-only
     
     print_status "Building the project..."
