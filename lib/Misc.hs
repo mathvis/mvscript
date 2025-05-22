@@ -4,6 +4,10 @@ import Control.Monad
 import Types
 import System.Exit
 import System.IO.Unsafe
+import qualified Data.Text as T
+import Data.Map as Map
+import Error
+import Prelude hiding (error)
 
 whitespace :: MVParser ()
 whitespace = void $ many $ oneOf " \n\t"
@@ -46,3 +50,10 @@ valueToType (Bool _) = BoolT
 valueToType (Vector _) = VectorT
 valueToType (Point _) = PointT
 valueToType (Matrix _) = MatrixT
+
+getVariableType :: SourcePos -> T.Text -> ParserState -> TypeName
+getVariableType pos name state = case Map.lookup name (st state) of
+    Just vData -> case variableType vData of
+        Just typ -> typ
+        Nothing -> error state pos "Variable does not have a type." "Internal error."
+    Nothing -> error state pos "Variable not found." "Internal error."

@@ -3,8 +3,9 @@ module VariableStorage where
 import Data.Map as Map hiding (foldl)
 import Data.Text as T hiding (foldl, show)
 import Error
-import Text.Parsec
 import Misc
+import Text.Parsec
+import TypeCheck
 import Types
 import Prelude hiding (error)
 
@@ -53,16 +54,29 @@ updateVariableUninitialized :: SourcePos -> Declaration -> ParserState -> Parser
 updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (Type typ))) state =
     case currentVData of
         Just vData -> case variableType vData of
-            Nothing -> state {st = Map.insert name vData{variableType=Just (valueToType typ), isInitialized = True} currentSt}
-            Just vType -> if vType == valueToType typ then
-                state {st = Map.insert name vData{isInitialized = True} currentSt}
-            else error state pos ("Expected " ++ show vType ++ " but got " ++ show (valueToType typ)) "Consider changing the variable type or declaring a new variable."
-
+            Nothing -> state{st = Map.insert name vData{variableType = Just (valueToType typ), isInitialized = True} currentSt}
+            Just vType ->
+                if vType == valueToType typ
+                    then state{st = Map.insert name vData{isInitialized = True} currentSt}
+                    else error state pos ("Expected " ++ show vType ++ " but got " ++ show (valueToType typ)) "Consider changing the variable type or declaring a new variable."
         Nothing -> error state pos ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
-    where
-        currentSt = st state
-        currentVData = Map.lookup name currentSt
+  where
+    currentSt = st state
+    currentVData = Map.lookup name currentSt
 -- TODO make it work with statements like a = b + 1;
+updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (Operation op))) state =
+    case currentVData of
+        Just vData -> case variableType vData of
+            Nothing -> state{st = Map.insert name vData{variableType = Just typ, isInitialized = True} currentSt}
+            Just vType ->
+                if vType == typ
+                    then state{st = Map.insert name vData{isInitialized = True} currentSt}
+                    else error state pos ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
+        Nothing -> error state pos ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
+  where
+    currentSt = st state
+    currentVData = Map.lookup name currentSt
+    typ = checkTypeExpression pos state (Operation op)
 updateVariableUninitialized _ _ state = state
 
 checkScope :: SourcePos -> Expression -> ParserState -> ParserState
@@ -85,9 +99,3 @@ removeScopeVariables :: Statement -> ParserState -> ParserState
 removeScopeVariables (Block _ (stmt : stmts)) state = removeScopeVarBlock stmt state
 removeScopeVariables (Block _ []) state = state
 
-getVariableType :: SourcePos -> T.Text -> ParserState -> TypeName
-getVariableType pos name state = case Map.lookup name (st state) of
-    Just vData -> case variableType vData of
-        Just typ -> typ
-        Nothing -> error state pos "Variable does not have a type." "Internal error."
-    Nothing -> error state pos "Variable not found." "Internal error."
