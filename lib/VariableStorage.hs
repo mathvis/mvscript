@@ -63,7 +63,6 @@ updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (Type t
   where
     currentSt = st state
     currentVData = Map.lookup name currentSt
--- TODO make it work with statements like a = b + 1;
 updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (Operation op))) state =
     case currentVData of
         Just vData -> case variableType vData of
@@ -77,6 +76,19 @@ updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (Operat
     currentSt = st state
     currentVData = Map.lookup name currentSt
     typ = checkTypeExpression pos state (Operation op)
+updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (VarIdentifier name2))) state =
+    case currentVData of
+        Just vData -> case variableType vData of
+            Nothing -> state{st = Map.insert name vData{variableType = Just typ, isInitialized = True} currentSt}
+            Just vType ->
+                if vType == typ
+                    then state{st = Map.insert name vData{isInitialized = True} currentSt}
+                    else error state pos ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
+        Nothing -> error state pos ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
+  where
+    currentSt = st state
+    currentVData = Map.lookup name currentSt
+    typ = getVariableType pos name2 state
 updateVariableUninitialized _ _ state = state
 
 checkScope :: SourcePos -> Expression -> ParserState -> ParserState
