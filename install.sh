@@ -10,15 +10,9 @@ tmp_dir=$(mktemp -d)
 clone_and_enter_repo() {
     local repo_url="https://github.com/mathvis/mvscript.git"  
 
-    if [ -d "$tmp_dir" ]; then
-        print_status "Using existing temp directory: $tmp_dir"
-        cd "$tmp_dir" || exit 1
-        git pull origin main
-    else
-        print_status "Cloning project repository..."
-        git clone "$repo_url" "$tmp_dir"
-        cd "$tmp_dir" || exit 1
-    fi
+    print_status "Cloning project repository..."
+    git clone "$repo_url" "$tmp_dir"
+    cd "$tmp_dir" || exit 1
 }
 
 
