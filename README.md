@@ -8,7 +8,10 @@ This project is still very much in an early stage and will definitely contain a 
 ![CI](https://github.com/mathvis/mvscript/actions/workflows/haskell.yml/badge.svg)
 [![GitHub contributors](https://img.shields.io/github/contributors/mathvis/mvscript)](https://github.com/mathvis/mvscript/graphs/contributors)
 
+## Prerequisites
 
+- Make sure `~/.local/bin` is in your path.
+- `git` and `curl`, `wget` or `fetch` must be installed.
 
 ## Installation
 

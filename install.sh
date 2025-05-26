@@ -48,8 +48,8 @@ detect_os() {
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         if command_exists apt-get; then
             echo "ubuntu"
-        elif command_exists yum; then
-            echo "centos"
+        elif command_exists dnf; then
+            echo "fedora"
         elif command_exists pacman; then
             echo "arch"
         else
@@ -64,28 +64,6 @@ detect_os() {
     fi
 }
 
-install_ghcup() {
-    print_status "Installing GHCup (Haskell toolchain installer)..."
-    
-    if command_exists ghcup; then
-        print_success "GHCup is already installed"
-        return 0
-    fi
-    
-    curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-    
-    if [ -f "$HOME/.ghcup/env" ]; then
-        source "$HOME/.ghcup/env"
-    fi
-    
-    if command_exists ghcup; then
-        print_success "GHCup installed successfully"
-    else
-        print_error "Failed to install GHCup"
-        return 1
-    fi
-}
-
 install_system_deps() {
     local os=$(detect_os)
     print_status "Detected OS: $os"
@@ -94,16 +72,16 @@ install_system_deps() {
         "ubuntu")
             print_status "Installing system dependencies for Ubuntu/Debian..."
             sudo apt-get update
-            sudo apt-get install -y curl build-essential libffi-dev libgmp-dev zlib1g-dev
+            sudo apt-get install -y build-essential libffi-dev libgmp-dev zlib1g-dev
             ;;
-        "centos")
+        "fedora")
             print_status "Installing system dependencies for CentOS/RHEL..."
-            sudo yum groupinstall -y "Development Tools"
-            sudo yum install -y curl gmp-devel zlib-devel
+            sudo dnf group install -y "Development Tools"
+            sudo dnf install -y gmp-devel zlib-devel
             ;;
         "arch")
             print_status "Installing system dependencies for Arch Linux..."
-            sudo pacman -S --noconfirm curl base-devel gmp zlib
+            sudo pacman -S --noconfirm base-devel gmp zlib
             ;;
         "macos")
             print_status "Installing system dependencies for macOS..."
@@ -136,20 +114,33 @@ install_system_deps() {
 install_haskell_tools() {
     print_status "Installing GHC and Cabal..."
     
-    if ! command_exists ghc; then
-        print_status "Installing GHC..."
-        ghcup install ghc --set recommended
-    else
-        print_success "GHC is already installed"
-    fi
-    
-    if ! command_exists cabal; then
-        print_status "Installing Cabal..."
-        ghcup install cabal --set latest
-    else
-        print_success "Cabal is already installed"
-    fi
-    
+    case $os in
+        "ubuntu")
+            print_status "Installing Haskell Tools for Ubuntu/Debian..."
+            sudo apt-get install -y ghc cabal-install
+            ;;
+        "dnf")
+            print_status "Installing Haskell Tools for Fedora/RedHat..."
+            sudo dnf install -y ghc cabal-install
+            ;;
+        "arch")
+            print_status "Installing Haskell Tools for Arch Linux..."
+            sudo pacman -S --noconfirm ghc cabal-install
+            ;;
+        "macos")
+            print_status "Installing Haskell Tools for macOS..."
+            brew install ghc cabal-install
+            ;;
+        "windows")
+            print_status "Installing Haskell Tools for Windows..."
+            winget install GHC.GHC
+            winget install --id=haskell.cabal  -e
+        *)
+            print_warning "Unknown OS. Please install Haskell tools manually:"
+            print_warning "- ghc"
+            print_warning "- cabal"
+            ;;
+    esac
     print_status "Updating Cabal package database..."
     cabal update
 }
@@ -318,7 +309,6 @@ main() {
     fi
     
     if [ "$skip_haskell" = false ]; then
-        install_ghcup
         install_haskell_tools
         echo
     fi
