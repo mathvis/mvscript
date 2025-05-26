@@ -6,13 +6,20 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' 
 
-tmp_dir=$(mktemp -d)
 clone_and_enter_repo() {
     local repo_url="https://github.com/mathvis/mvscript.git"  
+    local temp_dir="$HOME/.mvscript-tmp"
+    
+    if [ -d "$temp_dir" ]; then
+        print_status "Using existing temp directory: $temp_dir"
+        cd "$temp_dir" || exit 1
+        git pull origin main
+    else
+        print_status "Cloning project repository..."
+        git clone "$repo_url" "$temp_dir"
+        cd "$temp_dir" || exit 1
+    fi
 
-    print_status "Cloning project repository..."
-    git clone "$repo_url" "$tmp_dir"
-    cd "$tmp_dir" || exit 1
 }
 
 
@@ -329,7 +336,7 @@ main() {
     verify_installation
 
     print_status "Cleaning up temporary files..."
-    rm -rf $tmp_dir 
+    rm -rf "$HOME/.mvscript-tmp"
 }
 
 main "$@"
