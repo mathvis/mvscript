@@ -88,7 +88,9 @@ updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (VarIde
   where
     currentSt = st state
     currentVData = Map.lookup name currentSt
-    typ = getVariableType pos name2 state
+    typ = getVariableType pos state name
+updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (Parentheses op))) state =
+    updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) op)) state
 updateVariableUninitialized _ _ state = state
 
 checkScope :: SourcePos -> Expression -> ParserState -> ParserState

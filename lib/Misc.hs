@@ -51,9 +51,12 @@ valueToType (Vector _) = VectorT
 valueToType (Point _) = PointT
 valueToType (Matrix _) = MatrixT
 
-getVariableType :: SourcePos -> T.Text -> ParserState -> TypeName
-getVariableType pos name state = case Map.lookup name (st state) of
+getVariableType :: SourcePos -> ParserState -> T.Text -> TypeName
+getVariableType pos state name = case Map.lookup name (st state) of
     Just vData -> case variableType vData of
         Just typ -> typ
         Nothing -> error state pos "Variable does not have a type." "Internal error."
     Nothing -> error state pos "Variable not found." "Internal error."
+
+intercalateStr :: String -> [String] -> String
+intercalateStr delim lst = T.unpack (T.intercalate (T.pack delim) (Prelude.map T.pack lst)) 
