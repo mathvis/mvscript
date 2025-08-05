@@ -78,6 +78,7 @@ data Expression
     | FunctionCall Expression [Expression]
     | LambdaFunc [(Expression, TypeName)] (Maybe Statement) 
     | LambdaApplication Expression Expression
+    | Return Expression
     deriving (Eq, Show)
 
 data Declaration
