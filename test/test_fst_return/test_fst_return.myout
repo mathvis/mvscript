@@ -1,0 +1,1 @@
+(Decl (FunctionDef (FunctionIdentifier "a") [] BoolT (Just (Block FunctionBlock []))),ParserState {config = Configuration {debug = True, collapseOperations = True, collapseControlFlow = True, colors = True}, st = fromList [], fst = fromList [("a",FunctionData {returnType = BoolT, arguments = [], hasBody = True})]})
