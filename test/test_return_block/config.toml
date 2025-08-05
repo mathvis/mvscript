@@ -1,0 +1,9 @@
+[debug]
+enabled = false
+
+[parsing]
+collapse-operations = true
+collapse-control-flow = true
+
+[testing]
+colors = true
