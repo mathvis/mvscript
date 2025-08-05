@@ -17,7 +17,7 @@ import FunctionStorage
 
 -- MAIN TYPE PARSERS
 parseStatement :: MVParser Statement
-parseStatement = (Decl <$> try parseDeclaration) <|> (Expr <$> try parseExpr) <|> (Comment <$> parseComment) <|> parseBlock NoType
+parseStatement = (Decl <$> try parseDeclaration) <|> (Expr <$> try (parseExpr <|> parseReturn)) <|> (Comment <$> parseComment) <|> parseBlock NoType
 
 -- START OF THE CASCADING OPERATION PARSER
 parseExpr :: MVParser Expression
@@ -226,6 +226,9 @@ parseLambdaApplication =
 
 parseBlock :: BlockType -> MVParser Statement
 parseBlock blocktype = ((newLine . lexeme) (char '{') *> many ((newLine . lexeme) parseStatement) <* lexeme (char '}')) >>= (\block -> modifyState (removeScopeVariables block) >> return block) . Block blocktype
+
+parseReturn :: MVParser Expression
+parseReturn = (endLine . lexeme) $ Return <$> (string "return " *> parseExpr)
 
 -- COMMENT PARSERS
 parseComment :: MVParser String
