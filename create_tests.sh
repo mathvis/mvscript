@@ -19,3 +19,5 @@ cp ./config.toml "$dir_path/config.toml"
 echo "Successfully created:"
 echo "  Directory: $dir_path"
 echo "  Files: $name.mvs and $name.out"
+helix "$dir_path/$name.mvs" "$dir_path/$name.out" --vsplit
+
