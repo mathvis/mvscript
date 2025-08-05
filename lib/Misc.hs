@@ -61,3 +61,8 @@ getVariableType pos state name = case Map.lookup name (st state) of
 intercalateStr :: String -> [String] -> String
 intercalateStr delim lst = T.unpack (T.intercalate (T.pack delim) (Prelude.map T.pack lst)) 
 
+changeContext :: BlockType -> ParserState -> ParserState
+changeContext blocktype state = state{context = Just blocktype} 
+
+resetContext :: ParserState -> ParserState
+resetContext state = state{context=Nothing}

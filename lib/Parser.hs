@@ -225,7 +225,7 @@ parseLambdaApplication =
         <*> betweenParentheses parseExpr
 
 parseBlock :: BlockType -> MVParser Statement
-parseBlock blocktype = ((newLine . lexeme) (char '{') *> many ((newLine . lexeme) parseStatement) <* lexeme (char '}')) >>= (\block -> modifyState (removeScopeVariables block) >> return block) . Block blocktype
+parseBlock blocktype = modifyState (changeContext blocktype) >> ((newLine . lexeme) (char '{') *> many ((newLine . lexeme) parseStatement) <* lexeme (char '}')) >>= (\block -> modifyState (removeScopeVariables block . resetContext) >> return block) . Block blocktype 
 
 parseReturn :: MVParser Expression
 parseReturn = (endLine . lexeme) $ Return <$> (string "return " *> parseExpr)

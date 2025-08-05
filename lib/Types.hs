@@ -152,14 +152,16 @@ type FunctionSymbolTable = Map T.Text FunctionData
 data ParserState = ParserState {
     config :: Configuration,
     st :: SymbolTable,
-    fst :: FunctionSymbolTable
+    fst :: FunctionSymbolTable,
+    context :: Maybe BlockType
 } deriving Show
 
 defaultParserState :: ParserState
 defaultParserState = ParserState {
     config = defaultConfig,
     st = Map.empty,
-    fst = Map.empty
+    fst = Map.empty,
+    context = Nothing
 }
 
 type MVParser a = Parsec String ParserState a
