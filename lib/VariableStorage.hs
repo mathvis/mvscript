@@ -17,7 +17,7 @@ createVariableData :: Maybe TypeName -> Maybe Expression -> VariableData
 createVariableData typename value = defaultVariableData{isInitialized = initialized value, variableType = typename}
 
 createVariableRecord :: Declaration -> ParserState -> (T.Text, VariableData)
-createVariableRecord (Variable (VarIdentifier name) typename val) state = (,) name (createVariableData typename val)
+createVariableRecord (Variable (VarIdentifier name) typename val) _ = (,) name (createVariableData typename val)
 createVariableRecord _ state = error state defaultSourcePos "Could not create variable record." "Internal error."
 
 createArgumentVariableRecord :: (Expression, TypeName) -> ParserState -> (T.Text, VariableData)

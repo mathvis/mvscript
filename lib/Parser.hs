@@ -13,6 +13,7 @@ import Text.Parsec
 import TypeCheck
 import Types
 import VariableStorage
+import FunctionStorage
 
 -- MAIN TYPE PARSERS
 parseStatement :: MVParser Statement
@@ -191,11 +192,22 @@ parseFunctionReturnType = parseTypeName <|> parseVoid
   where
     parseVoid = lexeme $ VoidT <$ string ""
 
+parseFunctionSignature :: MVParser (Expression, [(Expression, TypeName)], TypeName)
+parseFunctionSignature = (,,) <$> (rword "func" *> parseFunctionIdentifier)
+                              <*> lexeme (char '(' *> parseFunctionArguments <* char ')')
+                              <*> parseFunctionReturnType
+
 parseFunctionForwardDeclaration :: MVParser Declaration
-parseFunctionForwardDeclaration = (endLine . lexeme) $ FunctionDef <$> (rword "func" *> parseFunctionIdentifier) <*> lexeme (char '(' *> parseFunctionArguments <* char ')') <*> parseFunctionReturnType <*> pure Nothing
+parseFunctionForwardDeclaration = (endLine . lexeme) $ parseFunctionSignature >>=
+                               \(funcIdentifier, args, returnType) -> let forwardDecl = FunctionDef funcIdentifier args returnType Nothing in
+                               modifyState (addFunctionToTable forwardDecl False) >> return forwardDecl
 
 parseFunctionDeclaration :: MVParser Declaration
-parseFunctionDeclaration = lexeme $ FunctionDef <$> (rword "func" *> parseFunctionIdentifier) <*> lexeme (char '(' *> parseFunctionArguments <* char ')') <*> parseFunctionReturnType <*> (Just <$> parseBlock FunctionBlock) >>= \decl -> modifyState (removeArgumentsFromTable decl) >> return decl
+parseFunctionDeclaration = lexeme $ parseFunctionSignature >>=
+                               \(funcIdentifier, args, returnType) -> let partialDecl = FunctionDef funcIdentifier args returnType Nothing in
+                               modifyState (addFunctionToTable partialDecl True) >>
+                               (FunctionDef funcIdentifier args returnType . Just <$> parseBlock FunctionBlock)
+                               >>= \decl -> modifyState (removeArgumentsFromTable decl) >> return decl
 
 parseFunctionCallArguments :: MVParser [Expression]
 parseFunctionCallArguments = lexeme (sepBy parseExpr (lexeme $ char ','))
