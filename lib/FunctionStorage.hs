@@ -22,7 +22,7 @@ createFunctionData args returnType hasBody = defaultFunctionData{returnType, arg
 
 createFunctionRecord :: Declaration -> Bool -> ParserState -> (T.Text, FunctionData)
 createFunctionRecord (FunctionDef (FunctionIdentifier name) args returnType _) hasBody _ = (,) name (createFunctionData args returnType hasBody)
-createFunctionRecord _ _ state = error state defaultSourcePos "Could not create function record." "Internal error."
+createFunctionRecord _ _ state = error defaultSourcePos state "Could not create function record." "Internal error."
 
 addFunctionToTable :: Declaration -> Bool -> ParserState -> ParserState
 addFunctionToTable decl hasBody state = state{fst = Map.insert name functionData currentFst}

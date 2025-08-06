@@ -18,11 +18,11 @@ createVariableData typename value = defaultVariableData{isInitialized = initiali
 
 createVariableRecord :: Declaration -> ParserState -> (T.Text, VariableData)
 createVariableRecord (Variable (VarIdentifier name) typename val) _ = (,) name (createVariableData typename val)
-createVariableRecord _ state = error state defaultSourcePos "Could not create variable record." "Internal error."
+createVariableRecord _ state = error defaultSourcePos state "Could not create variable record." "Internal error."
 
 createArgumentVariableRecord :: (Expression, TypeName) -> ParserState -> (T.Text, VariableData)
 createArgumentVariableRecord (VarIdentifier name, typename) state = (,) name (createVariableData (Just typename) (Just (Type (Int 0))))
-createArgumentVariableRecord _ state = error state defaultSourcePos "Could not create argument record." "Internal error."
+createArgumentVariableRecord _ state = error defaultSourcePos state "Could not create argument record." "Internal error."
 
 addVariableToTable :: Declaration -> ParserState -> ParserState
 addVariableToTable varDeclaration state = state{st = Map.insert name varData currentSt}
@@ -58,8 +58,8 @@ updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (Type t
             Just vType ->
                 if vType == valueToType typ
                     then state{st = Map.insert name vData{isInitialized = True} currentSt}
-                    else error state pos ("Expected " ++ show vType ++ " but got " ++ show (valueToType typ)) "Consider changing the variable type or declaring a new variable."
-        Nothing -> error state pos ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
+                    else error pos state ("Expected " ++ show vType ++ " but got " ++ show (valueToType typ)) "Consider changing the variable type or declaring a new variable."
+        Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
   where
     currentSt = st state
     currentVData = Map.lookup name currentSt
@@ -70,8 +70,8 @@ updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (Operat
             Just vType ->
                 if vType == typ
                     then state{st = Map.insert name vData{isInitialized = True} currentSt}
-                    else error state pos ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
-        Nothing -> error state pos ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
+                    else error pos state ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
+        Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
   where
     currentSt = st state
     currentVData = Map.lookup name currentSt
@@ -83,8 +83,8 @@ updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (VarIde
             Just vType ->
                 if vType == typ
                     then state{st = Map.insert name vData{isInitialized = True} currentSt}
-                    else error state pos ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
-        Nothing -> error state pos ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
+                    else error pos state ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
+        Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
   where
     currentSt = st state
     currentVData = Map.lookup name currentSt
@@ -98,9 +98,9 @@ checkScope pos (VarIdentifier name) state = case Map.lookup name (st state) of
     Just varData ->
         if inScope varData
             then state
-            else error state pos ("Variable " ++ show name ++ " is out of scope.") "Variable might have been initialized in a stricter scope."
-    Nothing -> error state pos ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
-checkScope pos _ state = error state pos "Could not check scope." "Internal error."
+            else error pos state ("Variable " ++ show name ++ " is out of scope.") "Variable might have been initialized in a stricter scope."
+    Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
+checkScope pos _ state = error pos state "Could not check scope." "Internal error."
 
 removeScope :: VariableData -> VariableData
 removeScope varData = varData{inScope = False}

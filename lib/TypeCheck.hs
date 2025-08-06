@@ -18,20 +18,20 @@ convertToTypeName pos state (Operation op) = checkTypeExpression pos state (Oper
 inferVariableType :: SourcePos -> ParserState -> Declaration -> Declaration
 inferVariableType _ _ (Variable exp (Just a) val) = Variable exp (Just a) val
 inferVariableType _ _ (Variable exp Nothing (Just (Type val))) = Variable exp (Just $ valueToType val) (Just (Type val))
-inferVariableType pos state decl = error state pos ("Could not infer type: " ++ show decl) "Internal error."
+inferVariableType pos state decl = error pos state ("Could not infer type: " ++ show decl) "Internal error."
 
 checkType :: SourcePos -> ParserState -> Declaration -> Declaration
 checkType pos state (Variable exp (Just expectedType) (Just (Type val))) =
     let actualType = convertToTypeName pos state (Type val)
      in if expectedType == actualType
             then Variable exp (Just expectedType) (Just (Type val))
-            else error state pos ("Expected " ++ show expectedType ++ " but got " ++ show actualType) "Consider changing the variable type or declaring a new variable."
+            else error pos state ("Expected " ++ show expectedType ++ " but got " ++ show actualType) "Consider changing the variable type or declaring a new variable."
 checkType pos state (Assignment (Assign (VarIdentifier name) (Type val))) =
     let actualType = convertToTypeName pos state (Type val)
      in if convertToTypeName pos state (VarIdentifier name) == actualType
             then Assignment (Assign (VarIdentifier name) (Type val))
-            else error state pos ("Expected " ++ show (convertToTypeName pos state (VarIdentifier name)) ++ " but got " ++ show actualType) "Consider changing the variable type or declaring a new variable."
-checkType pos state _ = error state pos "Declaration is not a variable declaration" "Internal error."
+            else error pos state ("Expected " ++ show (convertToTypeName pos state (VarIdentifier name)) ++ " but got " ++ show actualType) "Consider changing the variable type or declaring a new variable."
+checkType pos state _ = error pos state "Declaration is not a variable declaration" "Internal error."
 
 -- TODO: needs to allow:
 --    - type + variable ✓
@@ -43,30 +43,30 @@ checkType pos state _ = error state pos "Declaration is not a variable declarati
 checkTypeOperation :: Expression -> Expression -> SourcePos -> ParserState -> Maybe TypeName -> TypeName
 checkTypeOperation (Type typ) (VarIdentifier name) pos state expectedOutputType = if convertToTypeName pos state (Type typ) == convertToTypeName pos state (VarIdentifier name)
     then convertToTypeName pos state (Type typ) <| expectedOutputType
-    else error state pos ("Expected " ++ show (convertToTypeName pos state (Type typ)) ++ " but got " ++ show (convertToTypeName pos state (VarIdentifier name))) "Consider changing this expression."
+    else error pos state ("Expected " ++ show (convertToTypeName pos state (Type typ)) ++ " but got " ++ show (convertToTypeName pos state (VarIdentifier name))) "Consider changing this expression."
 checkTypeOperation (VarIdentifier name) (Type typ) pos state expectedOutputType = if convertToTypeName pos state (Type typ) == convertToTypeName pos state (VarIdentifier name)
     then convertToTypeName pos state (Type typ) <| expectedOutputType
-    else error state pos ("Expected " ++ show (convertToTypeName pos state (VarIdentifier name)) ++ " but got " ++ show (convertToTypeName pos state (Type typ))) "Consider changing this expression."
+    else error pos state ("Expected " ++ show (convertToTypeName pos state (VarIdentifier name)) ++ " but got " ++ show (convertToTypeName pos state (Type typ))) "Consider changing this expression."
 checkTypeOperation (VarIdentifier name) (Operation op) pos state expectedOutputType =
     if convertToTypeName pos state (VarIdentifier name) == convertToTypeName pos state (Operation op)
         then convertToTypeName pos state (VarIdentifier name) <| expectedOutputType
-    else error state pos ("Expected " ++ show (convertToTypeName pos state (VarIdentifier name)) ++ " but got " ++ show (convertToTypeName pos state (Operation op))) "Consider changing this expression."
+    else error pos state ("Expected " ++ show (convertToTypeName pos state (VarIdentifier name)) ++ " but got " ++ show (convertToTypeName pos state (Operation op))) "Consider changing this expression."
 checkTypeOperation  (Operation op) (VarIdentifier name) pos state expectedOutputType =
     if convertToTypeName pos state (VarIdentifier name) == convertToTypeName pos state (Operation op)
         then convertToTypeName pos state (VarIdentifier name) <| expectedOutputType
-    else error state pos ("Expected " ++ show (convertToTypeName pos state (Operation op)) ++ " but got " ++  show (convertToTypeName pos state (VarIdentifier name)))  "Consider changing this expression."
+    else error pos state ("Expected " ++ show (convertToTypeName pos state (Operation op)) ++ " but got " ++  show (convertToTypeName pos state (VarIdentifier name)))  "Consider changing this expression."
 checkTypeOperation (Operation op) (Type typ) pos state expectedOutputType =
     if convertToTypeName pos state (Type typ) == convertToTypeName pos state (Operation op)
         then convertToTypeName pos state (Type typ) <| expectedOutputType
-    else error state pos ("Expected " ++ show (convertToTypeName pos state (Operation op)) ++ " but got " ++  show (convertToTypeName pos state (Type typ)))  "Consider changing this expression."
+    else error pos state ("Expected " ++ show (convertToTypeName pos state (Operation op)) ++ " but got " ++  show (convertToTypeName pos state (Type typ)))  "Consider changing this expression."
 checkTypeOperation (Type typ) (Operation op) pos state expectedOutputType =
     if convertToTypeName pos state (Type typ) == convertToTypeName pos state (Operation op)
         then convertToTypeName pos state (Type typ) <| expectedOutputType
-    else error state pos ("Expected " ++ show (convertToTypeName pos state (Type typ)) ++ " but got " ++  show (convertToTypeName pos state (Operation op)))  "Consider changing this expression."
+    else error pos state ("Expected " ++ show (convertToTypeName pos state (Type typ)) ++ " but got " ++  show (convertToTypeName pos state (Operation op)))  "Consider changing this expression."
 checkTypeOperation (Operation op1) (Operation op2) pos state expectedOutputType =
     if convertToTypeName pos state (Operation op1) == convertToTypeName pos state (Operation op2)
         then convertToTypeName pos state (Operation op1) <| expectedOutputType
-    else error state pos ("Expected " ++ show (convertToTypeName pos state (Operation op1)) ++ " but got " ++  show (convertToTypeName pos state (Operation op2)))  "Consider changing this expression."
+    else error pos state ("Expected " ++ show (convertToTypeName pos state (Operation op1)) ++ " but got " ++  show (convertToTypeName pos state (Operation op2)))  "Consider changing this expression."
 checkTypeOperation (Operation op) (Parentheses inner) pos state expectedOutputType =
     checkTypeOperation (Operation op) inner pos state expectedOutputType
 checkTypeOperation (Type typ) (Parentheses inner) pos state expectedOutputType =
@@ -103,6 +103,6 @@ checkTypeExpression pos state (Operation op) = case op of
     BitwiseAnd x y -> checkTypeOperation x y pos state (Just IntT)
     BitwiseXor x y -> checkTypeOperation x y pos state (Just IntT)
     -- BitwiseNot x -> checkTypeOperationUnary x pos state
-    _ -> error state pos "Not a valid operation" "Internal error."
+    _ -> error pos state "Not a valid operation" "Internal error."
 checkTypeExpression pos state (Parentheses op) = checkTypeExpression pos state op
 

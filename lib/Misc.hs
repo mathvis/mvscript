@@ -55,14 +55,9 @@ getVariableType :: SourcePos -> ParserState -> T.Text -> TypeName
 getVariableType pos state name = case Map.lookup name (st state) of
     Just vData -> case variableType vData of
         Just typ -> typ
-        Nothing -> error state pos "Variable does not have a type." "Internal error."
-    Nothing -> error state pos "Variable not found." "Internal error."
+        Nothing -> error pos state "Variable does not have a type." "Internal error."
+    Nothing -> error pos state "Variable not found." "Internal error."
 
 intercalateStr :: String -> [String] -> String
 intercalateStr delim lst = T.unpack (T.intercalate (T.pack delim) (Prelude.map T.pack lst)) 
 
-changeContext :: BlockType -> ParserState -> ParserState
-changeContext blocktype state = state{context = Just blocktype} 
-
-resetContext :: ParserState -> ParserState
-resetContext state = state{context=Nothing}

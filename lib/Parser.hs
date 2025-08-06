@@ -9,6 +9,7 @@ import Data.Functor
 import Data.Text as T (pack, unpack)
 import Eval
 import Misc
+import Context
 import Text.Parsec
 import TypeCheck
 import Types
@@ -228,7 +229,7 @@ parseBlock :: BlockType -> MVParser Statement
 parseBlock blocktype = modifyState (changeContext blocktype) >> ((newLine . lexeme) (char '{') *> many ((newLine . lexeme) parseStatement) <* lexeme (char '}')) >>= (\block -> modifyState (removeScopeVariables block . resetContext) >> return block) . Block blocktype 
 
 parseReturn :: MVParser Expression
-parseReturn = (endLine . lexeme) $ Return <$> (string "return " *> parseExpr)
+parseReturn = getPosition >>= \pos -> (endLine . lexeme) (Return <$> (string "return " *> parseExpr)) >>= \expr -> modifyState (checkForBlock pos) >> return expr
 
 -- COMMENT PARSERS
 parseComment :: MVParser String

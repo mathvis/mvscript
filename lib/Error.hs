@@ -62,8 +62,8 @@ colorizedError pos msg hint = unsafePerformIO $ do
     exitFailure
 
 
-error :: ParserState -> SourcePos -> String -> String -> a
-error state pos msg hint =
+error :: SourcePos -> ParserState -> String -> String -> a
+error pos state msg hint =
     if colors (config state) then
         colorizedError pos msg hint
     else
