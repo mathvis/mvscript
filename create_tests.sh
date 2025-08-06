@@ -14,7 +14,7 @@ mkdir -p "$dir_path"
 
 touch "$dir_path/$name.mvs"
 touch "$dir_path/$name.out"
-cp ./config.toml "$dir_path/config.toml"
+cp ./utils/config.toml "$dir_path/config.toml"
 
 echo "Successfully created:"
 echo "  Directory: $dir_path"
