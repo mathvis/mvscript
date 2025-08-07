@@ -1,0 +1,1 @@
+Decl (Variable (VarIdentifier "a") (Just (LambdaT [LambdaT [LambdaT [IntT] IntT] IntT] (LambdaT [IntT] IntT))) Nothing)

@@ -1,0 +1,1 @@
+let a: lambda[lambda[lambda[int]int]int]lambda[int]int;

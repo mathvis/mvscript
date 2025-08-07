@@ -1,0 +1,1 @@
+let a: lambda[string, int, float, bool, vector, point, matrix, [lambda[]]]lambda[]int;
