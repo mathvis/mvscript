@@ -37,6 +37,7 @@ parseDeclaration :: MVParser Declaration
 parseDeclaration = try parseVarInitialization <|> try parseVarDeclaration <|> try parseAssign <|> try parseFunctionForwardDeclaration <|> parseFunctionDeclaration <|> parseIf
 
 -- DATA TYPE PARSERS
+
 parseNum :: MVParser Expression
 parseNum = Type <$> (try parseFloat <|> parseInt)
 
@@ -112,8 +113,11 @@ parseVarDeclaration =
         <*> (lexeme (char ';') Data.Functor.$> Nothing)
         >>= \decl -> modifyState (addVariableToTable decl) >> return decl
 
+parseVoidTypeName :: MVParser TypeName
+parseVoidTypeName = lexeme $ VoidT <$ string ""
+
 parseTypeName :: MVParser TypeName
-parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parseBoolTName <|> parseVectorTName <|> parseMatrixTName <|> parsePointTName <|> parseArrayTName
+parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parseBoolTName <|> parseVectorTName <|> parseMatrixTName <|> parsePointTName <|> parseArrayTName <|> parseLambdaTName
   where
     parseIntTName = lexeme $ IntT <$ string "int"
     parseFloatTName = lexeme $ FloatT <$ string "float"
@@ -123,6 +127,7 @@ parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parse
     parseVectorTName = lexeme $ VectorT <$ string "vector"
     parseMatrixTName = lexeme $ MatrixT <$ string "matrix"
     parseArrayTName = lexeme $ ArrayT <$> (char '[' *> parseTypeName <* char ']')
+    parseLambdaTName = lexeme $ LambdaT <$> (string "lambda[" *> sepBy parseTypeName (lexeme $ char ',') <* char ']') <*> (parseTypeName <|> parseVoidTypeName)
 
 parseVarInitialization :: MVParser Declaration
 parseVarInitialization =
@@ -168,7 +173,7 @@ parseAssign =
                     <*> pure leftTerm
                     <*> parseExpr
                 )
-                >>= \decl -> modifyState (updateVariableUninitialized pos decl) >> return decl
+                        >>= \decl -> modifyState (addFunctionToTable decl True >>  updateVariableUninitialized pos decl) >> return decl
 
 -- FUNCTION RELATED PARSERS
 parseFunctionIdentifier :: MVParser Expression
@@ -189,9 +194,7 @@ parseFunctionArguments = sepBy parseFunctionArgument (lexeme $ char ',') >>= \ar
     parseFunctionArgument = (,) <$> lexeme (parseArgIdentifier <* char ':') <*> parseTypeName
 
 parseFunctionReturnType :: MVParser TypeName
-parseFunctionReturnType = parseTypeName <|> parseVoid
-  where
-    parseVoid = lexeme $ VoidT <$ string ""
+parseFunctionReturnType = parseTypeName <|> parseVoidTypeName
 
 parseFunctionSignature :: MVParser (Expression, [(Expression, TypeName)], TypeName)
 parseFunctionSignature = (,,) <$> (rword "func" *> parseFunctionIdentifier)

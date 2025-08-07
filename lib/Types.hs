@@ -18,6 +18,7 @@ data TypeName
     | MatrixT
     | ArrayT TypeName
     | VoidT
+    | LambdaT [TypeName] TypeName
     deriving (Eq, Show)
 
 data Type
