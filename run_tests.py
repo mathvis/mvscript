@@ -27,7 +27,7 @@ def run_test(name: str) -> bool:
         )
     )
     if result == "":
-        print("TEST PASSED!")
+        print(f"{name} PASSED!")
         return True
     print(f"TEST {name} FAILED!\n{result}")
     return False
