@@ -1,0 +1,3 @@
+func a() bool {
+	return 26.0;
+}

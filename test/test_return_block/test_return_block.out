@@ -1,1 +1,1 @@
-Block NoType [Expr (Return (Type (Int 0)))]
+Block NoType [Expr (Return Nothing)]

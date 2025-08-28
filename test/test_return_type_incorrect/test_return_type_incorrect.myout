@@ -1,0 +1,7 @@
+error: Expected BoolT but got FloatT
+ --> test/test_return_type_incorrect/test_return_type_incorrect.mvs:2:9
+  |
+2 | 	return 26.0;
+  |     ^
+  |
+hint: Consider changing the return type or declaring a new function.

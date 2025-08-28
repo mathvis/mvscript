@@ -1,0 +1,4 @@
+func a() int {
+	let b = 5;
+	return 0 + b;
+}
