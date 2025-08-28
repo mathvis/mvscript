@@ -18,7 +18,7 @@ import FunctionStorage
 
 -- MAIN TYPE PARSERS
 parseStatement :: MVParser Statement
-parseStatement = (Decl <$> try parseDeclaration) <|> (Expr <$> try (parseExpr <|> parseReturn)) <|> (Comment <$> parseComment) <|> parseBlock NoType
+parseStatement = (Decl <$> try parseDeclaration) <|> (Expr <$> (try parseReturn <|> try parseExpr)) <|> (Comment <$> parseComment) <|> parseBlock NoType
 
 -- START OF THE CASCADING OPERATION PARSER
 parseExpr :: MVParser Expression
@@ -210,7 +210,7 @@ parseFunctionDeclaration :: MVParser Declaration
 parseFunctionDeclaration = lexeme $ parseFunctionSignature >>=
                                \(funcIdentifier, args, returnType) -> let partialDecl = FunctionDef funcIdentifier args returnType Nothing in
                                modifyState (addFunctionToTable partialDecl True) >>
-                               (FunctionDef funcIdentifier args returnType . Just <$> parseBlock FunctionBlock)
+                               (FunctionDef funcIdentifier args returnType . Just <$> parseBlock (FunctionBlock returnType))
                                >>= \decl -> modifyState (removeArgumentsFromTable decl) >> return decl
 
 parseFunctionCallArguments :: MVParser [Expression]
@@ -219,8 +219,9 @@ parseFunctionCallArguments = lexeme (sepBy parseExpr (lexeme $ char ','))
 parseFunctionCall :: MVParser Expression
 parseFunctionCall = lexeme $ FunctionCall <$> parseFunctionIdentifier <*> between (lexeme $ char '(') (lexeme $ char ')') parseFunctionCallArguments
 
+-- TODO: fix lambda return types
 parseLambda :: MVParser Expression
-parseLambda = LambdaFunc <$> betweenParentheses parseFunctionArguments <*> (lexeme (char ':') *> (Just <$> (parseBlock FunctionBlock <|> parseStatement))) >>= \expr -> modifyState (removeArgumentsFromTableLambda expr) >> return expr
+parseLambda = LambdaFunc <$> betweenParentheses parseFunctionArguments <*> (lexeme (char ':') *> (Just <$> (parseBlock (FunctionBlock VoidT) <|> parseStatement))) >>= \expr -> modifyState (removeArgumentsFromTableLambda expr) >> return expr
 
 parseLambdaApplication :: MVParser Expression
 parseLambdaApplication =
@@ -232,7 +233,7 @@ parseBlock :: BlockType -> MVParser Statement
 parseBlock blocktype = modifyState (changeContext blocktype) >> ((newLine . lexeme) (char '{') *> many ((newLine . lexeme) parseStatement) <* lexeme (char '}')) >>= (\block -> modifyState (removeScopeVariables block . resetContext) >> return block) . Block blocktype 
 
 parseReturn :: MVParser Expression
-parseReturn = getPosition >>= \pos -> (endLine . lexeme) (Return <$> (string "return " *> parseExpr)) >>= \expr -> modifyState (checkForBlock pos) >> return expr
+parseReturn = getPosition >>= \pos -> (endLine . lexeme) (Return <$> (lexeme (string "return") *> optionMaybe parseExpr)) >>= \expr -> modifyState (checkReturnType expr pos . checkForBlock pos) >> return expr
 
 -- COMMENT PARSERS
 parseComment :: MVParser String

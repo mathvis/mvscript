@@ -6,6 +6,7 @@ import Misc
 import Text.Parsec
 import Types
 import Prelude hiding (error)
+import Context
 
 (<|) :: a -> Maybe a -> a
 a <| b = fromMaybe a b
@@ -107,3 +108,16 @@ checkTypeExpression pos state (Operation op) = case op of
     BitwiseNot x -> checkTypeOperationUnary x pos state (Just IntT)
     _ -> error pos state "Not a valid operation" "Internal error."
 checkTypeExpression pos state (Parentheses op) = checkTypeExpression pos state op
+checkTypeExpression pos state (Type typ) = convertToTypeName pos state (Type typ)
+
+checkReturnType :: Expression -> SourcePos -> ParserState -> ParserState
+checkReturnType (Return expr) pos state =
+    let
+        returnType = getCurrentFunctionReturnType pos state
+        expressionType = case expr of
+            Just exp -> checkTypeExpression pos state exp
+            Nothing -> VoidT
+    in if returnType == expressionType then
+        state
+    else
+        error pos state ("Expected " ++ show returnType ++ " but got " ++ show expressionType) "Consider changing the return type or declaring a new function."

@@ -79,7 +79,7 @@ data Expression
     | FunctionCall Expression [Expression]
     | LambdaFunc [(Expression, TypeName)] (Maybe Statement) 
     | LambdaApplication Expression Expression
-    | Return Expression
+    | Return (Maybe Expression)
     deriving (Eq, Show)
 
 data Declaration
@@ -92,7 +92,7 @@ data Declaration
     | CollapsedControlFlow Statement
     deriving (Eq, Show)
 
-data BlockType = NoType | If | Else | FunctionBlock deriving (Eq, Show)
+data BlockType = NoType | If | Else | FunctionBlock TypeName deriving (Eq, Show)
 
 data Statement = Decl Declaration | Expr Expression | Comment String | Block BlockType [Statement] deriving (Eq, Show)
 
