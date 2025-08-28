@@ -1,0 +1,7 @@
+error: Function "a" was not declared.
+ --> test/test_fst_on_call_not_declared/test_fst_on_call_not_declared.mvs:1:1
+  |
+1 | a();
+  | ^
+  |
+hint: Consider declaring a function.
