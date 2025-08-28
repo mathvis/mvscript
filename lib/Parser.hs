@@ -15,6 +15,7 @@ import TypeCheck
 import Types
 import VariableStorage
 import FunctionStorage
+import Debug.Trace
 
 -- MAIN TYPE PARSERS
 parseStatement :: MVParser Statement
@@ -202,7 +203,7 @@ parseFunctionSignature = (,,) <$> (rword "func" *> parseFunctionIdentifier)
                               <*> parseFunctionReturnType
 
 parseFunctionForwardDeclaration :: MVParser Declaration
-parseFunctionForwardDeclaration = (endLine . lexeme) $ parseFunctionSignature >>=
+parseFunctionForwardDeclaration = (lexeme . endLine) $ parseFunctionSignature >>=
                                \(funcIdentifier, args, returnType) -> let forwardDecl = FunctionDef funcIdentifier args returnType Nothing in
                                modifyState (addFunctionToTable forwardDecl False) >> return forwardDecl
 
@@ -217,7 +218,9 @@ parseFunctionCallArguments :: MVParser [Expression]
 parseFunctionCallArguments = sepBy parseExpr (lexeme $ char ',')
 
 parseFunctionCall :: MVParser Expression
-parseFunctionCall = lexeme $ FunctionCall <$> parseFunctionIdentifier <*> between (lexeme $ char '(') (lexeme $ char ')') parseFunctionCallArguments
+parseFunctionCall = getPosition >>= \pos -> functionCall >>= (\expr -> modifyState (checkScope pos expr) >> return expr)
+    where
+        functionCall = lexeme $ FunctionCall <$> parseFunctionIdentifier <*> between (lexeme $ char '(') (lexeme $ char ')') parseFunctionCallArguments
 
 -- TODO: fix lambda return types
 parseLambda :: MVParser Expression

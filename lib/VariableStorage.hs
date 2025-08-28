@@ -7,7 +7,7 @@ import Misc
 import Text.Parsec
 import TypeCheck
 import Types
-import Prelude hiding (error)
+import Prelude hiding (fst, error)
 
 initialized :: Maybe Expression -> Bool
 initialized Nothing = False
@@ -100,6 +100,9 @@ checkScope pos (VarIdentifier name) state = case Map.lookup name (st state) of
             then state
             else error pos state ("Variable " ++ show name ++ " is out of scope.") "Variable might have been initialized in a stricter scope."
     Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
+checkScope pos (FunctionCall (FunctionIdentifier name) _) state = case Map.lookup name (fst state) of
+    Just funcData -> state
+    Nothing -> error pos state ("Function " ++ show name ++ " was not declared.") "Consider declaring a function."
 checkScope pos _ state = error pos state "Could not check scope." "Internal error."
 
 removeScope :: VariableData -> VariableData
