@@ -59,7 +59,7 @@ updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (Type t
                 if vType == valueToType typ
                     then state{st = Map.insert name vData{isInitialized = True} currentSt}
                     else error pos state ("Expected " ++ show vType ++ " but got " ++ show (valueToType typ)) "Consider changing the variable type or declaring a new variable."
-        Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
+        Nothing -> error pos state ("Variable" ++ show name ++ " was not declared.") "Consider using the let keyword."
   where
     currentSt = st state
     currentVData = Map.lookup name currentSt
