@@ -156,7 +156,7 @@ parseUnary =
 parseAssign :: MVParser Declaration
 parseAssign =
     getPosition >>= \pos ->
-        parseVarIdentifier >>= \leftTerm ->
+        parseVarIdentifierDecl >>= \leftTerm ->
             endLine
                 ( lexeme
                     ( try (string "//=" $> (\lhs rhs -> Assignment (IntDivAssign lhs rhs)))
@@ -170,7 +170,7 @@ parseAssign =
                         <|> try (string "^=" $> (\lhs rhs -> Assignment (BitwiseXorAssign lhs rhs)))
                         <|> try (string "=" $> (\lhs rhs -> Assignment (Assign lhs rhs)))
                     )
-                    <*> pure leftTerm
+                    <*> (\term -> modifyState (checkScope pos term) >> pure term) leftTerm
                     <*> parseExpr
                 )
                         >>= \decl -> modifyState (addFunctionToTable decl True >>  updateVariableUninitialized pos decl) >> return decl
@@ -180,7 +180,7 @@ parseFunctionIdentifier :: MVParser Expression
 parseFunctionIdentifier = FunctionIdentifier . T.pack <$> identifier
   where
     identifier =
-        (lexeme . try) $ do
+        try $ do
             name <- (:) <$> firstChar <*> many nonFirstChar
             if name `elem` reservedKeywords
                 then fail $ "Cannot use reserved keyword '" ++ name ++ "' as a function identifier"
@@ -214,7 +214,7 @@ parseFunctionDeclaration = lexeme $ parseFunctionSignature >>=
                                >>= \decl -> modifyState (removeArgumentsFromTable decl) >> return decl
 
 parseFunctionCallArguments :: MVParser [Expression]
-parseFunctionCallArguments = lexeme (sepBy parseExpr (lexeme $ char ','))
+parseFunctionCallArguments = sepBy parseExpr (lexeme $ char ',')
 
 parseFunctionCall :: MVParser Expression
 parseFunctionCall = lexeme $ FunctionCall <$> parseFunctionIdentifier <*> between (lexeme $ char '(') (lexeme $ char ')') parseFunctionCallArguments
