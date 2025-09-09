@@ -7,6 +7,7 @@ import Text.Parsec
 import Types
 import Prelude hiding (error)
 import Context
+import Debug.Trace
 
 (<|) :: a -> Maybe a -> a
 a <| b = fromMaybe a b
@@ -15,6 +16,7 @@ convertToTypeName :: SourcePos -> ParserState -> Expression -> TypeName
 convertToTypeName _ _ (Type typ) = valueToType typ
 convertToTypeName pos state (VarIdentifier name) = getVariableType pos state name
 convertToTypeName pos state (Operation op) = checkTypeExpression pos state (Operation op)
+convertToTypeName pos state (FunctionIdentifier name) = getFunctionType pos state name
 
 inferVariableType :: SourcePos -> ParserState -> Declaration -> Declaration
 inferVariableType _ _ (Variable exp (Just a) val) = Variable exp (Just a) val
@@ -34,8 +36,19 @@ checkType pos state (Assignment (Assign (VarIdentifier name) (Type val))) =
             else error pos state ("Expected " ++ show (convertToTypeName pos state (VarIdentifier name)) ++ " but got " ++ show actualType) "Consider changing the variable type or declaring a new variable."
 checkType pos state (Variable exp (Just expectedType) (Just (LambdaFunc args stmt))) = Variable exp (Just expectedType) (Just (LambdaFunc args stmt))
 checkType pos state (Assignment (Assign (VarIdentifier name) (LambdaFunc args stmt))) = Assignment (Assign (VarIdentifier name) (LambdaFunc args stmt))
+checkType pos state (Variable exp (Just expectedType) (Just (FunctionCall (FunctionIdentifier name) args))) =
+    let actualType = convertToTypeName pos state (FunctionIdentifier name)
+    in if expectedType == actualType
+        then Variable exp (Just expectedType) (Just (FunctionCall (FunctionIdentifier name) args))
+        else error pos state ("Expected " ++ show expectedType ++ " but got " ++ show actualType) "Consider changing the variable type or declaring a new variable."
+checkType pos state (Assignment (Assign (VarIdentifier varName) (FunctionCall (FunctionIdentifier name) args))) =
+    let actualType = convertToTypeName pos state (FunctionIdentifier name)
+     in if convertToTypeName pos state (VarIdentifier varName) == actualType
+            then Assignment (Assign (VarIdentifier varName) (FunctionCall (FunctionIdentifier name) args))
+            else error pos state ("Expected " ++ show (convertToTypeName pos state (VarIdentifier varName)) ++ " but got " ++ show actualType) "Consider changing the variable type or declaring a new variable."
 checkType pos state _ = error pos state "Declaration is not a variable declaration" "Internal error."
 
+-- TODO: FUNCTIONS AND LAMBDAS
 checkTypeOperation :: Expression -> Expression -> SourcePos -> ParserState -> Maybe TypeName -> TypeName
 checkTypeOperation (Type typ) (VarIdentifier name) pos state expectedOutputType =
     if convertToTypeName pos state (Type typ) == convertToTypeName pos state (VarIdentifier name)

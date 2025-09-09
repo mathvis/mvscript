@@ -91,6 +91,19 @@ updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (VarIde
     typ = getVariableType pos state name
 updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) (Parentheses op))) state =
     updateVariableUninitialized pos (Assignment (Assign (VarIdentifier name) op)) state
+updateVariableUninitialized pos (Assignment (Assign (VarIdentifier vName) (FunctionCall (FunctionIdentifier fName) args))) state =
+    case currentVData of
+        Just vData -> case variableType vData of
+            Nothing -> state{st = Map.insert vName vData{variableType = Just typ, isInitialized = True} currentSt}
+            Just vType ->
+                if vType == typ
+                    then state{st = Map.insert vName vData{isInitialized = True} currentSt}
+                    else error pos state ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
+        Nothing -> error pos state ("Variable " ++ show vName ++ " was not initialized.") "Consider using the let keyword."
+    where
+        currentSt = st state
+        currentVData = Map.lookup vName currentSt
+        typ = getFunctionType pos state fName
 updateVariableUninitialized _ _ state = state
 
 checkScope :: SourcePos -> Expression -> ParserState -> ParserState

@@ -174,7 +174,7 @@ parseAssign =
                     <*> (\term -> modifyState (checkScope pos term) >> pure term) leftTerm
                     <*> parseExpr
                 )
-                        >>= \decl -> modifyState (addFunctionToTable decl True >>  updateVariableUninitialized pos decl) >> return decl
+                        >>= \decl -> modifyState (updateVariableUninitialized pos decl) >> return decl
 
 -- FUNCTION RELATED PARSERS
 parseFunctionIdentifier :: MVParser Expression

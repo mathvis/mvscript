@@ -7,7 +7,7 @@ import System.IO.Unsafe
 import qualified Data.Text as T
 import Data.Map as Map
 import Error
-import Prelude hiding (error)
+import Prelude hiding (fst, error)
 
 whitespace :: MVParser ()
 whitespace = void $ many $ oneOf " \n\t"
@@ -56,6 +56,11 @@ getVariableType pos state name = case Map.lookup name (st state) of
     Just vData -> case variableType vData of
         Just typ -> typ
         Nothing -> error pos state "Variable does not have a type." "Internal error."
+    Nothing -> error pos state "Variable not found." "Internal error."
+
+getFunctionType :: SourcePos -> ParserState -> T.Text -> TypeName
+getFunctionType pos state name = case Map.lookup name (fst state) of
+    Just fData -> returnType fData 
     Nothing -> error pos state "Variable not found." "Internal error."
 
 intercalateStr :: String -> [String] -> String
