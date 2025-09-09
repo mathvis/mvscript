@@ -17,10 +17,11 @@ import System.FilePath ((</>))
 
 parseFile :: String -> String -> ParserState -> [Statement]
 parseFile filename file state =
-    do
-        case runParser (many parseStatement) state filename file of
-            Left e -> error ("Error while parsing: " ++ show e)
-            Right parsed -> parsed
+    case runParser (sepEndBy parseStatement whitespaceOrNewline) state filename file of
+        Left e -> error ("Error while parsing: " ++ show e)
+        Right parsed -> parsed
+  where
+    whitespaceOrNewline = skipMany (oneOf " \t\n\r;")
 
 parseFileDebug :: String -> String -> ParserState -> [(Statement, ParserState)]
 parseFileDebug filename file state =
