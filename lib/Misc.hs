@@ -5,7 +5,7 @@ import Types
 import System.Exit
 import System.IO.Unsafe
 import qualified Data.Text as T
-import Data.Map as Map
+import Data.Map as Map hiding (map)
 import Error
 import Prelude hiding (fst, error)
 
@@ -16,7 +16,7 @@ lexeme :: MVParser a -> MVParser a
 lexeme p = p <* whitespace
 
 endLine :: MVParser a -> MVParser a
-endLine p = p <* char ';'
+endLine p = p <* optional (char ';') 
 
 newLine :: MVParser a -> MVParser a
 newLine p = p <* optional (char '\n')
@@ -62,6 +62,12 @@ getFunctionType :: SourcePos -> ParserState -> T.Text -> TypeName
 getFunctionType pos state name = case Map.lookup name (fst state) of
     Just fData -> returnType fData 
     Nothing -> error pos state "Variable not found." "Internal error."
+
+getFunctionArgTypes :: SourcePos -> ParserState -> T.Text -> [TypeName]
+getFunctionArgTypes pos state name = case Map.lookup name (fst state) of
+    Just fData -> map snd (arguments fData) 
+    Nothing -> error pos state "Variable not found." "Internal error."
+
 
 intercalateStr :: String -> [String] -> String
 intercalateStr delim lst = T.unpack (T.intercalate (T.pack delim) (Prelude.map T.pack lst)) 

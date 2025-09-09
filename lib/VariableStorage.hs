@@ -106,17 +106,17 @@ updateVariableUninitialized pos (Assignment (Assign (VarIdentifier vName) (Funct
         typ = getFunctionType pos state fName
 updateVariableUninitialized _ _ state = state
 
-checkScope :: SourcePos -> Expression -> ParserState -> ParserState
-checkScope pos (VarIdentifier name) state = case Map.lookup name (st state) of
+checkScope :: Expression -> SourcePos -> ParserState -> ParserState
+checkScope (VarIdentifier name) pos state = case Map.lookup name (st state) of
     Just varData ->
         if inScope varData
             then state
             else error pos state ("Variable " ++ show name ++ " is out of scope.") "Variable might have been initialized in a stricter scope."
     Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
-checkScope pos (FunctionCall (FunctionIdentifier name) _) state = case Map.lookup name (fst state) of
+checkScope (FunctionCall (FunctionIdentifier name) _) pos state = case Map.lookup name (fst state) of
     Just funcData -> state
     Nothing -> error pos state ("Function " ++ show name ++ " was not declared.") "Consider declaring a function."
-checkScope pos _ state = error pos state "Could not check scope." "Internal error."
+checkScope _ pos state = error pos state "Could not check scope." "Internal error."
 
 removeScope :: VariableData -> VariableData
 removeScope varData = varData{inScope = False}

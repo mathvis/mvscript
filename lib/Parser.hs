@@ -19,7 +19,7 @@ import Debug.Trace
 
 -- MAIN TYPE PARSERS
 parseStatement :: MVParser Statement
-parseStatement = (Decl <$> try parseDeclaration) <|> (Expr <$> (try parseReturn <|> try parseExpr)) <|> (Comment <$> parseComment) <|> parseBlock NoType
+parseStatement = endLine ((Decl <$> try parseDeclaration) <|> (Expr <$> (try parseReturn <|> try parseExpr)) <|> (Comment <$> parseComment) <|> parseBlock NoType)
 
 -- START OF THE CASCADING OPERATION PARSER
 parseExpr :: MVParser Expression
@@ -71,7 +71,7 @@ parseMatrix = Type . Matrix <$> (rword "Matrix" *> char '(' *> sepBy parseArray 
 
 -- VARIABLE PARSERS
 parseVarIdentifier :: MVParser Expression
-parseVarIdentifier = getPosition >>= \pos -> identifier >>= (\expr -> modifyState (checkScope pos expr) >> return expr) . VarIdentifier . T.pack
+parseVarIdentifier = getPosition >>= \pos -> identifier >>= (\expr -> modifyState (checkScope expr pos) >> return expr) . VarIdentifier . T.pack
   where
     identifier =
         (lexeme . try) $ do
@@ -111,7 +111,7 @@ parseVarDeclaration =
     Variable
         <$> (rword "let" *> parseVarIdentifierDecl)
         <*> optionMaybe (lexeme (char ':') *> parseTypeName)
-        <*> (lexeme (char ';') Data.Functor.$> Nothing)
+        <*> pure Nothing
         >>= \decl -> modifyState (addVariableToTable decl) >> return decl
 
 parseVoidTypeName :: MVParser TypeName
@@ -137,7 +137,7 @@ parseVarInitialization =
             ( Variable
                 <$> (rword "let" *> parseVarIdentifierDecl)
                 <*> optionMaybe (lexeme (char ':') *> parseTypeName)
-                <*> (lexeme (char '=') *> parseExpr <* lexeme (char ';') >>= \expr -> return (Just expr))
+                <*> (lexeme (char '=') *> parseExpr >>= \expr -> return (Just expr))
             )
                 >>= (\decl -> modifyState (addVariableToTable decl) >> return decl) . checkType pos state . inferVariableType pos state
 
@@ -158,7 +158,6 @@ parseAssign :: MVParser Declaration
 parseAssign =
     getPosition >>= \pos ->
         parseVarIdentifierDecl >>= \leftTerm ->
-            endLine
                 ( lexeme
                     ( try (string "//=" $> (\lhs rhs -> Assignment (IntDivAssign lhs rhs)))
                         <|> try (string "+=" $> (\lhs rhs -> Assignment (AddAssign lhs rhs)))
@@ -171,7 +170,7 @@ parseAssign =
                         <|> try (string "^=" $> (\lhs rhs -> Assignment (BitwiseXorAssign lhs rhs)))
                         <|> try (string "=" $> (\lhs rhs -> Assignment (Assign lhs rhs)))
                     )
-                    <*> (\term -> modifyState (checkScope pos term) >> pure term) leftTerm
+                    <*> (\term -> modifyState (checkScope term pos) >> pure term) leftTerm
                     <*> parseExpr
                 )
                         >>= \decl -> modifyState (updateVariableUninitialized pos decl) >> return decl
@@ -203,7 +202,7 @@ parseFunctionSignature = (,,) <$> (rword "func" *> parseFunctionIdentifier)
                               <*> parseFunctionReturnType
 
 parseFunctionForwardDeclaration :: MVParser Declaration
-parseFunctionForwardDeclaration = (lexeme . endLine) $ parseFunctionSignature >>=
+parseFunctionForwardDeclaration = lexeme $ lexeme (string "[fwd]") *> parseFunctionSignature >>=
                                \(funcIdentifier, args, returnType) -> let forwardDecl = FunctionDef funcIdentifier args returnType Nothing in
                                modifyState (addFunctionToTable forwardDecl False) >> return forwardDecl
 
@@ -218,7 +217,7 @@ parseFunctionCallArguments :: MVParser [Expression]
 parseFunctionCallArguments = sepBy parseExpr (lexeme $ char ',')
 
 parseFunctionCall :: MVParser Expression
-parseFunctionCall = getPosition >>= \pos -> functionCall >>= (\expr -> modifyState (checkScope pos expr) >> return expr)
+parseFunctionCall = getPosition >>= \pos -> functionCall >>= (\expr -> modifyState (checkArguments expr pos . checkScope expr pos) >> return expr)
     where
         functionCall = lexeme $ FunctionCall <$> parseFunctionIdentifier <*> between (lexeme $ char '(') (lexeme $ char ')') parseFunctionCallArguments
 
@@ -236,7 +235,7 @@ parseBlock :: BlockType -> MVParser Statement
 parseBlock blocktype = modifyState (changeContext blocktype) >> ((newLine . lexeme) (char '{') *> many ((newLine . lexeme) parseStatement) <* lexeme (char '}')) >>= (\block -> modifyState (removeScopeVariables block . resetContext) >> return block) . Block blocktype 
 
 parseReturn :: MVParser Expression
-parseReturn = getPosition >>= \pos -> (endLine . lexeme) (Return <$> (lexeme (string "return") *> optionMaybe parseExpr)) >>= \expr -> modifyState (checkReturnType expr pos . checkForBlock pos) >> return expr
+parseReturn = getPosition >>= \pos -> lexeme (Return <$> (lexeme (string "return") *> optionMaybe parseExpr)) >>= \expr -> modifyState (checkReturnType expr pos . checkForBlock pos) >> return expr
 
 -- COMMENT PARSERS
 parseComment :: MVParser String
@@ -248,7 +247,7 @@ parseElse :: MVParser Declaration
 parseElse = lexeme $ ElseBlock <$> (rword "else" *> (parseBlock Else <|> parseStatement))
 
 parseIf :: MVParser Declaration
-parseIf = lexeme (IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> endLine parseStatement) <*> optionMaybe parseElse) >>= evaluateControlFlow (collapseControlFlow <$> getConfig)
+parseIf = lexeme (IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> parseStatement) <*> optionMaybe parseElse) >>= evaluateControlFlow (collapseControlFlow <$> getConfig)
 
 -- OPERATION PARSERS
 parseOr :: MVParser Expression

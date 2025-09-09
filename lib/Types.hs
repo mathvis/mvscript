@@ -97,7 +97,7 @@ data BlockType = NoType | If | Else | FunctionBlock TypeName deriving (Eq, Show)
 data Statement = Decl Declaration | Expr Expression | Comment String | Block BlockType [Statement] deriving (Eq, Show)
 
 reservedKeywords :: [String]
-reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false", "func", "const"]
+reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false", "func", "const", "fwd"]
 
 data Configuration = Configuration {
     debug :: Bool,

@@ -8,6 +8,7 @@ import Types
 import Prelude hiding (error)
 import Context
 import Debug.Trace
+import qualified Data.Text as T
 
 (<|) :: a -> Maybe a -> a
 a <| b = fromMaybe a b
@@ -94,6 +95,7 @@ checkTypeOperation (Parentheses inner) (VarIdentifier name) pos state expectedOu
 checkTypeOperationUnary :: Expression -> SourcePos -> ParserState -> Maybe TypeName -> TypeName
 checkTypeOperationUnary (Type typ) pos state expectedOutputType = convertToTypeName pos state (Type typ) <| expectedOutputType
 checkTypeOperationUnary (VarIdentifier name) pos state expectedOutputType = convertToTypeName pos state (VarIdentifier name) <| expectedOutputType
+checkTypeOperationUnary (FunctionCall name args) pos state expectedOutputType = convertToTypeName pos state name <| expectedOutputType
 checkTypeOperationUnary (Operation op) pos state expectedOutputType = convertToTypeName pos state (Operation op) <| expectedOutputType
 checkTypeOperationUnary (Parentheses inner) pos state expectedOutputType = checkTypeExpression pos state inner
 
@@ -122,6 +124,8 @@ checkTypeExpression pos state (Operation op) = case op of
     _ -> error pos state "Not a valid operation" "Internal error."
 checkTypeExpression pos state (Parentheses op) = checkTypeExpression pos state op
 checkTypeExpression pos state (Type typ) = convertToTypeName pos state (Type typ)
+checkTypeExpression pos state (FunctionCall name _) = convertToTypeName pos state name 
+checkTypeExpression pos state (VarIdentifier name) = convertToTypeName pos state (VarIdentifier name)
 
 checkReturnType :: Expression -> SourcePos -> ParserState -> ParserState
 checkReturnType (Return expr) pos state =
@@ -134,3 +138,24 @@ checkReturnType (Return expr) pos state =
         state
     else
         error pos state ("Expected " ++ show returnType ++ " but got " ++ show expressionType) "Consider changing the return type or declaring a new function."
+
+checkArguments :: Expression -> SourcePos -> ParserState -> ParserState
+checkArguments (FunctionCall (FunctionIdentifier name) args) pos state =
+    if expectedLength /= actualLength
+        then error pos state ("Expected " ++ show expectedLength ++ " arguments but got " ++ show actualLength) "Consider adding or removing arguments, or checking the function signature."
+    else 
+        case mapM checkArgumentType (zip argTypes expectedArgTypes) of
+            Left err -> uncurry (error pos state) err
+            Right _ -> state
+    where
+        expectedArgTypes = getFunctionArgTypes pos state name
+        expectedLength = length expectedArgTypes
+        argTypes = map (checkTypeExpression pos state) args
+        actualLength = length argTypes    
+checkArguments _ _ state = state
+
+checkArgumentType :: (TypeName, TypeName) -> Either (String, String) ()
+checkArgumentType (actual, expected) = if actual == expected
+    then Right ()
+    else Left ("Expected " ++ show expected ++ " but got " ++ show actual, "Try changing the argument type.")
+    
