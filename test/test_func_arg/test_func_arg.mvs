@@ -1,1 +1,1 @@
-func a(b: int, c: string) int;
+[fwd] func a(b: int, c: string) int;
