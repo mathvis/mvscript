@@ -1,0 +1,2 @@
+Decl (FunctionDef (FunctionIdentifier "a") [] BoolT (Just (Block (FunctionBlock BoolT) [])))
+Decl (Variable (VarIdentifier "b") (Just BoolT) (Just (FunctionCall (FunctionIdentifier "a") [])))

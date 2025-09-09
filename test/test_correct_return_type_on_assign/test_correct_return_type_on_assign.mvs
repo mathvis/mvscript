@@ -1,0 +1,3 @@
+func a() bool {}
+let b: bool;
+b = a();

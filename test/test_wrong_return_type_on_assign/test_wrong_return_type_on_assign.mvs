@@ -1,0 +1,3 @@
+func a() float {}
+let b: int;
+b = a();

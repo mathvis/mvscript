@@ -1,0 +1,7 @@
+error: Expected IntT but got FloatT
+ --> test/test_wrong_return_type_on_assign/test_wrong_return_type_on_assign.mvs:3:1
+  |
+3 | b = a();
+  | ^
+  |
+hint: Consider changing the variable type or declaring a new variable.
