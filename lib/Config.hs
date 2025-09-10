@@ -46,13 +46,13 @@ getColorsValue (Table "testing" opts) = case Map.lookup "colors" opts of
 getColorsValue _ = colors defaultConfig
 
 setCollapseOperations :: Table -> ParserState -> ParserState
-setCollapseOperations table (ParserState config st fst ctx) = ParserState (config {collapseOperations=getCollapseOperationsValue table}) st fst ctx
+setCollapseOperations table (ParserState config st fst ctx ufc) = ParserState (config {collapseOperations=getCollapseOperationsValue table}) st fst ctx ufc
 
 setCollapseControlFlow :: ParserState -> Table -> ParserState
-setCollapseControlFlow (ParserState config st fst ctx) table = ParserState (config {collapseControlFlow=getCollapseControlFlowValue table}) st fst ctx
+setCollapseControlFlow (ParserState config st fst ctx ufc) table = ParserState (config {collapseControlFlow=getCollapseControlFlowValue table}) st fst ctx ufc
 
 setColors :: ParserState -> Table -> ParserState
-setColors (ParserState config st fst ctx) table = ParserState (config {colors=getColorsValue table}) st fst ctx
+setColors (ParserState config st fst ctx ufc) table = ParserState (config {colors=getColorsValue table}) st fst ctx ufc
 
 setDebug :: ParserState -> Table -> ParserState
-setDebug (ParserState config st fst ctx) table = ParserState (config {debug= getDebugValue table}) st fst ctx
+setDebug (ParserState config st fst ctx ufc) table = ParserState (config {debug= getDebugValue table}) st fst ctx ufc

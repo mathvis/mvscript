@@ -150,11 +150,17 @@ defaultVariableData = VariableData {
 type SymbolTable = Map T.Text VariableData
 type FunctionSymbolTable = Map T.Text FunctionData
 
+data FunctionCallData = FunctionCallData {
+    identifier :: Expression,
+    pos :: SourcePos
+} deriving Show
+
 data ParserState = ParserState {
     config :: Configuration,
     st :: SymbolTable,
     fst :: FunctionSymbolTable,
-    context :: Maybe BlockType
+    context :: Maybe BlockType,
+    unresolvedFunctionCalls :: [FunctionCallData]
 } deriving Show
 
 defaultParserState :: ParserState
@@ -162,7 +168,8 @@ defaultParserState = ParserState {
     config = defaultConfig,
     st = Map.empty,
     fst = Map.empty,
-    context = Nothing
+    context = Nothing,
+    unresolvedFunctionCalls = []
 }
 
 type MVParser a = Parsec String ParserState a
@@ -178,3 +185,6 @@ getFunctionSymbolTable = fst <$> getState
 
 defaultSourcePos :: SourcePos
 defaultSourcePos = newPos "internal" 0 0
+
+data ParseResult = NoDebug ([Statement], ParserState) | Debug ([(Statement, ParserState)], ParserState)
+
