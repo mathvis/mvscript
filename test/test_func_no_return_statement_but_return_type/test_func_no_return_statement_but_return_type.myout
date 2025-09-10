@@ -1,0 +1,7 @@
+error: Function must return a value of type IntT
+ --> test/test_func_no_return_statement_but_return_type/test_func_no_return_statement_but_return_type.mvs:1:1
+  |
+1 | func a() int {}
+  | ^
+  |
+hint: Try adding a return statement.
