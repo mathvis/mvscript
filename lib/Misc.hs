@@ -58,8 +58,8 @@ getVariableType pos state name = case Map.lookup name (st state) of
         Nothing -> error pos state "Variable does not have a type." "Internal error."
     Nothing -> error pos state "Variable not found." "Internal error."
 
-getFunctionType :: SourcePos -> ParserState -> T.Text -> TypeName
-getFunctionType pos state name = case Map.lookup name (fst state) of
+getFunctionReturnType :: SourcePos -> ParserState -> T.Text -> TypeName
+getFunctionReturnType pos state name = case Map.lookup name (fst state) of
     Just fData -> returnType fData 
     Nothing -> error pos state "Variable not found." "Internal error."
 

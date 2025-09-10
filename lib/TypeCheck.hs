@@ -1,6 +1,7 @@
 module TypeCheck where
 
 import Data.Maybe
+import Data.Map as Map hiding (map)
 import Data.List
 import Error
 import Misc
@@ -10,6 +11,7 @@ import Prelude hiding (error)
 import Context
 import Debug.Trace
 import qualified Data.Text as T
+import FunctionStorage
 
 (<|) :: a -> Maybe a -> a
 a <| b = fromMaybe a b
@@ -18,7 +20,7 @@ convertToTypeName :: SourcePos -> ParserState -> Expression -> TypeName
 convertToTypeName _ _ (Type typ) = valueToType typ
 convertToTypeName pos state (VarIdentifier name) = getVariableType pos state name
 convertToTypeName pos state (Operation op) = checkTypeExpression pos state (Operation op)
-convertToTypeName pos state (FunctionIdentifier name) = getFunctionType pos state name
+convertToTypeName pos state (FunctionIdentifier name) = getFunctionReturnType pos state name
 
 inferVariableType :: SourcePos -> ParserState -> Declaration -> Declaration
 inferVariableType _ _ (Variable exp (Just a) val) = Variable exp (Just a) val
@@ -172,3 +174,22 @@ hasReturn = any isReturnStmt
 isReturnStmt :: Statement -> Bool
 isReturnStmt (Expr (Return _)) = True
 isReturnStmt _ = False
+
+compareFunctionSignatureToForwardDecl :: Declaration -> SourcePos -> ParserState -> ParserState
+compareFunctionSignatureToForwardDecl (FunctionDef (FunctionIdentifier name) args returnType (Just _)) pos state
+    | not (hasForwardDecl name state) = state
+    | expectedLength /= actualLength =
+        error pos state ("Expected " ++ show expectedLength ++ " arguments but got " ++ show actualLength) "Consider adding or removing arguments, or checking the function signature."
+    | returnType /= expectedReturnType =
+        error pos state ("Expected " ++ show expectedReturnType ++ " as a return type but got " ++ show returnType) "Consider changing the return type, or checking the function signature."
+    | otherwise =
+        case mapM checkArgumentType (zip argTypes expectedArgTypes) of
+            Left err -> uncurry (error pos state) err
+            Right _ -> state
+    where
+        expectedArgTypes = if hasForwardDecl name state then getFunctionArgTypes pos state name else []
+        expectedLength = length expectedArgTypes
+        expectedReturnType = if hasForwardDecl name state then getFunctionReturnType pos state name else VoidT
+        argTypes = map snd args
+        actualLength = length argTypes    
+

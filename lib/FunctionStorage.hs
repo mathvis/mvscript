@@ -10,10 +10,6 @@ import Types
 import Prelude hiding (error, fst)
 import Text.Parsec
 
-checkBody :: Maybe Statement -> Bool
-checkBody Nothing = False
-checkBody (Just _) = True
-
 argIdsToText :: [(Expression, TypeName)] -> [(T.Text, TypeName)]
 argIdsToText = map argIdToText
     where
@@ -41,7 +37,7 @@ resolveFunctionCalls state = foldl resolveCallIfPossible state (unresolvedFuncti
 canBeResolved :: ParserState -> FunctionCallData -> Bool
 canBeResolved state call = case Map.lookup (identifier call) (fst state) of
     Just funcData -> hasBody funcData
-    Nothing -> error (pos call) state "This shouldn't happen????." "Internal error."
+    Nothing -> error (pos call) state "This shouldn't happen if the other checks happen first." "Internal error."
 
 resolveCallIfPossible :: ParserState -> FunctionCallData -> ParserState
 resolveCallIfPossible state call =
@@ -51,8 +47,13 @@ resolveCallIfPossible state call =
         error (pos call) state "Function has a forward declaration but does not have a body." "Consider adding a body to the function."
 
 addUnresolvedCall :: T.Text -> SourcePos -> ParserState -> ParserState
-addUnresolvedCall name pos state = state {unresolvedFunctionCalls = (FunctionCallData {pos, identifier=name}):calls}        
+addUnresolvedCall name pos state = state {unresolvedFunctionCalls = newCalls}    
     where
+        functionCallData = (FunctionCallData {pos, identifier=name}) 
         calls = unresolvedFunctionCalls state
-             
-  
+        newCalls = functionCallData:calls             
+
+hasForwardDecl :: T.Text -> ParserState -> Bool
+hasForwardDecl name state = case Map.lookup name (fst state) of
+    Just funcData -> not (hasBody funcData)
+    Nothing -> False

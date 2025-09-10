@@ -213,7 +213,7 @@ parseFunctionDeclaration =
         \(funcIdentifier, args, returnType) -> let partialDecl = FunctionDef funcIdentifier args returnType Nothing in
         modifyState (addFunctionToTable partialDecl True) >>
         (FunctionDef funcIdentifier args returnType . Just <$> parseBlock (FunctionBlock returnType))
-        >>= \decl -> modifyState (checkForReturn decl pos . removeArgumentsFromTable decl) >> return decl
+        >>= \decl -> modifyState (checkForReturn decl pos . removeArgumentsFromTable decl . compareFunctionSignatureToForwardDecl decl pos) >> return decl
 
 parseFunctionCallArguments :: MVParser [Expression]
 parseFunctionCallArguments = sepBy parseExpr (lexeme $ char ',')

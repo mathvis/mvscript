@@ -105,7 +105,7 @@ updateVariableUninitialized pos (Assignment (Assign (VarIdentifier vName) (Funct
     where
         currentSt = st state
         currentVData = Map.lookup vName currentSt
-        typ = getFunctionType pos state fName
+        typ = getFunctionReturnType pos state fName
 updateVariableUninitialized _ _ state = state
 
 checkScope :: Expression -> SourcePos -> ParserState -> ParserState
