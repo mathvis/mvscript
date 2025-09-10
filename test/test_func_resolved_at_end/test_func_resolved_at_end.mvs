@@ -1,0 +1,6 @@
+[fwd] func a();
+[fwd] func b();
+a();
+b();
+func a() {}
+func b() {}

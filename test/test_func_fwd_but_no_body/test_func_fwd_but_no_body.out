@@ -1,0 +1,7 @@
+error: Function has a forward declaration but does not have a body.
+ --> test/test_func_fwd_but_no_body/test_func_fwd_but_no_body.mvs:2:1
+  |
+2 | a();
+  | ^
+  |
+hint: Consider adding a body to the function.
