@@ -1,6 +1,7 @@
 module VariableStorage where
 
 import Data.Map as Map hiding (foldl)
+import Data.List as List
 import Data.Text as T hiding (foldl, show)
 import Error
 import Misc
@@ -8,6 +9,7 @@ import Text.Parsec
 import TypeCheck
 import Types
 import Prelude hiding (fst, error)
+import FunctionStorage
 
 initialized :: Maybe Expression -> Bool
 initialized Nothing = False
@@ -113,9 +115,14 @@ checkScope (VarIdentifier name) pos state = case Map.lookup name (st state) of
             then state
             else error pos state ("Variable " ++ show name ++ " is out of scope.") "Variable might have been initialized in a stricter scope."
     Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
-checkScope (FunctionCall (FunctionIdentifier name) _) pos state = case Map.lookup name (fst state) of
-    Just funcData -> state
-    Nothing -> error pos state ("Function " ++ show name ++ " was not declared.") "Consider declaring a function."
+checkScope (FunctionCall (FunctionIdentifier name) _) pos state =
+    case Map.lookup name (fst state) of
+        Just funcData ->
+            if hasBody funcData then
+                state
+            else
+                addUnresolvedCall name pos state
+        Nothing -> error pos state ("Function " ++ show name ++ " was not declared.") "Consider declaring a function."
 checkScope _ pos state = error pos state "Could not check scope." "Internal error."
 
 removeScope :: VariableData -> VariableData

@@ -14,6 +14,8 @@ import Text.ParserCombinators.Parsec
 import Types hiding (fst)
 import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
+import FunctionStorage
+import Control.Exception
 
 parseFile :: String -> String -> ParserState -> ([Statement], ParserState)
 parseFile filename file state =
@@ -29,20 +31,21 @@ parseFile filename file state =
 
 parseFileDebug :: String -> String -> ParserState -> ([(Statement, ParserState)], ParserState)
 parseFileDebug filename file state =
-    case runParser parseStatementsStateThenReturnState state filename file of
+    case runParser parseStatementsWithStateThenReturnState state filename file of
         Left e -> error ("Error while parsing: " ++ show e)
         Right parsed -> parsed
   where
-    parseStatementsState = do
-        option [] $ do
-            stmt <- parseStatement
-            currentState <- getState
-            rest <- parseStatementsState
-            return ((stmt, currentState) : rest)
-    parseStatementsStateThenReturnState = do
-        statements <- parseStatementsState 
-        state <- getState
-        return (statements, state)
+    whitespaceOrNewline = skipMany (oneOf " \t\n\r;")
+    
+    parseStatementWithState = do
+        stmt <- parseStatement
+        currentState <- getState
+        return (stmt, currentState)
+    
+    parseStatementsWithStateThenReturnState = do
+        statements <- sepEndBy parseStatementWithState whitespaceOrNewline
+        finalState <- getState
+        return (statements, finalState)
 
 parseConfig :: String -> [Table]
 parseConfig config =
@@ -63,6 +66,10 @@ main =
             then Debug (parseFileDebug filename fileContents state)
             else NoDebug (parseFile filename fileContents state)
         case parsed of
-            Debug debugParsed -> mapM_ print (fst debugParsed)
-            NoDebug normalParsed -> mapM_ print (fst normalParsed)
+            Debug debugParsed -> do
+                evaluate $ resolveFunctionCalls (snd debugParsed)
+                mapM_ print $ fst debugParsed
+            NoDebug normalParsed -> do
+                evaluate $ resolveFunctionCalls (snd normalParsed)
+                mapM_ print $ fst normalParsed
             

@@ -1,2 +1,2 @@
-[fwd] func b() int;
+func b() {}
 ((a: int): {})(b())

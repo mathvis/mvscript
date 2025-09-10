@@ -151,9 +151,9 @@ type SymbolTable = Map T.Text VariableData
 type FunctionSymbolTable = Map T.Text FunctionData
 
 data FunctionCallData = FunctionCallData {
-    identifier :: Expression,
+    identifier :: T.Text,
     pos :: SourcePos
-} deriving Show
+} deriving (Show, Eq)
 
 data ParserState = ParserState {
     config :: Configuration,
