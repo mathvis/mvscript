@@ -110,7 +110,7 @@ parseVarDeclaration :: MVParser Declaration
 parseVarDeclaration =
     Variable
         <$> (rword "let" *> parseVarIdentifierDecl)
-        <*> optionMaybe (lexeme (char ':') *> parseTypeName)
+        <*> (Just <$> (lexeme (char ':') *> parseTypeName))
         <*> pure Nothing
         >>= \decl -> modifyState (addVariableToTable decl) >> return decl
 
