@@ -1,0 +1,48 @@
+#!/usr/bin/python3
+from colorama import init as colorama_init
+from colorama import Fore
+from os import listdir, system
+import subprocess
+
+colorama_init()
+
+def run_test(name: str, num: int) -> bool:
+    system(f'cabal run mvscript "test/{name}/{name}.mvs" "test/{name}/config.toml" &> test/{name}/{name}.myout')
+    result = subprocess.getoutput(
+            f"diff ./test/{name}/{name}.myout ./test/{name}/{name}.out"
+        )
+    if result == "":
+        print(f"{Fore.GREEN}{name} PASSED!")
+        return True
+    print(f"\033[1m{Fore.RED}{name} FAILED! ({num})\033[0m")
+    return False
+
+
+def run_tests():
+    system("cabal build > /dev/null")
+    files = listdir("./test")
+    count: int = 0
+    test_num: int = 0
+    failed_tests: dict[int, str] = {}
+    for file in files:
+        if run_test(file, test_num):
+            count += 1
+        else:
+            failed_tests[test_num] = file
+        test_num += 1
+    if count != len(files):
+        print(f"\033[1m{Fore.RED}{count}/{len(files)} TESTS PASSED!\033[0m")
+        tests = map(int, input("Enter the tests you want to analyze (separated by ,): ").split(","))
+        for test in tests:
+            system(f"helix ./test/{failed_tests[test]}/{failed_tests[test]}.out ./test/{failed_tests[test]}/{failed_tests[test]}.myout --vsplit")
+        exit(1)
+    print(f"\033[1m{Fore.GREEN}{count}/{len(files)} TESTS PASSED!\033[0m")
+    exit(0)
+
+
+def main():
+    run_tests()
+
+
+if __name__ == "__main__":
+    main()

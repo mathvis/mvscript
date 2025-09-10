@@ -42,7 +42,7 @@ jobs:
         cabal build all
 
     - name: Run tests
-      run: python run_tests.py
+      run: python utils/run_tests.py
     - name: Cache build artifacts
       uses: actions/cache@v3
       with:
