@@ -1,4 +1,4 @@
-module Config where
+module Config (module Config) where
 import Types
 import ConfigTypes
 import qualified Data.Map as Map

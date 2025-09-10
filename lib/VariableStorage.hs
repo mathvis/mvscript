@@ -1,4 +1,4 @@
-module VariableStorage where
+module VariableStorage (module VariableStorage) where
 
 import Data.Map as Map hiding (foldl)
 import Data.List as List

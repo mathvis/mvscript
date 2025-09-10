@@ -1,4 +1,4 @@
-module Types where
+module Types (module Types) where
 
 import Data.Text as T
 import Text.ParserCombinators.Parsec

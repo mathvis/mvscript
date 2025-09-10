@@ -1,4 +1,4 @@
-module Context where
+module Context (module Context) where
 import Types
 import Text.Parsec
 import Error

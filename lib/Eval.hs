@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 
-module Eval where
+module Eval (module Eval) where
 
 import Control.Applicative
 import Data.Bits (Bits (complement, xor), (.&.), (.|.))

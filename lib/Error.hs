@@ -1,4 +1,4 @@
-module Error where
+module Error (module Error) where
 
 import GHC.IO.Unsafe
 import System.Exit

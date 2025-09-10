@@ -1,6 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module FunctionStorage where
+module FunctionStorage (module FunctionStorage) where
 
 import Data.Map as Map hiding (foldl, map)
 import Data.List as List

@@ -1,4 +1,4 @@
-module Misc where
+module Misc (module Misc) where
 import Text.ParserCombinators.Parsec
 import Control.Monad
 import Types

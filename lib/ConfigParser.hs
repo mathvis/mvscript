@@ -1,4 +1,4 @@
-module ConfigParser where
+module ConfigParser (module ConfigParser) where
 
 import Text.ParserCombinators.Parsec
 import Control.Monad.State

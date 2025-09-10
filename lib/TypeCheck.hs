@@ -1,4 +1,4 @@
-module TypeCheck where
+module TypeCheck (module TypeCheck) where
 
 import Data.Maybe
 import Data.Map as Map hiding (map)

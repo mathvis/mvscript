@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-module Parser where
+module Parser (module Parser) where
 
 import Control.Applicative (liftA2)
 import Control.Monad
