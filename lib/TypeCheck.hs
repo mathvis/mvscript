@@ -1,6 +1,7 @@
 module TypeCheck where
 
 import Data.Maybe
+import Data.List
 import Error
 import Misc
 import Text.Parsec
@@ -158,4 +159,16 @@ checkArgumentType :: (TypeName, TypeName) -> Either (String, String) ()
 checkArgumentType (actual, expected) = if actual == expected
     then Right ()
     else Left ("Expected " ++ show expected ++ " but got " ++ show actual, "Try changing the argument type.")
+   
+checkForReturn :: Declaration -> SourcePos -> ParserState -> ParserState
+checkForReturn (FunctionDef _ _ returnType (Just (Block (FunctionBlock _) stmts))) pos state =
+    if not (hasReturn stmts) && returnType /= VoidT 
+        then error pos state ("Function must return a value of type " ++ show returnType) "Try adding a return statement."
+        else state
     
+hasReturn :: [Statement] -> Bool
+hasReturn = any isReturnStmt
+
+isReturnStmt :: Statement -> Bool
+isReturnStmt (Expr (Return _)) = True
+isReturnStmt _ = False

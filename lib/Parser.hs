@@ -207,11 +207,13 @@ parseFunctionForwardDeclaration = lexeme $ lexeme (string "[fwd]") *> parseFunct
                                modifyState (addFunctionToTable forwardDecl False) >> return forwardDecl
 
 parseFunctionDeclaration :: MVParser Declaration
-parseFunctionDeclaration = lexeme $ parseFunctionSignature >>=
-                               \(funcIdentifier, args, returnType) -> let partialDecl = FunctionDef funcIdentifier args returnType Nothing in
-                               modifyState (addFunctionToTable partialDecl True) >>
-                               (FunctionDef funcIdentifier args returnType . Just <$> parseBlock (FunctionBlock returnType))
-                               >>= \decl -> modifyState (removeArgumentsFromTable decl) >> return decl
+parseFunctionDeclaration =
+    getPosition >>=
+        \pos -> lexeme $ parseFunctionSignature >>=
+        \(funcIdentifier, args, returnType) -> let partialDecl = FunctionDef funcIdentifier args returnType Nothing in
+        modifyState (addFunctionToTable partialDecl True) >>
+        (FunctionDef funcIdentifier args returnType . Just <$> parseBlock (FunctionBlock returnType))
+        >>= \decl -> modifyState (checkForReturn decl pos . removeArgumentsFromTable decl) >> return decl
 
 parseFunctionCallArguments :: MVParser [Expression]
 parseFunctionCallArguments = sepBy parseExpr (lexeme $ char ',')
