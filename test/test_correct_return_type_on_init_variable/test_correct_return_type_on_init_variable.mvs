@@ -1,2 +1,4 @@
-func a() bool {}
+func a() bool {
+	return false;
+}
 let b: bool = a();

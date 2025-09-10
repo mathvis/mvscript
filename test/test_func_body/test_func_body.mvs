@@ -1,3 +1,4 @@
 func a(b: int, c: string) int {
 	let a: int = 0;
+	return a;
 }

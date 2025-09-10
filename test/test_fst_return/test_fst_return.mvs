@@ -1,1 +1,3 @@
-func a() bool {}
+func a() bool {
+	return false;
+}

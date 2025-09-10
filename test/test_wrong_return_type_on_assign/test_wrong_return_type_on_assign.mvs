@@ -1,3 +1,5 @@
-func a() float {}
+func a() float {
+	return 5.0;
+}
 let b: int;
 b = a();
