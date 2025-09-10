@@ -177,7 +177,7 @@ isReturnStmt _ = False
 
 compareFunctionSignatureToForwardDecl :: Declaration -> SourcePos -> ParserState -> ParserState
 compareFunctionSignatureToForwardDecl (FunctionDef (FunctionIdentifier name) args returnType (Just _)) pos state
-    | not (hasForwardDecl name state) = state
+    | not (hasForwardDecl name state) = state 
     | expectedLength /= actualLength =
         error pos state ("Expected " ++ show expectedLength ++ " arguments but got " ++ show actualLength) "Consider adding or removing arguments, or checking the function signature."
     | returnType /= expectedReturnType =

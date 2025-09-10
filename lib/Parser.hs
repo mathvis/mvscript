@@ -16,6 +16,7 @@ import Types
 import VariableStorage
 import FunctionStorage
 import Debug.Trace
+import Control.Arrow
 
 -- MAIN TYPE PARSERS
 parseStatement :: MVParser Statement
@@ -204,16 +205,19 @@ parseFunctionSignature = (,,) <$> (rword "func" *> parseFunctionIdentifier)
 parseFunctionForwardDeclaration :: MVParser Declaration
 parseFunctionForwardDeclaration = lexeme $ lexeme (string "[fwd]") *> parseFunctionSignature >>=
                                \(funcIdentifier, args, returnType) -> let forwardDecl = FunctionDef funcIdentifier args returnType Nothing in
-                               modifyState (addFunctionToTable forwardDecl False) >> return forwardDecl
+                               modifyState (addFunctionToTable forwardDecl) >> return forwardDecl
 
 parseFunctionDeclaration :: MVParser Declaration
 parseFunctionDeclaration =
     getPosition >>=
         \pos -> lexeme $ parseFunctionSignature >>=
-        \(funcIdentifier, args, returnType) -> let partialDecl = FunctionDef funcIdentifier args returnType Nothing in
-        modifyState (addFunctionToTable partialDecl True) >>
-        (FunctionDef funcIdentifier args returnType . Just <$> parseBlock (FunctionBlock returnType))
-        >>= \decl -> modifyState (checkForReturn decl pos . removeArgumentsFromTable decl . compareFunctionSignatureToForwardDecl decl pos) >> return decl
+        \(funcIdentifier, args, returnType) -> parseBlock (FunctionBlock returnType)
+        >>= (\decl -> modifyState (
+            checkForReturn decl pos
+            >>> removeArgumentsFromTable decl
+            >>> compareFunctionSignatureToForwardDecl decl pos
+            >>> addFunctionToTable decl
+        ) >> return decl) . FunctionDef funcIdentifier args returnType . Just
 
 parseFunctionCallArguments :: MVParser [Expression]
 parseFunctionCallArguments = sepBy parseExpr (lexeme $ char ',')

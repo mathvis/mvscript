@@ -25,9 +25,13 @@ createFunctionRecord (FunctionDef (FunctionIdentifier name) args returnType _) h
 createFunctionRecord _ _ state =
     error defaultSourcePos state "Could not create function record." "Internal error."
 
-addFunctionToTable :: Declaration -> Bool -> ParserState -> ParserState
-addFunctionToTable decl hasBody state = state {fst = Map.insert name functionData currentFst}
+addFunctionToTable :: Declaration -> ParserState -> ParserState
+addFunctionToTable decl@(FunctionDef (FunctionIdentifier _) _ _ body) state =
+    state {fst = Map.insert name functionData currentFst}
     where
+        hasBody = case body of
+            Just body -> True
+            Nothing -> False
         (name, functionData) = createFunctionRecord decl hasBody state
         currentFst = fst state
 
