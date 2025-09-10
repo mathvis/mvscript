@@ -1,0 +1,4 @@
+[fwd] func a() int;
+func a() bool {
+	return false;
+}

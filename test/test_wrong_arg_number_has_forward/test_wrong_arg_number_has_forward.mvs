@@ -1,0 +1,2 @@
+[fwd] func a(b: int, c: bool);
+func a(b: int) {}

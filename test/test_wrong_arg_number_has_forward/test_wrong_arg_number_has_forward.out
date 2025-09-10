@@ -1,0 +1,7 @@
+error: Expected 2 arguments but got 1
+ --> test/test_wrong_arg_number_has_forward/test_wrong_arg_number_has_forward.mvs:2:1
+  |
+2 | func a(b: int) {}
+  | ^
+  |
+hint: Consider adding or removing arguments, or checking the function signature.

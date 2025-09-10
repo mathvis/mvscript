@@ -1,0 +1,2 @@
+[fwd] func a(b: int);
+func a(b: vector) {}
