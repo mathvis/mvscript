@@ -1,0 +1,4 @@
+func a(b: int) bool {
+	return false;
+};
+a(a(5));

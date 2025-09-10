@@ -1,0 +1,7 @@
+error: Expected 3 arguments but got 2
+ --> test/test_wrong_argument_number/test_wrong_argument_number.mvs:2:1
+  |
+2 | a(5, 2.0);
+  | ^
+  |
+hint: Consider adding or removing arguments, or checking the function signature.

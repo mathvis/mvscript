@@ -1,0 +1,7 @@
+error: Expected IntT but got FloatT
+ --> test/test_wrong_argument_type_value/test_wrong_argument_type_value.mvs:4:1
+  |
+4 | a(5.0);
+  | ^
+  |
+hint: Try changing the argument type.

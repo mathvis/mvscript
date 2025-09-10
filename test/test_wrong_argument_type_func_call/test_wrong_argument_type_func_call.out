@@ -1,0 +1,7 @@
+error: Expected IntT but got BoolT
+ --> test/test_wrong_argument_type_func_call/test_wrong_argument_type_func_call.mvs:4:1
+  |
+4 | a(a(5));
+  | ^
+  |
+hint: Try changing the argument type.

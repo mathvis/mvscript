@@ -1,0 +1,2 @@
+func a(b: int, c: float, d: bool) {}
+a(5, 2.0);

@@ -1,0 +1,3 @@
+let b = 0;
+func a(c: float) {}
+a(b);

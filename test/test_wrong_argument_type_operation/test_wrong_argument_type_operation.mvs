@@ -1,0 +1,4 @@
+func a(b: int) bool {
+	return true;
+}
+a(5.0 + 3.2);
