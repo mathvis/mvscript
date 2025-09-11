@@ -1,7 +1,7 @@
-error: A return statement must be inside a block.
+error: A return statement must be inside a function.
  --> test/test_return_outside_function/test_return_outside_function.mvs:1:1
   |
 1 | return 0;
   | ^
   |
-hint: Try putting this statement inside of a block or function.
+hint: Try putting this statement inside of a function.
