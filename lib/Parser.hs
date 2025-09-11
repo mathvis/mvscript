@@ -22,6 +22,9 @@ import Control.Arrow
 parseStatement :: MVParser Statement
 parseStatement = endLine ((Decl <$> try parseDeclaration) <|> (Expr <$> (try parseReturn <|> try parseExpr)) <|> (Comment <$> parseComment) <|> parseBlock NoType)
 
+parseStatementInBlock :: MVParser Statement
+parseStatementInBlock = endLine ((Decl <$> try parseDeclaration) <|> (Expr <$> (try parseReturn <|> try parseExpr)) <|> (Comment <$> parseComment)) 
+
 -- START OF THE CASCADING OPERATION PARSER
 parseExpr :: MVParser Expression
 parseExpr = parseOr
@@ -203,9 +206,9 @@ parseFunctionSignature = (,,) <$> (rword "func" *> parseFunctionIdentifier)
                               <*> parseFunctionReturnType
 
 parseFunctionForwardDeclaration :: MVParser Declaration
-parseFunctionForwardDeclaration = lexeme $ lexeme (string "[fwd]") *> parseFunctionSignature >>=
+parseFunctionForwardDeclaration = getPosition >>= \pos -> lexeme $ lexeme (string "[fwd]") *> parseFunctionSignature >>=
                                \(funcIdentifier, args, returnType) -> let forwardDecl = FunctionDef funcIdentifier args returnType Nothing in
-                               modifyState (addFunctionToTable forwardDecl) >> return forwardDecl
+                               modifyState (checkForSecondOrderFunction pos >>> addFunctionToTable forwardDecl) >> return forwardDecl
 
 parseFunctionDeclaration :: MVParser Declaration
 parseFunctionDeclaration =
@@ -213,7 +216,8 @@ parseFunctionDeclaration =
         \pos -> lexeme $ parseFunctionSignature >>=
         \(funcIdentifier, args, returnType) -> parseBlock (FunctionBlock returnType)
         >>= (\decl -> modifyState (
-            checkForReturn decl pos
+            checkForSecondOrderFunction pos
+            >>> checkForReturn decl pos
             >>> removeArgumentsFromTable decl
             >>> compareFunctionSignatureToForwardDecl decl pos
             >>> addFunctionToTable decl
@@ -238,7 +242,7 @@ parseLambdaApplication =
         <*> betweenParentheses parseExpr
 
 parseBlock :: BlockType -> MVParser Statement
-parseBlock blocktype = modifyState (changeContext blocktype) >> ((newLine . lexeme) (char '{') *> many ((newLine . lexeme) parseStatement) <* lexeme (char '}')) >>= (\block -> modifyState (removeScopeVariables block . resetContext) >> return block) . Block blocktype 
+parseBlock blocktype = modifyState (changeContext blocktype) >> ((newLine . lexeme) (char '{') *> many ((newLine . lexeme) parseStatementInBlock) <* lexeme (char '}')) >>= (\block -> modifyState (removeScopeVariables block . removeContext) >> return block) . Block blocktype 
 
 parseReturn :: MVParser Expression
 parseReturn = getPosition >>= \pos -> lexeme (Return <$> (lexeme (string "return") *> optionMaybe parseExpr)) >>= \expr -> modifyState (checkReturnType expr pos . checkForBlock pos) >> return expr

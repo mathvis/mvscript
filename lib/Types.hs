@@ -159,7 +159,7 @@ data ParserState = ParserState {
     config :: Configuration,
     st :: SymbolTable,
     fst :: FunctionSymbolTable,
-    context :: Maybe BlockType,
+    context :: [BlockType],
     unresolvedFunctionCalls :: [FunctionCallData]
 } deriving Show
 
@@ -168,7 +168,7 @@ defaultParserState = ParserState {
     config = defaultConfig,
     st = Map.empty,
     fst = Map.empty,
-    context = Nothing,
+    context = [],
     unresolvedFunctionCalls = []
 }
 
