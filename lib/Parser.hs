@@ -17,6 +17,7 @@ import VariableStorage
 import FunctionStorage
 import Debug.Trace
 import Control.Arrow
+import Config.ConfigHandler
 
 -- MAIN TYPE PARSERS
 parseStatement :: MVParser Statement
@@ -257,21 +258,21 @@ parseElse :: MVParser Declaration
 parseElse = lexeme $ ElseBlock <$> (rword "else" *> (parseBlock Else <|> parseStatement))
 
 parseIf :: MVParser Declaration
-parseIf = lexeme (IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> parseStatement) <*> optionMaybe parseElse) >>= evaluateControlFlow (collapseControlFlow <$> getConfig)
+parseIf = lexeme (IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> parseStatement) <*> optionMaybe parseElse) >>= evaluateControlFlow (getCollapseControlFlow <$> getState)
 
 -- OPERATION PARSERS
 parseOr :: MVParser Expression
-parseOr = chainl1 parseAnd parseOrOp >>= evaluateOperations (collapseOperations <$> getConfig)
+parseOr = chainl1 parseAnd parseOrOp >>= evaluateOperations (getCollapseOperations <$> getState)
   where
     parseOrOp = lexeme $ try (string "||" Data.Functor.$> (\lhs rhs -> Operation (Or lhs rhs)))
 
 parseAnd :: MVParser Expression
-parseAnd = chainl1 parseComparison parseAndOp >>= evaluateOperations (collapseOperations <$> getConfig)
+parseAnd = chainl1 parseComparison parseAndOp >>= evaluateOperations (getCollapseOperations <$> getState)
   where
     parseAndOp = lexeme $ try (string "&&" Data.Functor.$> (\lhs rhs -> Operation (And lhs rhs)))
 
 parseComparison :: MVParser Expression
-parseComparison = chainl1 parseBitwiseOr parseComparisonOp >>= evaluateOperations (collapseOperations <$> getConfig)
+parseComparison = chainl1 parseBitwiseOr parseComparisonOp >>= evaluateOperations (getCollapseOperations <$> getState)
   where
     parseComparisonOp =
         lexeme $
@@ -283,22 +284,22 @@ parseComparison = chainl1 parseBitwiseOr parseComparisonOp >>= evaluateOperation
                 <|> try (char '<' Data.Functor.$> (\lhs rhs -> Operation (LessThan lhs rhs)))
 
 parseBitwiseOr :: MVParser Expression
-parseBitwiseOr = chainl1 parseBitwiseXor parseBitwiseOrOp >>= evaluateOperations (collapseOperations <$> getConfig)
+parseBitwiseOr = chainl1 parseBitwiseXor parseBitwiseOrOp >>= evaluateOperations (getCollapseOperations <$> getState)
   where
     parseBitwiseOrOp = lexeme $ try (string "b|" Data.Functor.$> (\lhs rhs -> Operation (BitwiseOr lhs rhs)))
 
 parseBitwiseXor :: MVParser Expression
-parseBitwiseXor = chainl1 parseBitwiseAnd parseBitwiseXorOp >>= evaluateOperations (collapseOperations <$> getConfig)
+parseBitwiseXor = chainl1 parseBitwiseAnd parseBitwiseXorOp >>= evaluateOperations (getCollapseOperations <$> getState)
   where
     parseBitwiseXorOp = lexeme $ try (char '^' Data.Functor.$> (\lhs rhs -> Operation (BitwiseXor lhs rhs)))
 
 parseBitwiseAnd :: MVParser Expression
-parseBitwiseAnd = chainl1 parseAddSub parseBitwiseAndOp >>= evaluateOperations (collapseOperations <$> getConfig)
+parseBitwiseAnd = chainl1 parseAddSub parseBitwiseAndOp >>= evaluateOperations (getCollapseOperations <$> getState)
   where
     parseBitwiseAndOp = lexeme $ try (string "b&" Data.Functor.$> (\lhs rhs -> Operation (BitwiseAnd lhs rhs)))
 
 parseAddSub :: MVParser Expression
-parseAddSub = chainl1 parseMulDivMod parseAddSubOp >>= evaluateOperations (collapseOperations <$> getConfig)
+parseAddSub = chainl1 parseMulDivMod parseAddSubOp >>= evaluateOperations (getCollapseOperations <$> getState)
   where
     parseAddSubOp =
         lexeme $
@@ -306,7 +307,7 @@ parseAddSub = chainl1 parseMulDivMod parseAddSubOp >>= evaluateOperations (colla
                 <|> try (char '-' Data.Functor.$> (\lhs rhs -> Operation (Subtract lhs rhs)))
 
 parseMulDivMod :: MVParser Expression
-parseMulDivMod = chainl1 parseTerm parseMulDivModOp >>= evaluateOperations (collapseOperations <$> getConfig)
+parseMulDivMod = chainl1 parseTerm parseMulDivModOp >>= evaluateOperations (getCollapseOperations <$> getState)
   where
     parseMulDivModOp =
         lexeme $

@@ -1,9 +1,9 @@
-module ConfigParser (module ConfigParser) where
+module Config.ConfigParser (module Config.ConfigParser) where
 
 import Text.ParserCombinators.Parsec
 import Control.Monad.State
 import Misc
-import ConfigTypes
+import Config.ConfigTypes
 import Types (MVParser)
 import qualified Data.Map as Map
 
@@ -25,3 +25,8 @@ parseString = String <$> (char '"' *> many (noneOf "\"")<* char '"')
 parseOption :: MVParser (String, ConfigType)
 parseOption = (,) <$> lexeme (many (letter <|> char '-')) <* lexeme (char '=') <*> lexeme parseBool
 
+configValueToType :: ConfigType -> ConfigTypeName
+configValueToType (String _) = StringT
+configValueToType (Int _) = IntT
+configValueToType (Bool _) = BoolT
+  

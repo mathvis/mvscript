@@ -1,5 +1,7 @@
 [debug]
-enabled = true
+symbol-table = true
+function-symbol-table = true
+context = true
 
 [parsing]
 collapse-operations = true

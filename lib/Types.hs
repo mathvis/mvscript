@@ -1,12 +1,13 @@
 module Types (module Types) where
 
-import Data.Text as T
+import Data.Text as T hiding (map)
 import Text.ParserCombinators.Parsec
-import Data.Map
+import Data.Map hiding (map)
 import Text.Parsec
-import qualified Data.Map as Map
+import qualified Data.Map as Map hiding (map)
 import Prelude hiding (fst)
 import Text.Parsec.Pos
+import Config.ConfigTypes
 
 data TypeName
     = StringT
@@ -19,7 +20,21 @@ data TypeName
     | ArrayT TypeName
     | VoidT
     | LambdaT [TypeName] TypeName
-    deriving (Eq, Show)
+    deriving Eq
+
+instance Show TypeName where
+    show typename = case typename of
+        Types.StringT -> "string"        
+        Types.IntT -> "int"        
+        FloatT -> "float"        
+        Types.BoolT -> "bool"        
+        VectorT -> "vector"        
+        PointT -> "point"        
+        MatrixT -> "matrix"        
+        ArrayT typ -> "[" ++ show typ ++ "]"        
+        VoidT -> "void"
+        LambdaT args ret -> "lambda[" ++ T.unpack (intercalate (T.pack ", ") (map (T.pack . show) args)) ++ "]" ++ show ret
+
 
 data Type
     = String T.Text
@@ -99,21 +114,6 @@ data Statement = Decl Declaration | Expr Expression | Comment String | Block Blo
 reservedKeywords :: [String]
 reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false", "func", "const", "fwd"]
 
-data Configuration = Configuration {
-    debug :: Bool,
-    collapseOperations :: Bool,
-    collapseControlFlow :: Bool,
-    colors :: Bool
-} deriving Show
-
-defaultConfig :: Configuration
-defaultConfig = Configuration {
-    debug = False,
-    collapseOperations = False,
-    collapseControlFlow = True,
-    colors = True
-}
-
 class Data a where
 
 data FunctionData = FunctionData {
@@ -149,6 +149,7 @@ defaultVariableData = VariableData {
 
 type SymbolTable = Map T.Text VariableData
 type FunctionSymbolTable = Map T.Text FunctionData
+type ContextStack = [BlockType]
 
 data FunctionCallData = FunctionCallData {
     identifier :: T.Text,
@@ -156,12 +157,21 @@ data FunctionCallData = FunctionCallData {
 } deriving (Show, Eq)
 
 data ParserState = ParserState {
-    config :: Configuration,
+    config :: FlatParsedConfig,
     st :: SymbolTable,
     fst :: FunctionSymbolTable,
-    context :: [BlockType],
+    context :: ContextStack,
     unresolvedFunctionCalls :: [FunctionCallData]
 } deriving Show
+
+defaultConfig :: FlatParsedConfig
+defaultConfig = Map.fromList [
+    ("symbol-table", Config.ConfigTypes.Bool False),
+    ("function-symbol-table", Config.ConfigTypes.Bool False),
+    ("context", Config.ConfigTypes.Bool False),
+    ("colors", Config.ConfigTypes.Bool True),
+    ("collapse-operations", Config.ConfigTypes.Bool True),
+    ("collapse-control-flow", Config.ConfigTypes.Bool True)]
 
 defaultParserState :: ParserState
 defaultParserState = ParserState {
@@ -174,7 +184,7 @@ defaultParserState = ParserState {
 
 type MVParser a = Parsec String ParserState a
 
-getConfig :: MVParser Configuration
+getConfig :: MVParser FlatParsedConfig
 getConfig = config <$> getState
 
 getSymbolTable :: MVParser SymbolTable
@@ -186,5 +196,4 @@ getFunctionSymbolTable = fst <$> getState
 defaultSourcePos :: SourcePos
 defaultSourcePos = newPos "internal" 0 0
 
-data ParseResult = NoDebug ([Statement], ParserState) | Debug ([(Statement, ParserState)], ParserState)
 
