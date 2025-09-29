@@ -1,6 +1,6 @@
 module Types (module Types) where
 
-import Data.Text as T hiding (map)
+import Data.Text as T hiding (map, show)
 import Text.ParserCombinators.Parsec
 import Data.Map hiding (map)
 import Text.Parsec
