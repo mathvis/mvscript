@@ -1,3 +1,3 @@
-Decl (Variable (VarIdentifier "a") (Just IntT) (Just (Type (Int 0))))
-Decl (Variable (VarIdentifier "b") (Just IntT) (Just (Type (Int 0))))
+Decl (Variable (VarIdentifier "a") (Just int) (Just (Type (Int 0))))
+Decl (Variable (VarIdentifier "b") (Just int) (Just (Type (Int 0))))
 Decl (IfBlock (Operation (GreaterThan (VarIdentifier "a") (Type (Int 0)))) (Expr (VarIdentifier "b")) Nothing)

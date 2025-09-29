@@ -1,9 +1,9 @@
 [debug]
-enabled = true
+function-symbol-table = true
 
 [parsing]
 collapse-operations = true
 collapse-control-flow = true
 
 [testing]
-colors = true
+colors = false

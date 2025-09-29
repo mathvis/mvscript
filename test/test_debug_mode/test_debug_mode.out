@@ -1,1 +1,7 @@
-(Expr (Type (Int 3)),ParserState {config = Configuration {debug = True, collapseOperations = True, collapseControlFlow = True, colors = True}, st = fromList [], fst = fromList [], context = [], unresolvedFunctionCalls = []})
+Expr (Type (Int 3))
+
+--- STATE ---
+
+Context: 
+Function symbol table:
+Symbol table:

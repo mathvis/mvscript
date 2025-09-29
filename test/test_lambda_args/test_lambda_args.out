@@ -1,1 +1,1 @@
-Expr (LambdaFunc [(VarIdentifier "a",IntT)] (Just (Block (FunctionBlock VoidT) [Expr (VarIdentifier "a")])))
+Expr (LambdaFunc [(VarIdentifier "a",int)] (Just (Block (FunctionBlock void) [Expr (VarIdentifier "a")])))

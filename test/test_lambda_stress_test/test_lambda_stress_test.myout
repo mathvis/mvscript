@@ -1,1 +1,1 @@
-Decl (Variable (VarIdentifier "a") (Just (LambdaT [StringT,IntT,FloatT,BoolT,VectorT,PointT,MatrixT,ArrayT (LambdaT [] VoidT)] (LambdaT [] IntT))) Nothing)
+Decl (Variable (VarIdentifier "a") (Just lambda[string, int, float, bool, vector, point, matrix, [lambda[]void]]lambda[]int) Nothing)

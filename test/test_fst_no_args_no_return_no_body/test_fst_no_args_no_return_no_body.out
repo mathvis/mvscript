@@ -1,1 +1,9 @@
-(Decl (FunctionDef (FunctionIdentifier "a") [] VoidT (Just (Block (FunctionBlock VoidT) []))),ParserState {config = Configuration {debug = True, collapseOperations = True, collapseControlFlow = True, colors = True}, st = fromList [], fst = fromList [("a",FunctionData {returnType = VoidT, arguments = [], hasBody = True})], context = [], unresolvedFunctionCalls = []})
+Decl (FunctionDef (FunctionIdentifier "a") [] void (Just (Block (FunctionBlock void) [])))
+
+--- STATE ---
+
+Function symbol table:
+	Function name: a
+		Return type: void
+		Arguments: 
+		Has body: True

@@ -1,1 +1,1 @@
-Decl (FunctionDef (FunctionIdentifier "a") [] IntT (Just (Block (FunctionBlock IntT) [Decl (Variable (VarIdentifier "b") (Just IntT) (Just (Type (Int 5)))),Expr (Return (Just (Operation (Add (Type (Int 0)) (VarIdentifier "b")))))])))
+Decl (FunctionDef (FunctionIdentifier "a") [] int (Just (Block (FunctionBlock int) [Decl (Variable (VarIdentifier "b") (Just int) (Just (Type (Int 5)))),Expr (Return (Just (Operation (Add (Type (Int 0)) (VarIdentifier "b")))))])))

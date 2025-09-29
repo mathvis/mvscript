@@ -1,1 +1,9 @@
-(Decl (FunctionDef (FunctionIdentifier "a") [] VoidT (Just (Block (FunctionBlock VoidT) [Decl (Variable (VarIdentifier "c") (Just IntT) (Just (Type (Int 0))))]))),ParserState {config = Configuration {debug = True, collapseOperations = True, collapseControlFlow = True, colors = True}, st = fromList [("c",VariableData {variableType = Just IntT, inScope = False, isInitialized = True, isConstant = False})], fst = fromList [("a",FunctionData {returnType = VoidT, arguments = [], hasBody = True})], context = [], unresolvedFunctionCalls = []})
+Decl (FunctionDef (FunctionIdentifier "a") [] void (Just (Block (FunctionBlock void) [Decl (Variable (VarIdentifier "c") (Just int) (Just (Type (Int 0))))])))
+
+--- STATE ---
+
+Function symbol table:
+	Function name: a
+		Return type: void
+		Arguments: 
+		Has body: True

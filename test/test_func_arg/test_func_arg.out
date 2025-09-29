@@ -1,1 +1,1 @@
-Decl (FunctionDef (FunctionIdentifier "a") [(VarIdentifier "b",IntT),(VarIdentifier "c",StringT)] IntT Nothing)
+Decl (FunctionDef (FunctionIdentifier "a") [(VarIdentifier "b",int),(VarIdentifier "c",string)] int Nothing)

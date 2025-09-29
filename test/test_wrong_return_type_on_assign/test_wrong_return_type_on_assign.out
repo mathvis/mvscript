@@ -1,4 +1,4 @@
-error: Expected IntT but got FloatT
+error: Expected int but got float
  --> test/test_wrong_return_type_on_assign/test_wrong_return_type_on_assign.mvs:5:1
   |
 5 | b = a();

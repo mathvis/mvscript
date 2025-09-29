@@ -1,2 +1,2 @@
-Decl (Variable (VarIdentifier "a") (Just StringT) (Just (Type (String "test"))))
+Decl (Variable (VarIdentifier "a") (Just string) (Just (Type (String "test"))))
 Decl (Assignment (Assign (VarIdentifier "a") (Parentheses (Operation (Add (Type (String "test")) (VarIdentifier "a"))))))

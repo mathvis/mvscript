@@ -1,1 +1,1 @@
-Decl (Variable (VarIdentifier "a") (Just (LambdaT [] BoolT)) Nothing)
+Decl (Variable (VarIdentifier "a") (Just lambda[]bool) Nothing)

@@ -1,4 +1,4 @@
-error: Expected IntT but got FloatT
+error: Expected int but got float
  --> test/test_wrong_argument_type_value/test_wrong_argument_type_value.mvs:4:1
   |
 4 | a(5.0);

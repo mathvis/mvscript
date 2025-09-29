@@ -1,1 +1,1 @@
-Expr (LambdaFunc [] (Just (Block (FunctionBlock VoidT) [])))
+Expr (LambdaFunc [] (Just (Block (FunctionBlock void) [])))

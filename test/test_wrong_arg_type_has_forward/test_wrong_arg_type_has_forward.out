@@ -1,4 +1,4 @@
-error: Expected IntT but got VectorT
+error: Expected int but got vector
  --> test/test_wrong_arg_type_has_forward/test_wrong_arg_type_has_forward.mvs:2:1
   |
 2 | func a(b: vector) {}

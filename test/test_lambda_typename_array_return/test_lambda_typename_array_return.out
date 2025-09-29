@@ -1,1 +1,1 @@
-Decl (Variable (VarIdentifier "a") (Just (LambdaT [] (ArrayT IntT))) Nothing)
+Decl (Variable (VarIdentifier "a") (Just lambda[][int]) Nothing)

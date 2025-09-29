@@ -1,1 +1,1 @@
-Decl (Variable (VarIdentifier "a") (Just (LambdaT [IntT,IntT] VoidT)) Nothing)
+Decl (Variable (VarIdentifier "a") (Just lambda[int, int]void) Nothing)

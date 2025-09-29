@@ -1,1 +1,10 @@
-(Decl (FunctionDef (FunctionIdentifier "a") [(VarIdentifier "b",ArrayT IntT)] VectorT (Just (Block (FunctionBlock VectorT) [Decl (Variable (VarIdentifier "c") (Just IntT) (Just (Type (Int 0)))),Expr (Return (Just (Type (Vector [Type (Int 5),Type (Int 3)]))))]))),ParserState {config = Configuration {debug = True, collapseOperations = True, collapseControlFlow = True, colors = True}, st = fromList [("c",VariableData {variableType = Just IntT, inScope = False, isInitialized = True, isConstant = False})], fst = fromList [("a",FunctionData {returnType = VectorT, arguments = [("b",ArrayT IntT)], hasBody = True})], context = [], unresolvedFunctionCalls = []})
+Decl (FunctionDef (FunctionIdentifier "a") [(VarIdentifier "b",[int])] vector (Just (Block (FunctionBlock vector) [Decl (Variable (VarIdentifier "c") (Just int) (Just (Type (Int 0)))),Expr (Return (Just (Type (Vector [Type (Int 5),Type (Int 3)]))))])))
+
+--- STATE ---
+
+Function symbol table:
+	Function name: a
+		Return type: vector
+		Arguments: 
+			b: [int]
+		Has body: True

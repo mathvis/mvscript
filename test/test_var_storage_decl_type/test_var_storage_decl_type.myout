@@ -1,1 +1,10 @@
-(Decl (Variable (VarIdentifier "a") (Just IntT) Nothing),ParserState {config = Configuration {debug = True, collapseOperations = True, collapseControlFlow = True, colors = True}, st = fromList [("a",VariableData {variableType = Just IntT, inScope = True, isInitialized = False, isConstant = False})], fst = fromList [], context = [], unresolvedFunctionCalls = []})
+Decl (Variable (VarIdentifier "a") (Just int) Nothing)
+
+--- STATE ---
+
+Symbol table:
+	Variable name: a
+		Type: int
+		In scope: True
+		Is initialized: False
+		Is constant: False

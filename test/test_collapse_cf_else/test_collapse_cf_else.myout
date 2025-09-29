@@ -1,1 +1,1 @@
-Decl (CollapsedControlFlow (Block Else [Decl (Variable (VarIdentifier "a") (Just IntT) (Just (Type (Int 0))))]))
+Decl (CollapsedControlFlow (Block Else [Decl (Variable (VarIdentifier "a") (Just int) (Just (Type (Int 0))))]))

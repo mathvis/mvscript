@@ -1,1 +1,1 @@
-Block NoType [Decl (Variable (VarIdentifier "a") (Just IntT) (Just (Type (Int 0)))),Decl (Assignment (AddAssign (VarIdentifier "a") (Type (Int 1))))]
+Block NoType [Decl (Variable (VarIdentifier "a") (Just int) (Just (Type (Int 0)))),Decl (Assignment (AddAssign (VarIdentifier "a") (Type (Int 1))))]

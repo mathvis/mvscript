@@ -1,2 +1,2 @@
-Decl (FunctionDef (FunctionIdentifier "b") [] VoidT (Just (Block (FunctionBlock VoidT) [])))
-Expr (LambdaApplication (LambdaFunc [(VarIdentifier "a",IntT)] (Just (Block (FunctionBlock VoidT) []))) (FunctionCall (FunctionIdentifier "b") []))
+Decl (FunctionDef (FunctionIdentifier "b") [] void (Just (Block (FunctionBlock void) [])))
+Expr (LambdaApplication (LambdaFunc [(VarIdentifier "a",int)] (Just (Block (FunctionBlock void) []))) (FunctionCall (FunctionIdentifier "b") []))

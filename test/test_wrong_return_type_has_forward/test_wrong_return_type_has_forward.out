@@ -1,4 +1,4 @@
-error: Expected IntT as a return type but got BoolT
+error: Expected int as a return type but got bool
  --> test/test_wrong_return_type_has_forward/test_wrong_return_type_has_forward.mvs:2:1
   |
 2 | func a() bool {

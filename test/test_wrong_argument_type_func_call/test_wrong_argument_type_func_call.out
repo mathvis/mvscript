@@ -1,4 +1,4 @@
-error: Expected IntT but got BoolT
+error: Expected int but got bool
  --> test/test_wrong_argument_type_func_call/test_wrong_argument_type_func_call.mvs:4:1
   |
 4 | a(a(5));

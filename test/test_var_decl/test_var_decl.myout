@@ -1,1 +1,1 @@
-Decl (Variable (VarIdentifier "a") (Just IntT) Nothing)
+Decl (Variable (VarIdentifier "a") (Just int) Nothing)

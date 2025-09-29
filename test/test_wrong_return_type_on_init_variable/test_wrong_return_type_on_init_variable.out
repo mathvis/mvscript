@@ -1,5 +1,5 @@
-Decl (FunctionDef (FunctionIdentifier "a") [] IntT (Just (Block (FunctionBlock IntT) [Expr (Return (Just (Type (Int 0))))])))
-error: Expected BoolT but got IntT
+Decl (FunctionDef (FunctionIdentifier "a") [] int (Just (Block (FunctionBlock int) [Expr (Return (Just (Type (Int 0))))])))
+error: Expected bool but got int
  --> test/test_wrong_return_type_on_init_variable/test_wrong_return_type_on_init_variable.mvs:4:1
   |
 4 | let b: bool = a();
