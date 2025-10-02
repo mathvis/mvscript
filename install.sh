@@ -135,7 +135,7 @@ install_haskell_tools() {
             print_status "Installing Haskell Tools for Windows..."
             winget install GHC.GHC
             winget install --id=haskell.cabal  -e
-        *)
+        )
             print_warning "Unknown OS. Please install Haskell tools manually:"
             print_warning "- ghc"
             print_warning "- cabal"
