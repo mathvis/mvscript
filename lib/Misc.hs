@@ -4,23 +4,21 @@ import Types
 import System.Exit
 import System.IO.Unsafe
 import qualified Data.Text as T
-import Data.Map as Map hiding (map)
+import Data.Map as Map hiding (empty, map)
 import Error
 import Prelude hiding (fst, error)
 import Text.Megaparsec
 import Text.Megaparsec.Char
+import qualified Text.Megaparsec.Char.Lexer as L
 
-whitespace :: MVParser ()
-whitespace = void $ many $ oneOf " \n\t"
+sc :: MVParser ()
+sc = L.space (void $ some (spaceChar <|> char ';')) (L.skipLineComment "#") empty
 
 lexeme :: MVParser a -> MVParser a
-lexeme p = p <* whitespace
+lexeme = L.lexeme sc
 
-endLine :: MVParser a -> MVParser a
-endLine p = p <* optional (char ';') 
-
-newLine :: MVParser a -> MVParser a
-newLine p = p <* optional (char '\n')
+symbol :: String -> MVParser String
+symbol = L.symbol sc
 
 betweenParentheses :: MVParser a -> MVParser a
 betweenParentheses = between (lexeme $ char '(') (lexeme $ char ')') 
@@ -73,7 +71,3 @@ getFunctionArgTypes pos state name = case Map.lookup name (fst state) of
 intercalateStr :: String -> [String] -> String
 intercalateStr delim lst = T.unpack (T.intercalate (T.pack delim) (Prelude.map T.pack lst)) 
 
-chainl1 :: MVParser a -> MVParser (a -> a -> a) -> MVParser a
-chainl1 p op = p >>= rest
-  where
-    rest x = (op <*> pure x <*> p >>= rest) <|> return x

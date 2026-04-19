@@ -182,7 +182,7 @@ defaultParserState = ParserState {
     unresolvedFunctionCalls = []
 }
 
-type MVParser a = ParsecT Void String (State ParserState) a
+type MVParser = ParsecT Void String (State ParserState) 
 
 getConfig :: MVParser FlatParsedConfig
 getConfig = config <$> get
