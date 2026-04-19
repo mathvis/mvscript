@@ -3,3 +3,4 @@ run_tests_local.py
 test/*.local
 cabal.project.local
 .envrc
+.stack-work
