@@ -1,53 +1,37 @@
 name: Haskell CI
-
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
 permissions:
   contents: read
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
-
     - name: Setup Haskell
       uses: haskell-actions/setup@v2.7.10
-
+      with:
+        enable-stack: true
+        stack-version: 'latest'
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.13'
-
-    - name: Cache Cabal store
+    - name: Cache Stack
       uses: actions/cache@v3
       with:
         path: |
-          ~/.cabal/store
-          ~/.cabal/packages
-          dist-newstyle
-        key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-cabal-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze') }}
+          ~/.stack
+          .stack-work
+        key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml', 'stack.yaml.lock', '**/*.cabal') }}
         restore-keys: |
-          ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-cabal-
-          ${{ runner.os }}-ghc-
-
+          ${{ runner.os }}-stack-
     - name: Install dependencies
-      run: |
-        cabal build all
-
+      run: stack build --only-dependencies
+    - name: Build
+      run: stack build
     - name: Run tests
       run: python utils/run_tests.py
-    - name: Cache build artifacts
-      uses: actions/cache@v3
-      with:
-        path: |
-          dist-newstyle
-        key: ${{ runner.os }}-build-artifacts-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-build-artifacts-
