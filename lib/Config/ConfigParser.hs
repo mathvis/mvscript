@@ -1,14 +1,15 @@
 module Config.ConfigParser (module Config.ConfigParser) where
 
-import Text.ParserCombinators.Parsec
 import Control.Monad.State
 import Misc
 import Config.ConfigTypes
 import Types (MVParser)
 import qualified Data.Map as Map
+import Text.Megaparsec
+import Text.Megaparsec.Char
 
 parseTable :: MVParser Table
-parseTable = lexeme $ Table <$> (char '[' *> many letter <* string "]\n") <*> (Map.fromList <$> many parseOption)
+parseTable = lexeme $ Table <$> (char '[' *> many letterChar <* string "]\n") <*> (Map.fromList <$> many parseOption)
 
 parseBool :: MVParser ConfigType
 parseBool = Bool <$> (parseTrue <|> parseFalse)
@@ -17,13 +18,13 @@ parseBool = Bool <$> (parseTrue <|> parseFalse)
     parseFalse = False <$ string "false"
 
 parseInt :: MVParser ConfigType
-parseInt = Int . read <$> many digit
+parseInt = Int . read <$> many digitChar
 
 parseString :: MVParser ConfigType
 parseString = String <$> (char '"' *> many (noneOf "\"")<* char '"')
 
 parseOption :: MVParser (String, ConfigType)
-parseOption = (,) <$> lexeme (many (letter <|> char '-')) <* lexeme (char '=') <*> lexeme parseBool
+parseOption = (,) <$> lexeme (many (letterChar <|> char '-')) <* lexeme (char '=') <*> lexeme parseBool
 
 configValueToType :: ConfigType -> ConfigTypeName
 configValueToType (String _) = StringT

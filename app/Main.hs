@@ -10,49 +10,35 @@ import Data.Maybe
 import Parser
 import System.Environment
 import System.Exit
-import Text.ParserCombinators.Parsec
 import Types hiding (fst)
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import Control.Monad.State
 import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
 import FunctionStorage
 import Control.Exception
 import Config.ConfigHandler
 
--- parseFile :: String -> String -> ParserState -> ([Statement], ParserState)
--- parseFile filename file state =
---     case runParser parseStatementThenReturnState state filename file of
---         Left e -> error ("Error while parsing: " ++ show e)
---         Right parsed -> parsed
---   where
---     whitespaceOrNewline = skipMany (oneOf " \t\n\r;")
---     parseStatementThenReturnState = do
---         statements <- sepEndBy parseStatement whitespaceOrNewline
---         state <- getState
---         return (statements, state)
-
 parseFileDebug :: String -> String -> ParserState -> ([(Statement, ParserState)], ParserState)
 parseFileDebug filename file state =
-    case runParser parseStatementsWithStateThenReturnState state filename file of
-        Left e -> error ("Error while parsing: " ++ show e)
-        Right parsed -> parsed
-  where
-    whitespaceOrNewline = skipMany (oneOf " \t\n\r;")
-    parseStatementWithState = do
-        stmt <- parseStatement
-        currentState <- getState
-        return (stmt, currentState)
-  
-    parseStatementsWithStateThenReturnState = do
-        statements <- sepEndBy parseStatementWithState whitespaceOrNewline
-        finalState <- getState
-        return (statements, finalState)
+    case runState (runParserT parseStatementsWithStateThenReturnState filename file) state of
+        (Left e, _) -> error ("Error while parsing: " ++ show e)
+        (Right parsed, finalState) -> (parsed, finalState)
+    where
+        whitespaceOrNewline = skipMany (oneOf " \t\n\r;")
+        parseStatementWithState = do
+            stmt <- parseStatement
+            currentState <- get
+            return (stmt, currentState)
+        parseStatementsWithStateThenReturnState =
+            sepEndBy parseStatementWithState whitespaceOrNewline
 
 parseConfig :: String -> [Table]
 parseConfig config =
-    do
-        case runParser (many parseTable) defaultParserState "config" config of
-            Left e -> error ("Error while parsing: " ++ show e)
-            Right parsed -> parsed
+    case evalState (runParserT (many parseTable) "config" config) defaultParserState of
+        Left e -> error ("Error while parsing: " ++ show e)
+        Right parsed -> parsed
 
 main :: IO ()
 main =

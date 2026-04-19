@@ -5,13 +5,13 @@ import Data.Map as Map hiding (map)
 import Data.List
 import Error
 import Misc
-import Text.Parsec
 import Types
 import Prelude hiding (error)
 import Context
 import Debug.Trace
 import qualified Data.Text as T
 import FunctionStorage
+import Text.Megaparsec
 
 (<|) :: a -> Maybe a -> a
 a <| b = fromMaybe a b

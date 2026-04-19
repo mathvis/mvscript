@@ -8,7 +8,7 @@ import qualified Data.Text as T
 import Error
 import Types
 import Prelude hiding (error, fst)
-import Text.Parsec
+import Text.Megaparsec
 
 argIdsToText :: [(Expression, TypeName)] -> [(T.Text, TypeName)]
 argIdsToText = map argIdToText

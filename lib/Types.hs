@@ -1,13 +1,13 @@
 module Types (module Types) where
 
 import Data.Text as T hiding (map, show)
-import Text.ParserCombinators.Parsec
 import Data.Map hiding (map)
-import Text.Parsec
 import qualified Data.Map as Map hiding (map)
 import Prelude hiding (fst)
-import Text.Parsec.Pos
 import Config.ConfigTypes
+import Text.Megaparsec hiding (State)
+import Data.Void
+import Control.Monad.State
 
 data TypeName
     = StringT
@@ -182,18 +182,17 @@ defaultParserState = ParserState {
     unresolvedFunctionCalls = []
 }
 
-type MVParser a = Parsec String ParserState a
+type MVParser a = ParsecT Void String (State ParserState) a
 
 getConfig :: MVParser FlatParsedConfig
-getConfig = config <$> getState
+getConfig = config <$> get
 
 getSymbolTable :: MVParser SymbolTable
-getSymbolTable = st <$> getState
+getSymbolTable = st <$> get
 
 getFunctionSymbolTable :: MVParser FunctionSymbolTable
-getFunctionSymbolTable = fst <$> getState
+getFunctionSymbolTable = fst <$> get
 
 defaultSourcePos :: SourcePos
-defaultSourcePos = newPos "internal" 0 0
-
+defaultSourcePos = initialPos "internal"
 

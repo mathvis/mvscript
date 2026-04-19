@@ -5,7 +5,6 @@ module Eval (module Eval) where
 import Control.Applicative
 import Data.Bits (Bits (complement, xor), (.&.), (.|.))
 import Misc
-import Text.Parsec
 import Types
 
 compareValues :: (forall a. Ord a => a -> a -> Bool) -> Expression -> Expression -> Expression

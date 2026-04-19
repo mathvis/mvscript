@@ -2,10 +2,10 @@ module Error (module Error) where
 
 import GHC.IO.Unsafe
 import System.Exit
-import Text.Parsec
 import Types
 import qualified Data.Map as Map
 import qualified Config.ConfigTypes
+import Text.Megaparsec
 
 padF :: (Int -> Int) -> Int -> String
 padF _ 0 = "" 
@@ -72,18 +72,18 @@ red state str =
 getErrorLine :: SourcePos -> IO String
 getErrorLine pos = do
     contents <- lines <$> readFile (sourceName pos)
-    return $ contents !! (sourceLine pos - 1)
+    return $ contents !! (unPos (sourceLine pos) - 1)
     
 
 simpleError :: SourcePos -> String -> String -> a
 simpleError pos msg hint = unsafePerformIO $ do
     line <- getErrorLine pos
     putStrLn $ "error: " ++ msg
-    putStrLn $ padDigits (sourceLine pos) ++ "--> " ++ sourceName pos ++ ":" ++ show (sourceLine pos) ++ ":" ++ show (sourceColumn pos)
-    putStrLn $ padDigits (sourceLine pos) ++ " |"
-    putStrLn $ show (sourceLine pos) ++ " | " ++ line 
-    putStrLn $ padDigits (sourceLine pos) ++ " |" ++ pad (sourceColumn pos - 4 * countTabs line) ++ "^"
-    putStrLn $ padDigits (sourceLine pos) ++ " |"
+    putStrLn $ padDigits (unPos $ sourceLine pos) ++ "--> " ++ sourceName pos ++ ":" ++ show (unPos $ sourceLine pos) ++ ":" ++ show (sourceColumn pos)
+    putStrLn $ padDigits (unPos $ sourceLine pos) ++ " |"
+    putStrLn $ show (unPos $ sourceLine pos) ++ " | " ++ line 
+    putStrLn $ padDigits (unPos $ sourceLine pos) ++ " |" ++ pad (unPos (sourceColumn pos) - 4 * countTabs line) ++ "^"
+    putStrLn $ padDigits (unPos $ sourceLine pos) ++ " |"
     putStrLn $ "hint: " ++ hint
     exitFailure
 
@@ -91,11 +91,11 @@ error :: SourcePos -> ParserState -> String -> String -> a
 error pos state msg hint = unsafePerformIO $ do
     line <- getErrorLine pos
     putStrLn $ bold state (red state "error") ++ bold state ": " ++ bold state msg
-    putStrLn $ padDigits (sourceLine pos) ++ blue state "--> " ++ sourceName pos ++ ":" ++ show (sourceLine pos) ++ ":" ++ show (sourceColumn pos)
-    putStrLn $ padDigits (sourceLine pos) ++ blue state " |"
-    putStrLn $ blue state (show (sourceLine pos) ++ " | ") ++ line 
-    putStrLn $ padDigits (sourceLine pos) ++ blue state " |" ++ pad (sourceColumn pos - 4 * countTabs line) ++ red state "^"
-    putStrLn $ padDigits (sourceLine pos) ++ blue state " |"
+    putStrLn $ padDigits (unPos $ sourceLine pos) ++ blue state "--> " ++ sourceName pos ++ ":" ++ show (unPos $ sourceLine pos) ++ ":" ++ show (unPos $ sourceColumn pos)
+    putStrLn $ padDigits (unPos $ sourceLine pos) ++ blue state " |"
+    putStrLn $ blue state (show (unPos $ sourceLine pos) ++ " | ") ++ line 
+    putStrLn $ padDigits (unPos $ sourceLine pos) ++ blue state " |" ++ pad (unPos (sourceColumn pos) - 4 * countTabs line) ++ red state "^"
+    putStrLn $ padDigits (unPos $ sourceLine pos) ++ blue state " |"
     putStrLn $ bold state (lightBlue state "hint") ++ ": " ++ hint
     exitFailure
 

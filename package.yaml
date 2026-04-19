@@ -1,0 +1,44 @@
+name: mvscript
+version: 0.1.0.0
+author: João Novo
+maintainer: joaonovo05@protonmail.com
+
+library:
+  source-dirs: lib
+  dependencies:
+    - base
+    - containers
+    - mtl
+    - text
+    - megaparsec
+    - parser-combinators
+  exposed-modules:
+    - Config.ConfigParser
+    - Config.ConfigTypes
+    - Config.ConfigHandler
+    - Config.ConfigValidator
+    - Context
+    - Error
+    - Eval
+    - FunctionStorage
+    - Misc
+    - Parser
+    - TypeCheck
+    - Types
+    - VariableStorage
+    - PrettyPrint
+
+executables:
+  mvscc:
+    main: Main.hs
+    source-dirs: app
+    dependencies:
+      - base
+      - containers
+      - directory
+      - filepath
+      - mvscript
+      - text
+      - megaparsec
+      - parser-combinators
+      - mtl

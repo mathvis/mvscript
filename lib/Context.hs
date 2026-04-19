@@ -1,10 +1,10 @@
 module Context (module Context) where
 import Types
-import Text.Parsec
 import Error
 import Prelude hiding (error)
 import Data.List
 import Data.Maybe
+import Text.Megaparsec
 
 isFunction :: BlockType -> Bool
 isFunction (FunctionBlock _) = True

@@ -1,5 +1,4 @@
 module Misc (module Misc) where
-import Text.ParserCombinators.Parsec
 import Control.Monad
 import Types
 import System.Exit
@@ -8,6 +7,8 @@ import qualified Data.Text as T
 import Data.Map as Map hiding (map)
 import Error
 import Prelude hiding (fst, error)
+import Text.Megaparsec
+import Text.Megaparsec.Char
 
 whitespace :: MVParser ()
 whitespace = void $ many $ oneOf " \n\t"
@@ -25,7 +26,7 @@ betweenParentheses :: MVParser a -> MVParser a
 betweenParentheses = between (lexeme $ char '(') (lexeme $ char ')') 
 
 rword :: String -> MVParser ()
-rword w = (lexeme . try) (string w *> notFollowedBy (letter <|> digit))
+rword w = (lexeme . try) (string w *> notFollowedBy (letterChar <|> digitChar))
 
 toInt' :: (Num a, Real a) => a -> Integer
 toInt' = round . realToFrac
@@ -72,4 +73,7 @@ getFunctionArgTypes pos state name = case Map.lookup name (fst state) of
 intercalateStr :: String -> [String] -> String
 intercalateStr delim lst = T.unpack (T.intercalate (T.pack delim) (Prelude.map T.pack lst)) 
 
-
+chainl1 :: MVParser a -> MVParser (a -> a -> a) -> MVParser a
+chainl1 p op = p >>= rest
+  where
+    rest x = (op <*> pure x <*> p >>= rest) <|> return x

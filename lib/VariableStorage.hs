@@ -5,11 +5,11 @@ import Data.List as List
 import Data.Text as T hiding (foldl, show)
 import Error
 import Misc
-import Text.Parsec
 import TypeCheck
 import Types
 import Prelude hiding (fst, error)
 import FunctionStorage
+import Text.Megaparsec
 
 initialized :: Maybe Expression -> Bool
 initialized Nothing = False
