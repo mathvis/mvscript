@@ -130,7 +130,7 @@ checkTypeExpression pos state (Type typ) = convertToTypeName pos state (Type typ
 checkTypeExpression pos state (FunctionCall name _) = convertToTypeName pos state name 
 checkTypeExpression pos state (VarIdentifier name) = convertToTypeName pos state (VarIdentifier name)
 
-checkReturnType :: Expression -> SourcePos -> ParserState -> ParserState
+checkReturnType :: Statement -> SourcePos -> ParserState -> ParserState
 checkReturnType (Return expr) pos state =
     let
         returnType = getCurrentFunctionReturnType pos state
@@ -172,7 +172,7 @@ hasReturn :: [TopLevel] -> Bool
 hasReturn = any isReturnStmt
 
 isReturnStmt :: TopLevel -> Bool
-isReturnStmt (Expr (Return _)) = True
+isReturnStmt (Stmt (Return _)) = True
 isReturnStmt _ = False
 
 compareFunctionSignatureToForwardDecl :: Statement -> SourcePos -> ParserState -> ParserState

@@ -94,7 +94,6 @@ data Expression
     | FunctionCall Expression [Expression]
     | LambdaFunc [(Expression, TypeName)] (Maybe TopLevel) 
     | LambdaApplication Expression Expression
-    | Return (Maybe Expression)
     deriving (Eq, Show)
 
 data Statement
@@ -104,6 +103,7 @@ data Statement
     | FunctionDef Expression [(Expression, TypeName)] TypeName (Maybe TopLevel)
     | IfBlock Expression TopLevel (Maybe Statement)
     | ElseBlock TopLevel
+    | Return (Maybe Expression)
     | CollapsedControlFlow TopLevel
     deriving (Eq, Show)
 

@@ -21,13 +21,14 @@ import Text.Megaparsec.Char
 import TypeCheck
 import Types
 import VariableStorage
+import Text.Megaparsec.Debug
 
 -- MAIN TYPE PARSERS
 parseTopLevel :: MVParser TopLevel
 parseTopLevel =
   choice
-    [ Stmt <$> try parseStatement <?> "statement",
-      Expr <$> try parseExpr <?> "expression"
+    [ (Stmt <$> try parseStatement <?> "statement"),
+      (Expr <$> try parseExpr <?> "expression")
     ]
 
 parseExpr :: MVParser Expression
@@ -52,6 +53,7 @@ parseStatement =
     <|> try parseAssign
     <|> try parseFunctionForwardStatement
     <|> try parseFunctionStatement
+    <|> try parseReturn
     <|> parseIf
 
 -- DATA TYPE PARSERS
@@ -262,7 +264,7 @@ parseBlock blocktype = do
   modify (removeScopeVariables block . removeContext)
   return block
 
-parseReturn :: MVParser Expression
+parseReturn :: MVParser Statement
 parseReturn = getSourcePos >>= \pos -> lexeme (Return <$> (symbol "return" *> optional parseExpr)) >>= \expr -> modify (checkReturnType expr pos . checkForBlock pos) >> return expr
 
 -- CONTROL FLOW PARSERS
