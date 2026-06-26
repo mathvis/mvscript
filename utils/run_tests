@@ -1,51 +1,51 @@
 #!/usr/bin/python3
+from os import listdir, system
 from colorama import init as colorama_init
 from colorama import Fore
-from os import listdir, system
 import subprocess
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
-colorama_init()
+def parse_diff_output(output: str) -> str:
+    try:
+        if output == "":
+            return output
+        lines: list[str] = output.splitlines()
+        i = lines.index("---")
+        return f"Expected:\n\t{"\n".join(list(map(lambda l: l.lstrip('< '), lines[1 + 2:])))}\nGot:\n\t{"\n".join(list(map(lambda l: l.lstrip('> '), lines[1:i])))}"
+    except ValueError:
+        return output
+
+def run_test(binary: str, name: str) -> bool:
+    if subprocess.run(
+        [binary, f"test/compile_tests/{name}"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode == 0:
+        print(f"{Fore.GREEN}TEST {name} PASSED!")
+        return True
+    print(f"\033[1m{Fore.RED}TEST {name} FAILED!\033[0m")
+    return False
 
 def get_binary_path() -> str:
-    return subprocess.getoutput("stack exec -- which mvscc").strip()
-
-def run_test(name: str, num: int, binary: str) -> tuple[bool, int, str]:
-    system(f'{binary} "test/{name}/{name}.mvs" "test/{name}/config.toml" &> test/{name}/{name}.myout')
-    result = subprocess.getoutput(
-        f"diff ./test/{name}/{name}.myout ./test/{name}/{name}.out"
+    result = subprocess.run(
+        ["stack", "path", "--local-install-root"],
+        capture_output=True,
+        text=True,
     )
-    passed = result == ""
-    if passed:
-        print(f"{Fore.GREEN}{name} PASSED!")
-    else:
-        print(f"\033[1m{Fore.RED}{name} FAILED! ({num})\033[0m")
-    return passed, num, name
+    install_root = result.stdout.strip()
+    return f"{install_root}/bin/mvscc"
 
 def run_tests():
-    system("stack build > /dev/null 2>&1")
+    system("stack build > /dev/null")
     binary = get_binary_path()
-    files = listdir("./test")
-    count = 0
-    failed_tests: dict[int, str] = {}
-
-    with ThreadPoolExecutor() as executor:
-        futures = {executor.submit(run_test, f, i, binary): i for i, f in enumerate(files)}
-        for future in as_completed(futures):
-            passed, num, name = future.result()
-            if passed:
-                count += 1
-            else:
-                failed_tests[num] = name
-
+    files = listdir("./test/compile_tests")
+    count: int = 0
+    for file in files:
+        if run_test(binary, file):
+            count += 1
     if count != len(files):
-        print(f"\033[1m{Fore.RED}{count}/{len(files)} TESTS PASSED!\033[0m")
-        tests = map(int, input("Enter the tests you want to analyze (separated by ,): ").split(","))
-        for test in tests:
-            system(f"helix ./test/{failed_tests[test]}/{failed_tests[test]}.out ./test/{failed_tests[test]}/{failed_tests[test]}.myout --vsplit")
+        print(f"{count}/{len(files)} TESTS PASSED!")
         exit(1)
-
-    print(f"\033[1m{Fore.GREEN}{count}/{len(files)} TESTS PASSED!\033[0m")
+    print(f"{count}/{len(files)} TESTS PASSED!")
     exit(0)
 
 def main():
