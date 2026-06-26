@@ -185,13 +185,13 @@ defaultParserState = ParserState {
 type MVParser = ParsecT Void String (State ParserState) 
 
 getConfig :: MVParser FlatParsedConfig
-getConfig = config <$> get
+getConfig = gets config 
 
 getSymbolTable :: MVParser SymbolTable
-getSymbolTable = st <$> get
+getSymbolTable = gets st
 
 getFunctionSymbolTable :: MVParser FunctionSymbolTable
-getFunctionSymbolTable = fst <$> get
+getFunctionSymbolTable = gets fst
 
 defaultSourcePos :: SourcePos
 defaultSourcePos = initialPos "internal"

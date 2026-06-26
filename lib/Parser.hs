@@ -34,7 +34,7 @@ parseStatementInBlock = (Decl <$> try parseDeclaration) <|> (Expr <$> (try parse
 
 parseExpr :: MVParser Expression
 parseExpr = do
-    collapse <- getCollapseOperations <$> get
+    collapse <- gets getCollapseOperations 
     let fold = if collapse then foldExpression else id
     makeExprParser parseTerm (operatorTable fold)
 
@@ -250,7 +250,7 @@ parseElse :: MVParser Declaration
 parseElse = lexeme $ ElseBlock <$> (rword "else" *> (parseBlock Else <|> parseStatement))
 
 parseIf :: MVParser Declaration
-parseIf = lexeme (IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> parseStatement) <*> optional parseElse) >>= evaluateControlFlow (getCollapseControlFlow <$> get)
+parseIf = lexeme (IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> parseStatement) <*> optional parseElse) >>= evaluateControlFlow (gets getCollapseControlFlow)
 
 operatorTable :: (Expression -> Expression) -> [[Operator MVParser Expression]]
 operatorTable fold =
