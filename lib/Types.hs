@@ -92,24 +92,24 @@ data Expression
     | VarIdentifier T.Text
     | FunctionIdentifier T.Text
     | FunctionCall Expression [Expression]
-    | LambdaFunc [(Expression, TypeName)] (Maybe Statement) 
+    | LambdaFunc [(Expression, TypeName)] (Maybe TopLevel) 
     | LambdaApplication Expression Expression
     | Return (Maybe Expression)
     deriving (Eq, Show)
 
-data Declaration
+data Statement
     = Variable Expression (Maybe TypeName) (Maybe Expression)
     | Constant Expression TypeName Expression
     | Assignment Operation
-    | FunctionDef Expression [(Expression, TypeName)] TypeName (Maybe Statement)
-    | IfBlock Expression Statement (Maybe Declaration)
-    | ElseBlock Statement
-    | CollapsedControlFlow Statement
+    | FunctionDef Expression [(Expression, TypeName)] TypeName (Maybe TopLevel)
+    | IfBlock Expression TopLevel (Maybe Statement)
+    | ElseBlock TopLevel
+    | CollapsedControlFlow TopLevel
     deriving (Eq, Show)
 
 data BlockType = NoType | If | Else | FunctionBlock TypeName deriving (Eq, Show)
 
-data Statement = Decl Declaration | Expr Expression | Comment String | Block BlockType [Statement] deriving (Eq, Show)
+data TopLevel = Stmt Statement | Expr Expression | Block BlockType [TopLevel] deriving (Eq, Show)
 
 reservedKeywords :: [String]
 reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false", "func", "const", "fwd"]

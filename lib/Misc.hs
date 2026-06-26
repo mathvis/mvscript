@@ -12,7 +12,7 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 sc :: MVParser ()
-sc = L.space (void $ some (spaceChar <|> char ';')) (L.skipLineComment "#") empty
+sc = L.space space1 (L.skipLineComment "#") empty
 
 lexeme :: MVParser a -> MVParser a
 lexeme = L.lexeme sc

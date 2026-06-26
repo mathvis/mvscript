@@ -1,6 +1,5 @@
 dist-newstyle/**/*
-run_tests_local.py
-test/*.local
+test/*.myout
 cabal.project.local
 .envrc
 .stack-work

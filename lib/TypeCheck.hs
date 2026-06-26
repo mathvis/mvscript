@@ -22,12 +22,12 @@ convertToTypeName pos state (VarIdentifier name) = getVariableType pos state nam
 convertToTypeName pos state (Operation op) = checkTypeExpression pos state (Operation op)
 convertToTypeName pos state (FunctionIdentifier name) = getFunctionReturnType pos state name
 
-inferVariableType :: SourcePos -> ParserState -> Declaration -> Declaration
+inferVariableType :: SourcePos -> ParserState -> Statement -> Statement
 inferVariableType _ _ (Variable exp (Just a) val) = Variable exp (Just a) val
 inferVariableType _ _ (Variable exp Nothing (Just (Type val))) = Variable exp (Just $ valueToType val) (Just (Type val))
 inferVariableType pos state decl = error pos state ("Could not infer type: " ++ show decl) "Internal error."
 
-checkType :: SourcePos -> ParserState -> Declaration -> Declaration
+checkType :: SourcePos -> ParserState -> Statement -> Statement
 checkType pos state (Variable exp (Just expectedType) (Just (Type val))) =
     let actualType = convertToTypeName pos state (Type val)
      in if expectedType == actualType
@@ -50,7 +50,7 @@ checkType pos state (Assignment (Assign (VarIdentifier varName) (FunctionCall (F
      in if convertToTypeName pos state (VarIdentifier varName) == actualType
             then Assignment (Assign (VarIdentifier varName) (FunctionCall (FunctionIdentifier name) args))
             else error pos state ("Expected " ++ show (convertToTypeName pos state (VarIdentifier varName)) ++ " but got " ++ show actualType) "Consider changing the variable type or declaring a new variable."
-checkType pos state _ = error pos state "Declaration is not a variable declaration" "Internal error."
+checkType pos state _ = error pos state "Statement is not a variable declaration" "Internal error."
 
 -- TODO: FUNCTIONS AND LAMBDAS
 checkTypeOperation :: Expression -> Expression -> SourcePos -> ParserState -> Maybe TypeName -> TypeName
@@ -162,20 +162,20 @@ checkArgumentType (actual, expected) = if actual == expected
     then Right ()
     else Left ("Expected " ++ show expected ++ " but got " ++ show actual, "Try changing the argument type.")
    
-checkForReturn :: Declaration -> SourcePos -> ParserState -> ParserState
+checkForReturn :: Statement -> SourcePos -> ParserState -> ParserState
 checkForReturn (FunctionDef _ _ returnType (Just (Block (FunctionBlock _) stmts))) pos state =
     if not (hasReturn stmts) && returnType /= VoidT 
         then error pos state ("Function must return a value of type " ++ show returnType) "Try adding a return statement."
         else state
     
-hasReturn :: [Statement] -> Bool
+hasReturn :: [TopLevel] -> Bool
 hasReturn = any isReturnStmt
 
-isReturnStmt :: Statement -> Bool
+isReturnStmt :: TopLevel -> Bool
 isReturnStmt (Expr (Return _)) = True
 isReturnStmt _ = False
 
-compareFunctionSignatureToForwardDecl :: Declaration -> SourcePos -> ParserState -> ParserState
+compareFunctionSignatureToForwardDecl :: Statement -> SourcePos -> ParserState -> ParserState
 compareFunctionSignatureToForwardDecl (FunctionDef (FunctionIdentifier name) args returnType (Just _)) pos state
     | not (hasForwardDecl name state) = state 
     | expectedLength /= actualLength =

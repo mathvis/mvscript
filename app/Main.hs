@@ -21,14 +21,14 @@ import Control.Exception hiding (try)
 import Config.ConfigHandler
 import Misc
 
-parseFileDebug :: String -> String -> ParserState -> ([(Statement, ParserState)], ParserState)
+parseFileDebug :: String -> String -> ParserState -> ([(TopLevel, ParserState)], ParserState)
 parseFileDebug filename file state =
     case runState (runParserT parseStatementsWithStateThenReturnState filename file) state of
         (Left e, _) -> error ("Error while parsing: " ++ errorBundlePretty e)
         (Right parsed, finalState) -> (parsed, finalState)
     where
         parseStatementWithState = do
-            stmt <- parseStatement
+            stmt <- parseTopLevel
             currentState <- get
             return (stmt, currentState)
         parseStatementsWithStateThenReturnState =

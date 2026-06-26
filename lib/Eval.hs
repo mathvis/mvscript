@@ -17,7 +17,7 @@ compareValuesTyped op (Float x) (Float y) = op x y
 compareValuesTyped op (String x) (String y) = op x y
 compareValuesTyped _ _ _ = undefined
 
-evaluateControlFlow :: MVParser Bool -> Declaration -> MVParser Declaration
+evaluateControlFlow :: MVParser Bool -> Statement -> MVParser Statement
 evaluateControlFlow collapse (IfBlock condition statement elseBlock) = do
     shouldCollapse <- collapse
     if shouldCollapse

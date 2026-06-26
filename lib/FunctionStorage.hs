@@ -19,13 +19,13 @@ createFunctionData :: [(Expression, TypeName)] -> TypeName -> Bool -> FunctionDa
 createFunctionData args returnType hasBody =
     defaultFunctionData {returnType, arguments = argIdsToText args, hasBody}
 
-createFunctionRecord :: Declaration -> Bool -> ParserState -> (T.Text, FunctionData)
+createFunctionRecord :: Statement -> Bool -> ParserState -> (T.Text, FunctionData)
 createFunctionRecord (FunctionDef (FunctionIdentifier name) args returnType _) hasBody _ =
     (,) name (createFunctionData args returnType hasBody)
 createFunctionRecord _ _ state =
     error defaultSourcePos state "Could not create function record." "Internal error."
 
-addFunctionToTable :: Declaration -> ParserState -> ParserState
+addFunctionToTable :: Statement -> ParserState -> ParserState
 addFunctionToTable decl@(FunctionDef (FunctionIdentifier _) _ _ body) state =
     state {fst = Map.insert name functionData currentFst}
     where

@@ -22,7 +22,7 @@ getEnabledDebugOptions state = Map.filterWithKey isTrueDebug (config state)
         isTrueDebug name (Bool bool) =
             elem name (map Prelude.fst debugOptions) && bool
 
-printWithDebugOptions :: (Statement, ParserState) -> IO ()
+printWithDebugOptions :: (TopLevel, ParserState) -> IO ()
 printWithDebugOptions statefulStmt@(stmt, state) =
     do
         print stmt
