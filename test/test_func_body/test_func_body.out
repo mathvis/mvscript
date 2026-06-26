@@ -1,1 +1,0 @@
-Decl (FunctionDef (FunctionIdentifier "a") [(VarIdentifier "b",int),(VarIdentifier "c",string)] int (Just (Block (FunctionBlock int) [Decl (Variable (VarIdentifier "a") (Just int) (Just (Type (Int 0)))),Expr (Return (Just (VarIdentifier "a")))])))

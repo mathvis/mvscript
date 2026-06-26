@@ -1,4 +1,4 @@
-Decl (FunctionDef (FunctionIdentifier "a") [] void Nothing)
+Stmt (FunctionDef (FunctionIdentifier "a") [] void Nothing)
 
 --- STATE ---
 

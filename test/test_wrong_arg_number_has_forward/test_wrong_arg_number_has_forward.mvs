@@ -1,2 +1,2 @@
-[fwd] func a(b: int, c: bool);
+[fwd] func a(b: int, c: bool)
 func a(b: int) {}

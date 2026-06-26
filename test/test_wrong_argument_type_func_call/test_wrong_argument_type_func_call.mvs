@@ -1,4 +1,4 @@
 func a(b: int) bool {
-	return false;
+	return false
 };
-a(a(5));
+a(a(5))

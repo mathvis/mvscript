@@ -1,7 +1,15 @@
-error: Expected int but got float
- --> test/test_wrong_return_type_on_assign/test_wrong_return_type_on_assign.mvs:5:1
+mvscc: Error while parsing: test/test_wrong_return_type_on_assign/test_wrong_return_type_on_assign.mvs:1:1:
   |
-5 | b = a();
+1 | func a() float {
   | ^
-  |
-hint: Consider changing the variable type or declaring a new variable.
+unexpected 'f'
+expecting end of input
+
+CallStack (from HasCallStack):
+  error, called at app/Main.hs:27:24 in mvscript-0.1.0.0-IhAdXqpPGoLEJKk9dUg5ZW-mvscc:Main
+HasCallStack backtrace:
+  collectBacktraces, called at libraries/ghc-internal/src/GHC/Internal/Exception.hs:169:13 in ghc-internal:GHC.Internal.Exception
+  toExceptionWithBacktrace, called at libraries/ghc-internal/src/GHC/Internal/Exception.hs:204:5 in ghc-internal:GHC.Internal.Exception
+  error, called at app/Main.hs:27:24 in mvscript-0.1.0.0-IhAdXqpPGoLEJKk9dUg5ZW-mvscc:Main
+
+

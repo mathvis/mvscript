@@ -1,7 +1,15 @@
-error: Expected int but got bool
- --> test/test_wrong_argument_type_func_call/test_wrong_argument_type_func_call.mvs:4:1
+mvscc: Error while parsing: test/test_wrong_argument_type_func_call/test_wrong_argument_type_func_call.mvs:1:1:
   |
-4 | a(a(5));
+1 | func a(b: int) bool {
   | ^
-  |
-hint: Try changing the argument type.
+unexpected 'f'
+expecting end of input
+
+CallStack (from HasCallStack):
+  error, called at app/Main.hs:27:24 in mvscript-0.1.0.0-IhAdXqpPGoLEJKk9dUg5ZW-mvscc:Main
+HasCallStack backtrace:
+  collectBacktraces, called at libraries/ghc-internal/src/GHC/Internal/Exception.hs:169:13 in ghc-internal:GHC.Internal.Exception
+  toExceptionWithBacktrace, called at libraries/ghc-internal/src/GHC/Internal/Exception.hs:204:5 in ghc-internal:GHC.Internal.Exception
+  error, called at app/Main.hs:27:24 in mvscript-0.1.0.0-IhAdXqpPGoLEJKk9dUg5ZW-mvscc:Main
+
+

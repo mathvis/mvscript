@@ -1,2 +1,0 @@
-Decl (FunctionDef (FunctionIdentifier "a") [] bool (Just (Block (FunctionBlock bool) [Expr (Return (Just (Type (Bool False))))])))
-Decl (Variable (VarIdentifier "b") (Just bool) (Just (FunctionCall (FunctionIdentifier "a") [])))

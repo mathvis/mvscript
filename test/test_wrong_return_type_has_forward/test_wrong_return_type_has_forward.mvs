@@ -1,4 +1,4 @@
-[fwd] func a() int;
+[fwd] func a() int
 func a() bool {
-	return false;
+	return false
 }

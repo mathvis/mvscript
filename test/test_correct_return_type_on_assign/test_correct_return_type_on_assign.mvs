@@ -1,5 +1,0 @@
-func a() bool {
-	return false;
-}
-let b: bool;
-b = a();

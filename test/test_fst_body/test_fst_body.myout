@@ -1,4 +1,4 @@
-Decl (FunctionDef (FunctionIdentifier "a") [] void (Just (Block (FunctionBlock void) [Decl (Variable (VarIdentifier "c") (Just int) (Just (Type (Int 0))))])))
+Stmt (FunctionDef (FunctionIdentifier "a") [] void (Just (Block (FunctionBlock void) [Stmt (Variable (VarIdentifier "c") (Just int) (Just (Type (Int 0))))])))
 
 --- STATE ---
 

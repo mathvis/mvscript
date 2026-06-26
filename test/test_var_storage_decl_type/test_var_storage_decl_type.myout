@@ -1,4 +1,4 @@
-Decl (Variable (VarIdentifier "a") (Just int) Nothing)
+Stmt (Variable (VarIdentifier "a") (Just int) Nothing)
 
 --- STATE ---
 

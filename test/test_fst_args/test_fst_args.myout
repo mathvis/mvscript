@@ -1,4 +1,4 @@
-Decl (FunctionDef (FunctionIdentifier "a") [(VarIdentifier "b",int),(VarIdentifier "c",string)] void (Just (Block (FunctionBlock void) [])))
+Stmt (FunctionDef (FunctionIdentifier "a") [(VarIdentifier "b",int),(VarIdentifier "c",string)] void (Just (Block (FunctionBlock void) [])))
 
 --- STATE ---
 
