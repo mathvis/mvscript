@@ -1,6 +1,5 @@
 module Config.ConfigParser (module Config.ConfigParser) where
 
-import Control.Monad.State
 import Misc
 import Config.ConfigTypes
 import Types (MVParser)

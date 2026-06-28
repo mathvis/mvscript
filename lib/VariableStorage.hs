@@ -23,7 +23,7 @@ createVariableRecord (Variable (Identifier name) typename val) _ = (,) name (cre
 createVariableRecord _ state = error defaultSourcePos state "Could not create variable record." "Internal error."
 
 createArgumentVariableRecord :: (Expression, Type) -> ParserState -> (T.Text, VariableData)
-createArgumentVariableRecord (Identifier name, typename) state = (,) name (createVariableData (Just typename) (Just (Literal (Int 0))))
+createArgumentVariableRecord (Identifier name, typename) _ = (,) name (createVariableData (Just typename) (Just (Literal (Int 0))))
 createArgumentVariableRecord _ state = error defaultSourcePos state "Could not create argument record." "Internal error."
 
 addVariableToTable :: Statement -> ParserState -> ParserState
@@ -43,14 +43,17 @@ addArgumentsToTable args state = foldl (flip addArgumentToTable) state args
 
 removeArgumentFromTable :: (Expression, Type) -> ParserState -> ParserState
 removeArgumentFromTable (Identifier name, _) state = state {st = Map.delete name (st state)}
+removeArgumentFromTable _ state = error defaultSourcePos state "" "Internal error."
 
 removeArgumentsFromTable :: Statement -> ParserState -> ParserState
-removeArgumentsFromTable (FunctionDef name (arg : args) return stmts) state = removeArgumentsFromTable (FunctionDef name args return stmts) (removeArgumentFromTable arg state)
+removeArgumentsFromTable (FunctionDef name (arg : args) return' stmts) state = removeArgumentsFromTable (FunctionDef name args return' stmts) (removeArgumentFromTable arg state)
 removeArgumentsFromTable (FunctionDef _ [] _ _) state = state
+removeArgumentsFromTable _ state = error defaultSourcePos state "" "Internal error."
 
 removeArgumentsFromTableLambda :: Expression -> ParserState -> ParserState
 removeArgumentsFromTableLambda (LambdaFunc (arg : args) stmts) state = removeArgumentsFromTableLambda (LambdaFunc args stmts) (removeArgumentFromTable arg state)
 removeArgumentsFromTableLambda (LambdaFunc [] _) state = state
+removeArgumentsFromTableLambda _ state = error defaultSourcePos state "" "Internal error."
 
 updateVariableUninitialized :: SourcePos -> Statement -> ParserState -> ParserState
 updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Literal lit))) state =
@@ -78,7 +81,7 @@ updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Operation
     currentSt = st state
     currentVData = Map.lookup name currentSt
     typ = checkTypeExpression pos state (Operation op)
-updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Identifier name2))) state =
+updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Identifier _))) state =
   case currentVData of
     Just vData -> case variableType vData of
       Nothing -> state {st = Map.insert name vData {variableType = Just typ, isInitialized = True} currentSt}
@@ -93,7 +96,7 @@ updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Identifie
     typ = getVariableType pos state name
 updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Parentheses op))) state =
   updateVariableUninitialized pos (Assignment (Assign (Identifier name) op)) state
-updateVariableUninitialized pos (Assignment (Assign (Identifier vName) (FunctionCall (FunctionIdentifier fName) args))) state =
+updateVariableUninitialized pos (Assignment (Assign (Identifier vName) (FunctionCall (FunctionIdentifier fName) _))) state =
   case currentVData of
     Just vData -> case variableType vData of
       Nothing -> state {st = Map.insert vName vData {variableType = Just typ, isInitialized = True} currentSt}
@@ -134,5 +137,6 @@ removeScopeVarBlock (Stmt (Variable (Identifier name) _ _)) state = state {st = 
 removeScopeVarBlock _ state = state
 
 removeScopeVariables :: TopLevel -> ParserState -> ParserState
-removeScopeVariables (Block _ (stmt : stmts)) state = removeScopeVarBlock stmt state
+removeScopeVariables (Block _ (stmt : _)) state = removeScopeVarBlock stmt state
 removeScopeVariables (Block _ []) state = state
+removeScopeVariables _ state = state

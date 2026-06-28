@@ -2,33 +2,20 @@
 
 module Parser (module Parser) where
 
-import Config.ConfigHandler
-import Context
-import Control.Applicative (liftA2)
-import Control.Arrow
-import Control.Monad
 import Control.Monad.Combinators.Expr
-import Control.Monad.State
-import Data.Char
 import Data.Functor
-import Data.Text as T (pack, unpack)
-import Debug.Trace
-import Eval
-import FunctionStorage
+import Data.Text as T (pack)
 import Misc
 import Text.Megaparsec
 import Text.Megaparsec.Char
-import Text.Megaparsec.Debug
-import TypeCheck
 import Types
-import VariableStorage
 
 -- MAIN TYPE PARSERS
 parseTopLevel :: MVParser TopLevel
 parseTopLevel =
   choice
-    [ (Stmt <$> try parseStatement <?> "statement"),
-      (Expr <$> try parseExpr <?> "expression")
+    [ Stmt <$> try parseStatement <?> "statement",
+      Expr <$> try parseExpr <?> "expression"
     ]
 
 parseExpr :: MVParser Expression
@@ -91,10 +78,7 @@ identifierName = (lexeme . try) $ do
     else return name
 
 parseIdentifier :: MVParser Expression
-parseIdentifier = do
-  pos <- getSourcePos
-  expr <- Identifier . T.pack <$> identifierName
-  return expr
+parseIdentifier = Identifier . T.pack <$> identifierName
 
 parseArgIdentifier :: MVParser Expression
 parseArgIdentifier = Identifier . T.pack <$> identifierName
@@ -127,13 +111,10 @@ parseType = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parseBool
 
 parseVarInitialization :: MVParser Statement
 parseVarInitialization =
-  getSourcePos >>= \pos ->
-    get >>= \state ->
-      ( Variable
-          <$> (rword "let" *> parseIdentifierDecl)
-          <*> optional (symbol ":" *> parseType)
-          <*> (symbol "=" *> parseExpr >>= \expr -> return (Just expr))
-      )
+  Variable
+    <$> (rword "let" *> parseIdentifierDecl)
+    <*> optional (symbol ":" *> parseType)
+    <*> (symbol "=" *> parseExpr >>= \expr -> return (Just expr))
 
 -- OPERATION RELATED PARSERS
 parseParens :: MVParser Expression
@@ -149,7 +130,6 @@ parseUnary =
 
 parseAssign :: MVParser Statement
 parseAssign = do
-  pos <- getSourcePos
   leftTerm <- parseIdentifierDecl
   op <-
     try (symbol "//=")
@@ -197,37 +177,32 @@ parseFunctionSignature =
 
 parseFunctionForwardDeclaration :: MVParser Statement
 parseFunctionForwardDeclaration =
-  getSourcePos >>= \pos ->
     lexeme $
       symbol "[fwd]" *> parseFunctionSignature
-        >>= \(funcIdentifier, args, returnType) ->
-          return (FunctionDef funcIdentifier args returnType Nothing)
+        >>= \(funcIdentifier, args, returnType') ->
+          return (FunctionDef funcIdentifier args returnType' Nothing)
 
 parseFunctionDefinition :: MVParser Statement
 parseFunctionDefinition =
-  getSourcePos
-    >>= \pos ->
       lexeme $
         parseFunctionSignature
-          >>= \(funcIdentifier, args, returnType) ->
-            parseBlock (FunctionBlock returnType)
-              >>= ( \decl ->
-                      return decl
-                  )
-                . FunctionDef funcIdentifier args returnType
+          >>= \(funcIdentifier, args, returnType') ->
+            parseBlock (FunctionBlock returnType')
+              >>= return
+                . FunctionDef funcIdentifier args returnType'
                 . Just
 
 parseFunctionCallArguments :: MVParser [Expression]
 parseFunctionCallArguments = sepBy parseExpr (lexeme $ char ',')
 
 parseFunctionCall :: MVParser Expression
-parseFunctionCall = getSourcePos >>= \pos -> functionCall 
+parseFunctionCall = functionCall
   where
     functionCall = lexeme $ FunctionCall <$> parseFunctionIdentifier <*> between (symbol "(") (symbol ")") parseFunctionCallArguments
 
 -- TODO: fix lambda return types
 parseLambda :: MVParser Expression
-parseLambda = LambdaFunc <$> betweenParentheses parseFunctionParameters <*> (symbol ":" *> (parseBlock (FunctionBlock VoidT) <|> parseTopLevel)) 
+parseLambda = LambdaFunc <$> betweenParentheses parseFunctionParameters <*> (symbol ":" *> (parseBlock (FunctionBlock VoidT) <|> parseTopLevel))
 
 parseLambdaApplication :: MVParser Expression
 parseLambdaApplication =
@@ -237,14 +212,14 @@ parseLambdaApplication =
 
 parseBlock :: BlockType -> MVParser TopLevel
 parseBlock blocktype = do
-  symbol "{"
+  _ <- symbol "{"
   stmts <- many (lexeme parseTopLevel)
-  symbol "}"
+  _ <- symbol "}"
   let block = Block blocktype stmts
   return block
 
 parseReturn :: MVParser Statement
-parseReturn = getSourcePos >>= \pos -> lexeme (Return <$> (symbol "return" *> optional parseExpr)) 
+parseReturn = lexeme (Return <$> (symbol "return" *> optional parseExpr))
 
 -- CONTROL FLOW PARSERS
 parseElse :: MVParser Statement

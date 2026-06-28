@@ -122,6 +122,7 @@ data FunctionData = FunctionData {
     hasBody :: Bool 
 } deriving Show
 
+defaultFunctionData :: FunctionData
 defaultFunctionData = FunctionData {
     returnType = VoidT,
     arguments = [],
@@ -153,7 +154,7 @@ type ContextStack = [BlockType]
 
 data FunctionCallData = FunctionCallData {
     identifier :: T.Text,
-    pos :: SourcePos
+    position :: SourcePos
 } deriving (Show, Eq)
 
 data ParserState = ParserState {

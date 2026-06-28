@@ -34,14 +34,14 @@ printFunctionSymbolTableEntry state (name, fData) = do
 
 
 instance PrettyPrint SymbolTable where
-    pprint st state = do
+    pprint st' state = do
         putStrLn $ (bold state . darkerBlue state) "Symbol table:"
-        mapM_ (printSymbolTableEntry state) (Map.toList st)
+        mapM_ (printSymbolTableEntry state) (Map.toList st')
 
 instance PrettyPrint FunctionSymbolTable where
-    pprint fst state = do
+    pprint fst' state = do
         putStrLn $ (bold state . darkerBlue state) "Function symbol table:"
-        mapM_ (printFunctionSymbolTableEntry state) (Map.toList fst)
+        mapM_ (printFunctionSymbolTableEntry state) (Map.toList fst')
 
 instance PrettyPrint ContextStack where
     pprint ctx state = do

@@ -7,7 +7,7 @@ import Data.Void
 import Parser
 import Test.Hspec
 import Test.Hspec.Megaparsec
-import Text.Megaparsec (ParseErrorBundle, eof, parse, runParserT)
+import Text.Megaparsec (ParseErrorBundle, eof, runParserT)
 import Types
 
 testParse :: MVParser a -> String -> Either (ParseErrorBundle String Void) a

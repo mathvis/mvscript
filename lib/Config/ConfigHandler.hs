@@ -4,26 +4,26 @@ module Config.ConfigHandler (module Config.ConfigHandler) where
 import Types hiding (Bool)
 import Config.ConfigTypes
 import qualified Data.Map as Map
-import Data.List
 import Config.ConfigValidator
-import Config.ConfigParser
 import PrettyPrint
 import Error
 import Control.Monad
 
 setConfig :: ParserState -> ParsedConfig -> ParserState
-setConfig state config = state{config=Map.union flatConfig defaultConfig}
+setConfig state config' = state{config=Map.union flatConfig defaultConfig}
     where
-        flatConfig = flattenConfig config
+        flatConfig = flattenConfig config'
 
 getEnabledDebugOptions :: ParserState -> FlatParsedConfig
 getEnabledDebugOptions state = Map.filterWithKey isTrueDebug (config state)
     where
         isTrueDebug name (Bool bool) =
             elem name (map Prelude.fst debugOptions) && bool
+        isTrueDebug _ _ =
+            Prelude.error "internal error."
 
 printWithDebugOptions :: (TopLevel, ParserState) -> IO ()
-printWithDebugOptions statefulStmt@(stmt, state) =
+printWithDebugOptions (stmt, state) =
     do
         print stmt
         unless (Map.null options) $ do

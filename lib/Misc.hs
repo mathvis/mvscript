@@ -1,8 +1,5 @@
 module Misc (module Misc) where
-import Control.Monad
 import Types
-import System.Exit
-import System.IO.Unsafe
 import qualified Data.Text as T
 import Data.Map as Map hiding (empty, map)
 import Error
@@ -27,7 +24,7 @@ rword :: String -> MVParser ()
 rword w = (lexeme . try) (string w *> notFollowedBy (letterChar <|> digitChar))
 
 toInt' :: (Num a, Real a) => a -> Integer
-toInt' = round . realToFrac
+toInt' x = round (realToFrac x :: Double)
 
 intDiv :: (Num a, Real a) => a -> a -> Integer
 intDiv x y = div (toInt' x) (toInt' y)
@@ -49,6 +46,7 @@ valueToType (Vector _) = VectorT
 valueToType (Point _) = PointT
 valueToType (Matrix _) = MatrixT
 valueToType (Array ((Literal a):_)) = ArrayT (valueToType a)
+valueToType (Array _) = ArrayT (valueToType (Int 0))
 
 getVariableType :: SourcePos -> ParserState -> T.Text -> Type
 getVariableType pos state name = case Map.lookup name (st state) of

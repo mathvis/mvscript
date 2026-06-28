@@ -4,7 +4,6 @@
 module Config.ConfigValidator (module Config.ConfigValidator) where
 import Config.ConfigTypes
 import qualified Data.Map as Map
-import Data.Foldable
 import Config.ConfigParser
 
 possibleTableNames :: [String]
@@ -38,7 +37,7 @@ validateName table = elem (getName table) possibleTableNames
 checkOptions :: [(String, ConfigTypeName)] -> [(String, ConfigTypeName)] -> Bool
 checkOptions options expected = all (checkOption expected) options
     where
-        checkOption expected option = elem option expected
+        checkOption expected' option = elem option expected'
     
 
 validateOptions :: Table -> Bool
@@ -47,6 +46,7 @@ validateOptions table =
         "debug" -> checkOptions options debugOptions
         "parsing" -> checkOptions options parsingOptions
         "testing" -> checkOptions options testingOptions
+        _ -> error "internal error"
     where
         options =
             map

@@ -23,7 +23,7 @@ removeContext :: ParserState -> ParserState
 removeContext state = state{context = newContext}
     where
         previousContext = context state
-        newContext = tail previousContext
+        newContext = drop 1 previousContext
 
 checkForBlock :: SourcePos -> ParserState -> ParserState
 checkForBlock pos state = case listToMaybe (context state) of
@@ -35,6 +35,7 @@ getCurrentFunctionReturnType pos state =
     case findFunction ctx of
         Nothing -> error pos state "A return statement must be inside a function." "Try putting this statement inside of a function."
         Just (FunctionBlock typename) -> typename
+        Just _ -> error pos state "Unimplemented." "Internal error."
     where
         ctx = context state
 

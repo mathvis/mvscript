@@ -1,15 +1,12 @@
 module TypeCheck (module TypeCheck) where
 
 import Data.Maybe
-import Data.Map as Map hiding (map)
 import Data.List
 import Error
 import Misc
 import Types
 import Prelude hiding (error)
 import Context
-import Debug.Trace
-import qualified Data.Text as T
 import FunctionStorage
 import Text.Megaparsec
 
@@ -21,29 +18,30 @@ convertToType _ _ (Literal lit) = valueToType lit
 convertToType pos state (Identifier name) = getVariableType pos state name
 convertToType pos state (Operation op) = checkTypeExpression pos state (Operation op)
 convertToType pos state (FunctionIdentifier name) = getFunctionReturnType pos state name
+convertToType pos state _ = error pos state "" "Internal error."
 
 inferVariableType :: SourcePos -> ParserState -> Statement -> Statement
-inferVariableType _ _ (Variable exp (Just a) val) = Variable exp (Just a) val
-inferVariableType _ _ (Variable exp Nothing (Just (Literal val))) = Variable exp (Just $ valueToType val) (Just (Literal val))
+inferVariableType _ _ (Variable expr (Just a) val) = Variable expr (Just a) val
+inferVariableType _ _ (Variable expr Nothing (Just (Literal val))) = Variable expr (Just $ valueToType val) (Just (Literal val))
 inferVariableType pos state decl = error pos state ("Could not infer type: " ++ show decl) "Internal error."
 
 checkType :: SourcePos -> ParserState -> Statement -> Statement
-checkType pos state (Variable exp (Just expectedType) (Just (Literal val))) =
+checkType pos state (Variable expr (Just expectedType) (Just (Literal val))) =
     let actualType = convertToType pos state (Literal val)
      in if expectedType == actualType
-            then Variable exp (Just expectedType) (Just (Literal val))
+            then Variable expr (Just expectedType) (Just (Literal val))
             else error pos state ("Expected " ++ show expectedType ++ " but got " ++ show actualType) "Consider changing the variable type or declaring a new variable."
 checkType pos state (Assignment (Assign (Identifier name) (Literal val))) =
     let actualType = convertToType pos state (Literal val)
      in if convertToType pos state (Identifier name) == actualType
             then Assignment (Assign (Identifier name) (Literal val))
             else error pos state ("Expected " ++ show (convertToType pos state (Identifier name)) ++ " but got " ++ show actualType) "Consider changing the variable type or declaring a new variable."
-checkType pos state (Variable exp (Just expectedType) (Just (LambdaFunc args stmt))) = Variable exp (Just expectedType) (Just (LambdaFunc args stmt))
-checkType pos state (Assignment (Assign (Identifier name) (LambdaFunc args stmt))) = Assignment (Assign (Identifier name) (LambdaFunc args stmt))
-checkType pos state (Variable exp (Just expectedType) (Just (FunctionCall (FunctionIdentifier name) args))) =
+checkType _ _ (Variable expr (Just expectedType) (Just (LambdaFunc args stmt))) = Variable expr (Just expectedType) (Just (LambdaFunc args stmt))
+checkType _ _ (Assignment (Assign (Identifier name) (LambdaFunc args stmt))) = Assignment (Assign (Identifier name) (LambdaFunc args stmt))
+checkType pos state (Variable expr (Just expectedType) (Just (FunctionCall (FunctionIdentifier name) args))) =
     let actualType = convertToType pos state (FunctionIdentifier name)
     in if expectedType == actualType
-        then Variable exp (Just expectedType) (Just (FunctionCall (FunctionIdentifier name) args))
+        then Variable expr (Just expectedType) (Just (FunctionCall (FunctionIdentifier name) args))
         else error pos state ("Expected " ++ show expectedType ++ " but got " ++ show actualType) "Consider changing the variable type or declaring a new variable."
 checkType pos state (Assignment (Assign (Identifier varName) (FunctionCall (FunctionIdentifier name) args))) =
     let actualType = convertToType pos state (FunctionIdentifier name)
@@ -94,13 +92,15 @@ checkTypeOperation (Parentheses inner) (Literal lit) pos state expectedOutputTyp
     checkTypeOperation (Literal lit) inner pos state expectedOutputType
 checkTypeOperation (Parentheses inner) (Identifier name) pos state expectedOutputType =
     checkTypeOperation (Identifier name) inner pos state expectedOutputType
+checkTypeOperation _ _ pos state _ = error pos state "" "Internal error."
 
 checkTypeOperationUnary :: Expression -> SourcePos -> ParserState -> Maybe Type -> Type
 checkTypeOperationUnary (Literal lit) pos state expectedOutputType = convertToType pos state (Literal lit) <| expectedOutputType
 checkTypeOperationUnary (Identifier name) pos state expectedOutputType = convertToType pos state (Identifier name) <| expectedOutputType
-checkTypeOperationUnary (FunctionCall name args) pos state expectedOutputType = convertToType pos state name <| expectedOutputType
+checkTypeOperationUnary (FunctionCall name _) pos state expectedOutputType = convertToType pos state name <| expectedOutputType
 checkTypeOperationUnary (Operation op) pos state expectedOutputType = convertToType pos state (Operation op) <| expectedOutputType
-checkTypeOperationUnary (Parentheses inner) pos state expectedOutputType = checkTypeExpression pos state inner
+checkTypeOperationUnary (Parentheses inner) pos state _ = checkTypeExpression pos state inner
+checkTypeOperationUnary _ pos state _ = error pos state "" "Internal error."
 
 checkTypeExpression :: SourcePos -> ParserState -> Expression -> Type
 checkTypeExpression pos state (Operation op) = case op of
@@ -129,18 +129,20 @@ checkTypeExpression pos state (Parentheses op) = checkTypeExpression pos state o
 checkTypeExpression pos state (Literal lit) = convertToType pos state (Literal lit)
 checkTypeExpression pos state (FunctionCall name _) = convertToType pos state name 
 checkTypeExpression pos state (Identifier name) = convertToType pos state (Identifier name)
+checkTypeExpression pos state _ = error pos state "" "Internal error."
 
 checkReturnType :: Statement -> SourcePos -> ParserState -> ParserState
 checkReturnType (Return expr) pos state =
     let
-        returnType = getCurrentFunctionReturnType pos state
+        returnType' = getCurrentFunctionReturnType pos state
         expressionType = case expr of
-            Just exp -> checkTypeExpression pos state exp
+            Just expr' -> checkTypeExpression pos state expr'
             Nothing -> VoidT
-    in if returnType == expressionType then
+    in if returnType' == expressionType then
         state
     else
-        error pos state ("Expected " ++ show returnType ++ " but got " ++ show expressionType) "Consider changing the return type or declaring a new function."
+        error pos state ("Expected " ++ show returnType' ++ " but got " ++ show expressionType) "Consider changing the return type or declaring a new function."
+checkReturnType _ pos state = error pos state "" "Internal error."
 
 checkArguments :: Expression -> SourcePos -> ParserState -> ParserState
 checkArguments (FunctionCall (FunctionIdentifier name) args) pos state =
@@ -163,10 +165,11 @@ checkArgumentType (actual, expected) = if actual == expected
     else Left ("Expected " ++ show expected ++ " but got " ++ show actual, "Try changing the argument type.")
    
 checkForReturn :: Statement -> SourcePos -> ParserState -> ParserState
-checkForReturn (FunctionDef _ _ returnType (Just (Block (FunctionBlock _) stmts))) pos state =
-    if not (hasReturn stmts) && returnType /= VoidT 
-        then error pos state ("Function must return a value of type " ++ show returnType) "Try adding a return statement."
+checkForReturn (FunctionDef _ _ returnType' (Just (Block (FunctionBlock _) stmts))) pos state =
+    if not (hasReturn stmts) && returnType' /= VoidT
+        then error pos state ("Function must return a value of type " ++ show returnType') "Try adding a return statement."
         else state
+checkForReturn _ pos state = error pos state "" "Internal error."
     
 hasReturn :: [TopLevel] -> Bool
 hasReturn = any isReturnStmt
@@ -176,12 +179,12 @@ isReturnStmt (Stmt (Return _)) = True
 isReturnStmt _ = False
 
 compareFunctionSignatureToForwardDecl :: Statement -> SourcePos -> ParserState -> ParserState
-compareFunctionSignatureToForwardDecl (FunctionDef (FunctionIdentifier name) args returnType (Just _)) pos state
+compareFunctionSignatureToForwardDecl (FunctionDef (FunctionIdentifier name) args returnType' (Just _)) pos state
     | not (hasForwardDecl name state) = state 
     | expectedLength /= actualLength =
         error pos state ("Expected " ++ show expectedLength ++ " arguments but got " ++ show actualLength) "Consider adding or removing arguments, or checking the function signature."
-    | returnType /= expectedReturnType =
-        error pos state ("Expected " ++ show expectedReturnType ++ " as a return type but got " ++ show returnType) "Consider changing the return type, or checking the function signature."
+    | returnType' /= expectedReturnType =
+        error pos state ("Expected " ++ show expectedReturnType ++ " as a return type but got " ++ show returnType') "Consider changing the return type, or checking the function signature."
     | otherwise =
         case mapM checkArgumentType (zip argTypes expectedArgTypes) of
             Left err -> uncurry (error pos state) err
@@ -191,5 +194,6 @@ compareFunctionSignatureToForwardDecl (FunctionDef (FunctionIdentifier name) arg
         expectedLength = length expectedArgTypes
         expectedReturnType = if hasForwardDecl name state then getFunctionReturnType pos state name else VoidT
         argTypes = map snd args
-        actualLength = length argTypes    
+        actualLength = length argTypes
+compareFunctionSignatureToForwardDecl _ pos state = error pos state "" "Internal error."
 

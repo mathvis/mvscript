@@ -14,6 +14,7 @@ argIdsToText :: [(Expression, Type)] -> [(T.Text, Type)]
 argIdsToText = map argIdToText
     where
         argIdToText (Identifier name, typename) = (name, typename)
+        argIdToText _ = error defaultSourcePos defaultParserState "internal error" ""
 
 createFunctionData :: [(Expression, Type)] -> Type -> Bool -> FunctionData
 createFunctionData args returnType hasBody =
@@ -30,10 +31,11 @@ addFunctionToTable decl@(FunctionDef (FunctionIdentifier _) _ _ body) state =
     state {fst = Map.insert name functionData currentFst}
     where
         hasBody = case body of
-            Just body -> True
+            Just _ -> True
             Nothing -> False
         (name, functionData) = createFunctionRecord decl hasBody state
         currentFst = fst state
+addFunctionToTable _ state = error defaultSourcePos state "" "internal error"
 
 resolveFunctionCalls :: ParserState -> ParserState
 resolveFunctionCalls state = foldl resolveCallIfPossible state (unresolvedFunctionCalls state)
@@ -41,19 +43,19 @@ resolveFunctionCalls state = foldl resolveCallIfPossible state (unresolvedFuncti
 canBeResolved :: ParserState -> FunctionCallData -> Bool
 canBeResolved state call = case Map.lookup (identifier call) (fst state) of
     Just funcData -> hasBody funcData
-    Nothing -> error (pos call) state "This shouldn't happen if the other checks happen first." "Internal error."
+    Nothing -> error (position call) state "This shouldn't happen if the other checks happen first." "Internal error."
 
 resolveCallIfPossible :: ParserState -> FunctionCallData -> ParserState
 resolveCallIfPossible state call =
     if canBeResolved state call then
         state { unresolvedFunctionCalls = List.delete call (unresolvedFunctionCalls state) }
     else
-        error (pos call) state "Function has a forward declaration but does not have a body." "Consider adding a body to the function."
+        error (position call) state "Function has a forward declaration but does not have a body." "Consider adding a body to the function."
 
 addUnresolvedCall :: T.Text -> SourcePos -> ParserState -> ParserState
 addUnresolvedCall name pos state = state {unresolvedFunctionCalls = newCalls}    
     where
-        functionCallData = (FunctionCallData {pos, identifier=name}) 
+        functionCallData = (FunctionCallData {position=pos, identifier=name}) 
         calls = unresolvedFunctionCalls state
         newCalls = functionCallData:calls             
 

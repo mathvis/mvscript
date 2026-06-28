@@ -2,14 +2,13 @@
 
 module Eval (module Eval) where
 
-import Control.Applicative
 import Data.Bits (Bits (complement, xor), (.&.), (.|.))
 import Misc
 import Types
 
 compareValues :: (forall a. Ord a => a -> a -> Bool) -> Expression -> Expression -> Expression
 compareValues op (Literal val1) (Literal val2) = Literal (Bool (compareValuesTyped op val1 val2))
-compareValues _ lhs rhs = Operation undefined
+compareValues _ _ _ = Operation undefined
 
 compareValuesTyped :: (forall a. Ord a => a -> a -> Bool) -> Literal -> Literal -> Bool
 compareValuesTyped op (Int x) (Int y) = op x y
@@ -67,15 +66,16 @@ applyOperator :: (forall a. Real a => a -> a -> a) -> Expression -> Expression -
 applyOperator op (Literal (Int val1)) (Literal (Int val2)) = Literal (Int (op val1 val2))
 applyOperator op (Literal (Float val1)) (Literal (Float val2)) = Literal (Float (op val1 val2))
 applyOperator op (Literal (Bool val1)) (Literal (Bool val2)) = Literal (Int (op (boolToInt val1) (boolToInt val2)))
-applyOperator _ lhs rhs = Operation undefined
+applyOperator _ _ _= Operation undefined
 
 applyLogic :: (Bool -> Bool -> Bool) -> Expression -> Expression -> Expression
 applyLogic op (Literal (Int val1)) (Literal (Int val2)) = Literal (Bool (op (realToBool val1) (realToBool val2)))
 applyLogic op (Literal (Float val1)) (Literal (Float val2)) = Literal (Bool (op (realToBool val1) (realToBool val2)))
 applyLogic op (Literal (Bool val1)) (Literal (Bool val2)) = Literal (Bool (op val1 val2))
-applyLogic _ lhs rhs = Operation undefined
+applyLogic _ _ _ = Operation undefined
 
 applyNot :: Expression -> Expression
 applyNot (Literal (Int val1)) = Literal (Bool (not (realToBool val1)))
 applyNot (Literal (Float val1)) = Literal (Bool (not (realToBool val1)))
 applyNot (Literal (Bool val1)) = Literal (Bool (not val1))
+applyNot _ = error "oops"
