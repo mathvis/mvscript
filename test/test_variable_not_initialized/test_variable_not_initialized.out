@@ -1,7 +1,0 @@
-error: Variable "a" was not initialized.
- --> test/test_variable_not_initialized/test_variable_not_initialized.mvs:1:1
-  |
-1 | a = 0;
-  | ^
-  |
-hint: Consider using the let keyword.

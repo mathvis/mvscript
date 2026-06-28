@@ -30,7 +30,7 @@ checkForBlock pos state = case listToMaybe (context state) of
     Just (FunctionBlock _) -> state
     _ -> error pos state "A return statement must be inside a function." "Try putting this statement inside of a function."
 
-getCurrentFunctionReturnType :: SourcePos -> ParserState -> TypeName
+getCurrentFunctionReturnType :: SourcePos -> ParserState -> Type
 getCurrentFunctionReturnType pos state =
     case findFunction ctx of
         Nothing -> error pos state "A return statement must be inside a function." "Try putting this statement inside of a function."

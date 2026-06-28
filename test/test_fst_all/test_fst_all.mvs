@@ -1,4 +1,0 @@
-func a(b: [int]) vector {
-	let c = 0
-	return Vector(5, 3)
-}

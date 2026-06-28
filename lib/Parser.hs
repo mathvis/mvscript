@@ -18,10 +18,10 @@ import FunctionStorage
 import Misc
 import Text.Megaparsec
 import Text.Megaparsec.Char
+import Text.Megaparsec.Debug
 import TypeCheck
 import Types
 import VariableStorage
-import Text.Megaparsec.Debug
 
 -- MAIN TYPE PARSERS
 parseTopLevel :: MVParser TopLevel
@@ -33,60 +33,54 @@ parseTopLevel =
 
 parseExpr :: MVParser Expression
 parseExpr = do
-  collapse <- gets getCollapseOperations
-  let fold = if collapse then foldExpression else id
-  makeExprParser parseTerm (operatorTable fold)
+  makeExprParser parseTerm operatorTable
 
-parseType :: MVParser Expression
-parseType = parseNum <|> parseBool <|> parseArray <|> parseString <|> parseVector <|> parsePoint <|> parseMatrix
-
-parseAtom :: MVParser Expression
-parseAtom = try parseLambda <|> try parseLambdaApplication <|> try parseFunctionCall <|> try parseType <|> try parseParens <|> parseVarIdentifier
+parseLiteral :: MVParser Expression
+parseLiteral = parseNumber <|> parseBool <|> parseArray <|> parseString <|> parseVector <|> parsePoint <|> parseMatrix
 
 parseTerm :: MVParser Expression
-parseTerm = try parseUnary <|> try parseAtom
+parseTerm = try parseLambda <|> try parseLambdaApplication <|> try parseFunctionCall <|> try parseLiteral <|> try parseParens <|> parseIdentifier
 
 parseStatement :: MVParser Statement
 parseStatement =
   try parseVarInitialization
-    <|> try parseVarStatement
+    <|> try parseVarDeclaration
     <|> try parseAssign
-    <|> try parseFunctionForwardStatement
-    <|> try parseFunctionStatement
+    <|> try parseFunctionForwardDeclaration
+    <|> try parseFunctionDefinition
     <|> try parseReturn
     <|> parseIf
 
 -- DATA TYPE PARSERS
 
-parseNum :: MVParser Expression
-parseNum = Type <$> (try parseFloat <|> parseInt)
+parseNumber :: MVParser Expression
+parseNumber = lexeme $ do
+  intPart <- some digitChar
+  fracPart <- optional (char '.' *> some digitChar)
+  case fracPart of
+    Nothing -> pure (Literal $ Int (read intPart))
+    Just frac -> pure (Literal $ Float (read (intPart ++ "." ++ frac)))
 
 parseString :: MVParser Expression
-parseString = lexeme $ Type . String . T.pack <$> (char '"' *> many (noneOf "\"") <* char '"')
-
-parseInt :: MVParser Type
-parseInt = Int . read <$> lexeme (some digitChar)
+parseString = lexeme $ Literal . String . T.pack <$> (char '"' *> many (noneOf "\"") <* char '"')
 
 parseBool :: MVParser Expression
-parseBool = Type . Bool <$> (parseTrue <|> parseFalse)
+parseBool = Literal . Bool <$> (parseTrue <|> parseFalse)
   where
     parseTrue = True <$ rword "true"
     parseFalse = False <$ rword "false"
 
-parseFloat :: MVParser Type
-parseFloat = Float . read <$> lexeme (liftA2 (++) (some digitChar) ((:) <$> char '.' <*> many digitChar))
-
 parseArray :: MVParser Expression
-parseArray = Type . Array <$> lexeme (char '[' *> sepBy parseExpr (symbol ",") <* char ']')
+parseArray = Literal . Array <$> lexeme (char '[' *> sepBy parseExpr (symbol ",") <* char ']')
 
 parseVector :: MVParser Expression
-parseVector = Type . Vector <$> (rword "Vector" *> symbol "(" *> sepBy parseExpr (symbol ",") <* symbol ")")
+parseVector = Literal . Vector <$> (rword "Vector" *> symbol "(" *> sepBy parseExpr (symbol ",") <* symbol ")")
 
 parsePoint :: MVParser Expression
-parsePoint = Type . Point <$> (rword "Point" *> symbol "(" *> sepBy parseExpr (symbol ",") <* symbol ")")
+parsePoint = Literal . Point <$> (rword "Point" *> symbol "(" *> sepBy parseExpr (symbol ",") <* symbol ")")
 
 parseMatrix :: MVParser Expression
-parseMatrix = Type . Matrix <$> (rword "Matrix" *> symbol "(" *> sepBy parseArray (symbol ",") <* symbol ")")
+parseMatrix = Literal . Matrix <$> (rword "Matrix" *> symbol "(" *> sepBy parseArray (symbol ",") <* symbol ")")
 
 -- VARIABLE PARSERS
 identifierName :: MVParser String
@@ -96,32 +90,30 @@ identifierName = (lexeme . try) $ do
     then fail $ "Cannot use reserved keyword '" ++ name ++ "' as an identifier"
     else return name
 
-parseVarIdentifier :: MVParser Expression
-parseVarIdentifier = do
+parseIdentifier :: MVParser Expression
+parseIdentifier = do
   pos <- getSourcePos
-  expr <- VarIdentifier . T.pack <$> identifierName
-  modify (checkScope expr pos)
+  expr <- Identifier . T.pack <$> identifierName
   return expr
 
 parseArgIdentifier :: MVParser Expression
-parseArgIdentifier = VarIdentifier . T.pack <$> identifierName
+parseArgIdentifier = Identifier . T.pack <$> identifierName
 
-parseVarIdentifierDecl :: MVParser Expression
-parseVarIdentifierDecl = VarIdentifier . T.pack <$> identifierName
+parseIdentifierDecl :: MVParser Expression
+parseIdentifierDecl = Identifier . T.pack <$> identifierName
 
-parseVarStatement :: MVParser Statement
-parseVarStatement =
+parseVarDeclaration :: MVParser Statement
+parseVarDeclaration =
   Variable
-    <$> (rword "let" *> parseVarIdentifierDecl)
-    <*> (Just <$> (lexeme (char ':') *> parseTypeName))
+    <$> (rword "let" *> parseIdentifierDecl)
+    <*> (Just <$> (lexeme (char ':') *> parseType))
     <*> pure Nothing
-    >>= \decl -> modify (addVariableToTable decl) >> return decl
 
-parseVoidTypeName :: MVParser TypeName
-parseVoidTypeName = pure VoidT
+parseVoidType :: MVParser Type
+parseVoidType = pure VoidT
 
-parseTypeName :: MVParser TypeName
-parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parseBoolTName <|> parseVectorTName <|> parseMatrixTName <|> parsePointTName <|> parseArrayTName <|> parseLambdaTName
+parseType :: MVParser Type
+parseType = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parseBoolTName <|> parseVectorTName <|> parseMatrixTName <|> parsePointTName <|> parseArrayTName <|> parseLambdaTName
   where
     parseIntTName = IntT <$ rword "int"
     parseFloatTName = FloatT <$ rword "float"
@@ -130,19 +122,18 @@ parseTypeName = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parse
     parsePointTName = PointT <$ rword "point"
     parseVectorTName = VectorT <$ rword "vector"
     parseMatrixTName = MatrixT <$ rword "matrix"
-    parseArrayTName = ArrayT <$> try (symbol "[" *> parseTypeName <* symbol "]")
-    parseLambdaTName = try $ LambdaT <$> (symbol "lambda[" *> sepBy parseTypeName (symbol ",") <* symbol "]") <*> (parseTypeName <|> parseVoidTypeName)
+    parseArrayTName = ArrayT <$> try (symbol "[" *> parseType <* symbol "]")
+    parseLambdaTName = try $ LambdaT <$> (symbol "lambda[" *> sepBy parseType (symbol ",") <* symbol "]") <*> (parseType <|> parseVoidType)
 
 parseVarInitialization :: MVParser Statement
 parseVarInitialization =
   getSourcePos >>= \pos ->
     get >>= \state ->
       ( Variable
-          <$> (rword "let" *> parseVarIdentifierDecl)
-          <*> optional (symbol ":" *> parseTypeName)
+          <$> (rword "let" *> parseIdentifierDecl)
+          <*> optional (symbol ":" *> parseType)
           <*> (symbol "=" *> parseExpr >>= \expr -> return (Just expr))
       )
-        >>= (\decl -> modify (addVariableToTable decl) >> return decl) . checkType pos state . inferVariableType pos state
 
 -- OPERATION RELATED PARSERS
 parseParens :: MVParser Expression
@@ -159,7 +150,7 @@ parseUnary =
 parseAssign :: MVParser Statement
 parseAssign = do
   pos <- getSourcePos
-  leftTerm <- parseVarIdentifierDecl
+  leftTerm <- parseIdentifierDecl
   op <-
     try (symbol "//=")
       $> (\lhs rhs -> Assignment (IntDivAssign lhs rhs))
@@ -181,42 +172,39 @@ parseAssign = do
       $> (\lhs rhs -> Assignment (BitwiseXorAssign lhs rhs))
         <|> try (symbol "=")
       $> (\lhs rhs -> Assignment (Assign lhs rhs))
-  modify (checkScope leftTerm pos)
   rhs <- parseExpr
   let decl = op leftTerm rhs
-  modify (updateVariableUninitialized pos decl)
   return decl
 
 -- FUNCTION RELATED PARSERS
 parseFunctionIdentifier :: MVParser Expression
 parseFunctionIdentifier = FunctionIdentifier . T.pack <$> identifierName
 
-parseFunctionArguments :: MVParser [(Expression, TypeName)]
-parseFunctionArguments = sepBy parseFunctionArgument (lexeme $ char ',') >>= \args -> modify (addArgumentsToTable args) >> return args
+parseFunctionParameters :: MVParser [(Expression, Type)]
+parseFunctionParameters = sepBy parseFunctionArgument (lexeme $ char ',')
   where
-    parseFunctionArgument = (,) <$> (parseArgIdentifier <* symbol ":") <*> parseTypeName
+    parseFunctionArgument = (,) <$> (parseArgIdentifier <* symbol ":") <*> parseType
 
-parseFunctionReturnType :: MVParser TypeName
-parseFunctionReturnType = parseTypeName <|> parseVoidTypeName
+parseFunctionReturnType :: MVParser Type
+parseFunctionReturnType = parseType <|> parseVoidType
 
-parseFunctionSignature :: MVParser (Expression, [(Expression, TypeName)], TypeName)
+parseFunctionSignature :: MVParser (Expression, [(Expression, Type)], Type)
 parseFunctionSignature =
   (,,)
     <$> (rword "func" *> parseFunctionIdentifier)
-    <*> (symbol "(" *> parseFunctionArguments <* symbol ")")
+    <*> (symbol "(" *> parseFunctionParameters <* symbol ")")
     <*> parseFunctionReturnType
 
-parseFunctionForwardStatement :: MVParser Statement
-parseFunctionForwardStatement =
+parseFunctionForwardDeclaration :: MVParser Statement
+parseFunctionForwardDeclaration =
   getSourcePos >>= \pos ->
     lexeme $
       symbol "[fwd]" *> parseFunctionSignature
         >>= \(funcIdentifier, args, returnType) ->
-          let forwardDecl = FunctionDef funcIdentifier args returnType Nothing
-           in modify (checkForSecondOrderFunction pos >>> addFunctionToTable forwardDecl) >> return forwardDecl
+          return (FunctionDef funcIdentifier args returnType Nothing)
 
-parseFunctionStatement :: MVParser Statement
-parseFunctionStatement =
+parseFunctionDefinition :: MVParser Statement
+parseFunctionDefinition =
   getSourcePos
     >>= \pos ->
       lexeme $
@@ -224,14 +212,7 @@ parseFunctionStatement =
           >>= \(funcIdentifier, args, returnType) ->
             parseBlock (FunctionBlock returnType)
               >>= ( \decl ->
-                      modify
-                        ( checkForSecondOrderFunction pos
-                            >>> checkForReturn decl pos
-                            >>> removeArgumentsFromTable decl
-                            >>> compareFunctionSignatureToForwardDecl decl pos
-                            >>> addFunctionToTable decl
-                        )
-                        >> return decl
+                      return decl
                   )
                 . FunctionDef funcIdentifier args returnType
                 . Just
@@ -240,13 +221,13 @@ parseFunctionCallArguments :: MVParser [Expression]
 parseFunctionCallArguments = sepBy parseExpr (lexeme $ char ',')
 
 parseFunctionCall :: MVParser Expression
-parseFunctionCall = getSourcePos >>= \pos -> functionCall >>= (\expr -> modify (checkArguments expr pos . checkScope expr pos) >> return expr)
+parseFunctionCall = getSourcePos >>= \pos -> functionCall 
   where
     functionCall = lexeme $ FunctionCall <$> parseFunctionIdentifier <*> between (symbol "(") (symbol ")") parseFunctionCallArguments
 
 -- TODO: fix lambda return types
 parseLambda :: MVParser Expression
-parseLambda = LambdaFunc <$> betweenParentheses parseFunctionArguments <*> (symbol ":" *> (Just <$> (parseBlock (FunctionBlock VoidT) <|> parseTopLevel))) >>= \expr -> modify (removeArgumentsFromTableLambda expr) >> return expr
+parseLambda = LambdaFunc <$> betweenParentheses parseFunctionParameters <*> (symbol ":" *> (parseBlock (FunctionBlock VoidT) <|> parseTopLevel)) 
 
 parseLambdaApplication :: MVParser Expression
 parseLambdaApplication =
@@ -257,47 +238,45 @@ parseLambdaApplication =
 parseBlock :: BlockType -> MVParser TopLevel
 parseBlock blocktype = do
   symbol "{"
-  modify (changeContext blocktype)
   stmts <- many (lexeme parseTopLevel)
   symbol "}"
   let block = Block blocktype stmts
-  modify (removeScopeVariables block . removeContext)
   return block
 
 parseReturn :: MVParser Statement
-parseReturn = getSourcePos >>= \pos -> lexeme (Return <$> (symbol "return" *> optional parseExpr)) >>= \expr -> modify (checkReturnType expr pos . checkForBlock pos) >> return expr
+parseReturn = getSourcePos >>= \pos -> lexeme (Return <$> (symbol "return" *> optional parseExpr)) 
 
 -- CONTROL FLOW PARSERS
 parseElse :: MVParser Statement
-parseElse = lexeme $ ElseBlock <$> (rword "else" *> (parseBlock Else <|> parseTopLevel))
+parseElse = lexeme $ ElseStmt <$> (rword "else" *> (parseBlock Else <|> Stmt <$> parseIf))
 
 parseIf :: MVParser Statement
-parseIf = lexeme (IfBlock <$> (rword "if" *> betweenParentheses parseExpr) <*> (parseBlock If <|> parseTopLevel) <*> optional parseElse) >>= evaluateControlFlow (gets getCollapseControlFlow)
+parseIf = lexeme (IfStmt <$> (rword "if" *> betweenParentheses (optional parseExpr)) <*> parseBlock If <*> optional (Stmt <$> parseElse))
 
-operatorTable :: (Expression -> Expression) -> [[Operator MVParser Expression]]
-operatorTable fold =
-  [ [ Prefix (Operation . Negation <$ symbol "-" <&> \f x -> fold (f x)),
-      Prefix (Operation . Not <$ symbol "!" <&> \f x -> fold (f x)),
-      Prefix (Operation . BitwiseNot <$ symbol "~" <&> \f x -> fold (f x))
+operatorTable :: [[Operator MVParser Expression]]
+operatorTable =
+  [ [ Prefix (Operation . Negation <$ symbol "-"),
+      Prefix (Operation . Not <$ symbol "!"),
+      Prefix (Operation . BitwiseNot <$ symbol "~")
     ],
-    [ InfixL (symbol "*" $> \l r -> fold (Operation (Multiply l r))),
-      InfixL (try (symbol "//") $> \l r -> fold (Operation (IntDivide l r))),
-      InfixL (symbol "/" $> \l r -> fold (Operation (Divide l r))),
-      InfixL (symbol "%" $> \l r -> fold (Operation (Modulo l r)))
+    [ InfixL (symbol "*" $> \l r -> Operation (Multiply l r)),
+      InfixL (try (symbol "//") $> \l r -> Operation (IntDivide l r)),
+      InfixL (symbol "/" $> \l r -> Operation (Divide l r)),
+      InfixL (symbol "%" $> \l r -> Operation (Modulo l r))
     ],
-    [ InfixL (symbol "+" $> \l r -> fold (Operation (Add l r))),
-      InfixL (symbol "-" $> \l r -> fold (Operation (Subtract l r)))
+    [ InfixL (symbol "+" $> \l r -> Operation (Add l r)),
+      InfixL (symbol "-" $> \l r -> Operation (Subtract l r))
     ],
-    [InfixL (try (symbol "b&") $> \l r -> fold (Operation (BitwiseAnd l r)))],
-    [InfixL (try (symbol "b|") $> \l r -> fold (Operation (BitwiseOr l r)))],
-    [InfixL (symbol "^" $> \l r -> fold (Operation (BitwiseXor l r)))],
-    [ InfixL (try (symbol ">=") $> \l r -> fold (Operation (GreaterThanEq l r))),
-      InfixL (try (symbol "<=") $> \l r -> fold (Operation (LessThanEq l r))),
-      InfixL (try (symbol "==") $> \l r -> fold (Operation (Equals l r))),
-      InfixL (try (symbol "!=") $> \l r -> fold (Operation (NotEquals l r))),
-      InfixL (symbol ">" $> \l r -> fold (Operation (GreaterThan l r))),
-      InfixL (symbol "<" $> \l r -> fold (Operation (LessThan l r)))
+    [InfixL (try (symbol "&" <* notFollowedBy (char '&')) $> \l r -> Operation (BitwiseAnd l r))],
+    [InfixL (try (symbol "|" <* notFollowedBy (char '|')) $> \l r -> Operation (BitwiseOr l r))],
+    [InfixL (symbol "^" $> \l r -> Operation (BitwiseXor l r))],
+    [ InfixL (try (symbol ">=") $> \l r -> Operation (GreaterThanEq l r)),
+      InfixL (try (symbol "<=") $> \l r -> Operation (LessThanEq l r)),
+      InfixL (try (symbol "==") $> \l r -> Operation (Equals l r)),
+      InfixL (try (symbol "!=") $> \l r -> Operation (NotEquals l r)),
+      InfixL (symbol ">" $> \l r -> Operation (GreaterThan l r)),
+      InfixL (symbol "<" $> \l r -> Operation (LessThan l r))
     ],
-    [InfixL (try (symbol "&&") $> \l r -> fold (Operation (And l r)))],
-    [InfixL (try (symbol "||") $> \l r -> fold (Operation (Or l r)))]
+    [InfixL (try (symbol "&&") $> \l r -> Operation (And l r))],
+    [InfixL (try (symbol "||") $> \l r -> Operation (Or l r))]
   ]

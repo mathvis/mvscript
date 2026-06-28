@@ -40,7 +40,7 @@ boolToInt :: Bool -> Integer
 boolToInt True = 1
 boolToInt False = 0
 
-valueToType :: Type -> TypeName
+valueToType :: Literal -> Type
 valueToType (String _) = StringT
 valueToType (Int _) = IntT
 valueToType (Float _) = FloatT
@@ -48,21 +48,21 @@ valueToType (Bool _) = BoolT
 valueToType (Vector _) = VectorT
 valueToType (Point _) = PointT
 valueToType (Matrix _) = MatrixT
-valueToType (Array ((Type a):_)) = ArrayT (valueToType a)
+valueToType (Array ((Literal a):_)) = ArrayT (valueToType a)
 
-getVariableType :: SourcePos -> ParserState -> T.Text -> TypeName
+getVariableType :: SourcePos -> ParserState -> T.Text -> Type
 getVariableType pos state name = case Map.lookup name (st state) of
     Just vData -> case variableType vData of
         Just typ -> typ
         Nothing -> error pos state "Variable does not have a type." "Internal error."
     Nothing -> error pos state "Variable not found." "Internal error."
 
-getFunctionReturnType :: SourcePos -> ParserState -> T.Text -> TypeName
+getFunctionReturnType :: SourcePos -> ParserState -> T.Text -> Type
 getFunctionReturnType pos state name = case Map.lookup name (fst state) of
     Just fData -> returnType fData 
     Nothing -> error pos state "Variable not found." "Internal error."
 
-getFunctionArgTypes :: SourcePos -> ParserState -> T.Text -> [TypeName]
+getFunctionArgTypes :: SourcePos -> ParserState -> T.Text -> [Type]
 getFunctionArgTypes pos state name = case Map.lookup name (fst state) of
     Just fData -> map snd (arguments fData) 
     Nothing -> error pos state "Variable not found." "Internal error."

@@ -1,9 +1,0 @@
-Stmt (FunctionDef (FunctionIdentifier "a") [] void Nothing)
-
---- STATE ---
-
-Function symbol table:
-	Function name: a
-		Return type: void
-		Arguments: 
-		Has body: False

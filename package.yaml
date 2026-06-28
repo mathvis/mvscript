@@ -42,3 +42,18 @@ executables:
       - megaparsec
       - parser-combinators
       - mtl
+
+tests:
+  mvscript-test:
+    main: Spec.hs
+    source-dirs: test
+    build-tool-depends:
+      - hspec-discover:hspec-discover
+    dependencies:
+      - base
+      - text
+      - mtl
+      - mvscript
+      - hspec
+      - hspec-megaparsec
+      - megaparsec

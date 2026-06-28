@@ -1,3 +1,0 @@
-if ("abcabc" > "abc") {
-	let a = 0
-}

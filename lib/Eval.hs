@@ -8,74 +8,74 @@ import Misc
 import Types
 
 compareValues :: (forall a. Ord a => a -> a -> Bool) -> Expression -> Expression -> Expression
-compareValues op (Type val1) (Type val2) = Type (Bool (compareValuesTyped op val1 val2))
+compareValues op (Literal val1) (Literal val2) = Literal (Bool (compareValuesTyped op val1 val2))
 compareValues _ lhs rhs = Operation undefined
 
-compareValuesTyped :: (forall a. Ord a => a -> a -> Bool) -> Type -> Type -> Bool
+compareValuesTyped :: (forall a. Ord a => a -> a -> Bool) -> Literal -> Literal -> Bool
 compareValuesTyped op (Int x) (Int y) = op x y
 compareValuesTyped op (Float x) (Float y) = op x y
 compareValuesTyped op (String x) (String y) = op x y
 compareValuesTyped _ _ _ = undefined
 
 evaluateControlFlow :: MVParser Bool -> Statement -> MVParser Statement
-evaluateControlFlow collapse (IfBlock condition statement elseBlock) = do
+evaluateControlFlow collapse (IfStmt (Just condition) statement elseBlock) = do
     shouldCollapse <- collapse
     if shouldCollapse
         then case foldExpression condition of
-            Type (Bool True)  -> return $ CollapsedControlFlow statement
-            Type (Bool False) -> case elseBlock of
-                Just (ElseBlock block) -> return $ CollapsedControlFlow block
+            Literal (Bool True)  -> return $ CollapsedControlFlow statement
+            Literal (Bool False) -> case elseBlock of
+                Just (Stmt (ElseStmt block)) -> return $ CollapsedControlFlow block
                 _                      -> return $ CollapsedControlFlow (Block NoType [])
-            _                 -> return $ IfBlock condition statement elseBlock
-        else return (IfBlock condition statement elseBlock)
+            _                 -> return $ IfStmt (Just condition) statement elseBlock
+        else return (IfStmt (Just condition) statement elseBlock)
 evaluateControlFlow _ other = return other
 
 foldExpression :: Expression -> Expression
 foldExpression expr@(Operation op) = case op of
-    Add (Type x) (Type y)                       -> applyOperator (+) (Type x) (Type y)
-    Subtract (Type x) (Type y)                  -> applyOperator (-) (Type x) (Type y)
-    Multiply (Type x) (Type y)                  -> applyOperator (*) (Type x) (Type y)
-    IntDivide (Type x) (Type y)                 -> applyOperator (\a b -> fromIntegral (intDiv a b)) (Type x) (Type y)
-    Divide (Type (Float x)) (Type (Float y))    -> Type (Float (x / y))
-    Modulo (Type (Int x)) (Type (Int y))        -> Type (Int (mod x y))
-    BitwiseOr (Type (Int x)) (Type (Int y))     -> Type (Int (x .|. y))
-    BitwiseAnd (Type (Int x)) (Type (Int y))    -> Type (Int (x .&. y))
-    BitwiseXor (Type (Int x)) (Type (Int y))    -> Type (Int (xor x y))
-    BitwiseNot (Type (Int x))                   -> Type (Int (complement x))
-    Negation (Type x)                           -> applyOperator (-) (Type (Int 0)) (Type x)
-    GreaterThan (Type x) (Type y)               -> compareValues (>) (Type x) (Type y)
-    LessThan (Type x) (Type y)                  -> compareValues (<) (Type x) (Type y)
-    GreaterThanEq (Type x) (Type y)             -> compareValues (>=) (Type x) (Type y)
-    LessThanEq (Type x) (Type y)                -> compareValues (<=) (Type x) (Type y)
-    Equals (Type x) (Type y)                    -> compareValues (==) (Type x) (Type y)
-    NotEquals (Type x) (Type y)                 -> compareValues (/=) (Type x) (Type y)
-    Not (Type (Bool x))                         -> Type (Bool (not x))
-    And (Type (Bool x)) (Type (Bool y))         -> Type (Bool (x && y))
-    Or (Type (Bool x)) (Type (Bool y))          -> Type (Bool (x || y))
+    Add (Literal x) (Literal y)                       -> applyOperator (+) (Literal x) (Literal y)
+    Subtract (Literal x) (Literal y)                  -> applyOperator (-) (Literal x) (Literal y)
+    Multiply (Literal x) (Literal y)                  -> applyOperator (*) (Literal x) (Literal y)
+    IntDivide (Literal x) (Literal y)                 -> applyOperator (\a b -> fromIntegral (intDiv a b)) (Literal x) (Literal y)
+    Divide (Literal (Float x)) (Literal (Float y))    -> Literal (Float (x / y))
+    Modulo (Literal (Int x)) (Literal (Int y))        -> Literal (Int (mod x y))
+    BitwiseOr (Literal (Int x)) (Literal (Int y))     -> Literal (Int (x .|. y))
+    BitwiseAnd (Literal (Int x)) (Literal (Int y))    -> Literal (Int (x .&. y))
+    BitwiseXor (Literal (Int x)) (Literal (Int y))    -> Literal (Int (xor x y))
+    BitwiseNot (Literal (Int x))                   -> Literal (Int (complement x))
+    Negation (Literal x)                           -> applyOperator (-) (Literal (Int 0)) (Literal x)
+    GreaterThan (Literal x) (Literal y)               -> compareValues (>) (Literal x) (Literal y)
+    LessThan (Literal x) (Literal y)                  -> compareValues (<) (Literal x) (Literal y)
+    GreaterThanEq (Literal x) (Literal y)             -> compareValues (>=) (Literal x) (Literal y)
+    LessThanEq (Literal x) (Literal y)                -> compareValues (<=) (Literal x) (Literal y)
+    Equals (Literal x) (Literal y)                    -> compareValues (==) (Literal x) (Literal y)
+    NotEquals (Literal x) (Literal y)                 -> compareValues (/=) (Literal x) (Literal y)
+    Not (Literal (Bool x))                         -> Literal (Bool (not x))
+    And (Literal (Bool x)) (Literal (Bool y))         -> Literal (Bool (x && y))
+    Or (Literal (Bool x)) (Literal (Bool y))          -> Literal (Bool (x || y))
     _                                           -> evaluateLogic expr
 foldExpression other = other
 
 evaluateLogic :: Expression -> Expression
 evaluateLogic (Operation op) = case op of
-    Or (Type x) (Type y) -> applyLogic (||) (Type x) (Type y)
-    And (Type x) (Type y) -> applyLogic (&&) (Type x) (Type y)
-    Not (Type x) -> applyNot (Type x)
+    Or (Literal x) (Literal y) -> applyLogic (||) (Literal x) (Literal y)
+    And (Literal x) (Literal y) -> applyLogic (&&) (Literal x) (Literal y)
+    Not (Literal x) -> applyNot (Literal x)
     _ -> Operation op
 evaluateLogic other = other
 
 applyOperator :: (forall a. Real a => a -> a -> a) -> Expression -> Expression -> Expression
-applyOperator op (Type (Int val1)) (Type (Int val2)) = Type (Int (op val1 val2))
-applyOperator op (Type (Float val1)) (Type (Float val2)) = Type (Float (op val1 val2))
-applyOperator op (Type (Bool val1)) (Type (Bool val2)) = Type (Int (op (boolToInt val1) (boolToInt val2)))
+applyOperator op (Literal (Int val1)) (Literal (Int val2)) = Literal (Int (op val1 val2))
+applyOperator op (Literal (Float val1)) (Literal (Float val2)) = Literal (Float (op val1 val2))
+applyOperator op (Literal (Bool val1)) (Literal (Bool val2)) = Literal (Int (op (boolToInt val1) (boolToInt val2)))
 applyOperator _ lhs rhs = Operation undefined
 
 applyLogic :: (Bool -> Bool -> Bool) -> Expression -> Expression -> Expression
-applyLogic op (Type (Int val1)) (Type (Int val2)) = Type (Bool (op (realToBool val1) (realToBool val2)))
-applyLogic op (Type (Float val1)) (Type (Float val2)) = Type (Bool (op (realToBool val1) (realToBool val2)))
-applyLogic op (Type (Bool val1)) (Type (Bool val2)) = Type (Bool (op val1 val2))
+applyLogic op (Literal (Int val1)) (Literal (Int val2)) = Literal (Bool (op (realToBool val1) (realToBool val2)))
+applyLogic op (Literal (Float val1)) (Literal (Float val2)) = Literal (Bool (op (realToBool val1) (realToBool val2)))
+applyLogic op (Literal (Bool val1)) (Literal (Bool val2)) = Literal (Bool (op val1 val2))
 applyLogic _ lhs rhs = Operation undefined
 
 applyNot :: Expression -> Expression
-applyNot (Type (Int val1)) = Type (Bool (not (realToBool val1)))
-applyNot (Type (Float val1)) = Type (Bool (not (realToBool val1)))
-applyNot (Type (Bool val1)) = Type (Bool (not val1))
+applyNot (Literal (Int val1)) = Literal (Bool (not (realToBool val1)))
+applyNot (Literal (Float val1)) = Literal (Bool (not (realToBool val1)))
+applyNot (Literal (Bool val1)) = Literal (Bool (not val1))

@@ -9,7 +9,7 @@ import Text.Megaparsec hiding (State)
 import Data.Void
 import Control.Monad.State
 
-data TypeName
+data Type
     = StringT
     | IntT
     | FloatT
@@ -17,12 +17,12 @@ data TypeName
     | VectorT
     | PointT
     | MatrixT
-    | ArrayT TypeName
+    | ArrayT Type
     | VoidT
-    | LambdaT [TypeName] TypeName
+    | LambdaT [Type] Type
     deriving Eq
 
-instance Show TypeName where
+instance Show Type where
     show typename = case typename of
         Types.StringT -> "string"        
         Types.IntT -> "int"        
@@ -36,7 +36,7 @@ instance Show TypeName where
         LambdaT args ret -> "lambda[" ++ T.unpack (intercalate (T.pack ", ") (map (T.pack . show) args)) ++ "]" ++ show ret
 
 
-data Type
+data Literal
     = String T.Text
     | Int Integer
     | Float Float
@@ -86,39 +86,39 @@ data Operation
     deriving (Eq, Show)
 
 data Expression
-    = Type Type
+    = Literal Literal
     | Parentheses Expression
     | Operation Operation
-    | VarIdentifier T.Text
+    | Identifier T.Text
     | FunctionIdentifier T.Text
     | FunctionCall Expression [Expression]
-    | LambdaFunc [(Expression, TypeName)] (Maybe TopLevel) 
+    | LambdaFunc [(Expression, Type)] TopLevel
     | LambdaApplication Expression Expression
     deriving (Eq, Show)
 
 data Statement
-    = Variable Expression (Maybe TypeName) (Maybe Expression)
-    | Constant Expression TypeName Expression
+    = Variable Expression (Maybe Type) (Maybe Expression)
+    | Constant Expression Type Expression
     | Assignment Operation
-    | FunctionDef Expression [(Expression, TypeName)] TypeName (Maybe TopLevel)
-    | IfBlock Expression TopLevel (Maybe Statement)
-    | ElseBlock TopLevel
+    | FunctionDef Expression [(Expression, Type)] Type (Maybe TopLevel)
+    | IfStmt (Maybe Expression) TopLevel (Maybe TopLevel)
+    | ElseStmt TopLevel
     | Return (Maybe Expression)
     | CollapsedControlFlow TopLevel
     deriving (Eq, Show)
 
-data BlockType = NoType | If | Else | FunctionBlock TypeName deriving (Eq, Show)
+data BlockType = NoType | If | Else | FunctionBlock Type deriving (Eq, Show)
 
 data TopLevel = Stmt Statement | Expr Expression | Block BlockType [TopLevel] deriving (Eq, Show)
 
 reservedKeywords :: [String]
-reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false", "func", "const", "fwd"]
+reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false", "func", "const", "fwd", "int", "bool", "float", "string", "vector", "point", "matrix"]
 
 class Data a where
 
 data FunctionData = FunctionData {
-    returnType :: TypeName,
-    arguments :: [(T.Text, TypeName)],
+    returnType :: Type,
+    arguments :: [(T.Text, Type)],
     hasBody :: Bool 
 } deriving Show
 
@@ -131,7 +131,7 @@ defaultFunctionData = FunctionData {
 instance Data FunctionData where
 
 data VariableData = VariableData {
-    variableType :: Maybe TypeName,
+    variableType :: Maybe Type,
     inScope :: Bool,
     isInitialized :: Bool,
     isConstant :: Bool

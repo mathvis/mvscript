@@ -10,12 +10,12 @@ import Types
 import Prelude hiding (error, fst)
 import Text.Megaparsec
 
-argIdsToText :: [(Expression, TypeName)] -> [(T.Text, TypeName)]
+argIdsToText :: [(Expression, Type)] -> [(T.Text, Type)]
 argIdsToText = map argIdToText
     where
-        argIdToText (VarIdentifier name, typename) = (name, typename)
+        argIdToText (Identifier name, typename) = (name, typename)
 
-createFunctionData :: [(Expression, TypeName)] -> TypeName -> Bool -> FunctionData
+createFunctionData :: [(Expression, Type)] -> Type -> Bool -> FunctionData
 createFunctionData args returnType hasBody =
     defaultFunctionData {returnType, arguments = argIdsToText args, hasBody}
 

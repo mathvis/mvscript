@@ -1,2 +1,0 @@
-Decl (FunctionDef (FunctionIdentifier "a") [] void (Just (Block (FunctionBlock void) [])))
-Expr (FunctionCall (FunctionIdentifier "a") [])

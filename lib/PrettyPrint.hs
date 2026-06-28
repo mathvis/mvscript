@@ -20,7 +20,7 @@ printSymbolTableEntry state (name, vData) = do
     where
         vType = fromMaybe VoidT (variableType vData) 
 
-printArgument :: ParserState -> (T.Text, TypeName) -> IO ()
+printArgument :: ParserState -> (T.Text, Type) -> IO ()
 printArgument state (name, typename) =
     putStrLn $ yellow state ("\t\t\t" ++ T.unpack name ++ ": " ++ show typename)
         

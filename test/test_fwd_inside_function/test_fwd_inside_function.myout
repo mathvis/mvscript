@@ -1,7 +1,0 @@
-error: A function cannot be inside another function.
- --> test/test_fwd_inside_function/test_fwd_inside_function.mvs:2:9
-  |
-2 | 	[fwd] func b()
-  |     ^
-  |
-hint: Try going outside this function.
