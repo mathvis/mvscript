@@ -22,7 +22,7 @@ parseFileDebug filename file state' =
         (Right parsed, finalState) -> (parsed, finalState)
     where
         parseStatementWithState = do
-            stmt <- parseTopLevel
+            stmt <- topLevel
             currentState <- get
             return (stmt, currentState)
         parseStatementsWithStateThenReturnState =

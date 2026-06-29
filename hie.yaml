@@ -1,0 +1,8 @@
+cradle:
+  stack:
+    - path: "lib"
+      component: "mvscript:lib"
+    - path: "app"
+      component: "mvscript:exe:mvscc"
+    - path: "test"
+      component: "mvscript:test:mvscript-test"

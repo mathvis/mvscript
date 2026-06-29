@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
 module Parser (module Parser) where
 
 import Control.Monad.Combinators.Expr
@@ -8,96 +6,127 @@ import Data.Text as T (pack)
 import Misc
 import Text.Megaparsec
 import Text.Megaparsec.Char
-import Types
+import qualified Text.Megaparsec.Char.Lexer as L
+import Types hiding (identifier)
 
 -- MAIN TYPE PARSERS
-parseTopLevel :: MVParser TopLevel
-parseTopLevel =
+topLevel :: MVParser TopLevel
+topLevel =
   choice
-    [ Stmt <$> try parseStatement <?> "statement",
-      Expr <$> try parseExpr <?> "expression"
+    [ Stmt <$> try statement <?> "statement",
+      Expr <$> expr <?> "expression"
     ]
 
-parseExpr :: MVParser Expression
-parseExpr = do
-  makeExprParser parseTerm operatorTable
+expr :: MVParser Expression
+expr = makeExprParser term operatorTable
 
-parseLiteral :: MVParser Expression
-parseLiteral = parseNumber <|> parseBool <|> parseArray <|> parseString <|> parseVector <|> parsePoint <|> parseMatrix
+literal :: MVParser Expression
+literal =
+  choice
+    [ number <?> "number",
+      bool <?> "bool",
+      array <?> "array",
+      stringLiteral <?> "string",
+      vector <?> "vector",
+      point <?> "point",
+      matrix <?> "matrix"
+    ]
 
-parseTerm :: MVParser Expression
-parseTerm = try parseLambda <|> try parseLambdaApplication <|> try parseFunctionCall <|> try parseLiteral <|> try parseParens <|> parseIdentifier
+term :: MVParser Expression
+term =
+  choice
+    [ try lambda <?> "lambda",
+      try lambdaApplication <?> "lambda application",
+      parens <?> "parentheses",
+      try functionCall <?> "function call",
+      try identifier <?> "identifier",
+      literal <?> "literal"
+    ]
 
-parseStatement :: MVParser Statement
-parseStatement =
-  try parseVarInitialization
-    <|> try parseVarDeclaration
-    <|> try parseAssign
-    <|> try parseFunctionForwardDeclaration
-    <|> try parseFunctionDefinition
-    <|> try parseReturn
-    <|> parseIf
+statement :: MVParser Statement
+statement =
+  choice
+    [ varDeclaration <?> "variable declaration",
+      functionDeclaration <?> "function declaration",
+      returnStmt <?> "return",
+      ifStmt <?> "if statement",
+      assignment <?> "assignment"
+    ]
 
 -- DATA TYPE PARSERS
 
-parseNumber :: MVParser Expression
-parseNumber = lexeme $ do
+number :: MVParser Expression
+number = lexeme $ do
   intPart <- some digitChar
   fracPart <- optional (char '.' *> some digitChar)
-  case fracPart of
-    Nothing -> pure (Literal $ Int (read intPart))
-    Just frac -> pure (Literal $ Float (read (intPart ++ "." ++ frac)))
+  return $ case fracPart of
+    Nothing -> Literal $ Int (read intPart)
+    Just frac -> Literal $ Float (read (intPart ++ "." ++ frac))
 
-parseString :: MVParser Expression
-parseString = lexeme $ Literal . String . T.pack <$> (char '"' *> many (noneOf "\"") <* char '"')
+stringLiteral :: MVParser Expression
+stringLiteral = lexeme (mkString <$> stringContents)
+  where
+    mkString = Literal . String . T.pack
+    stringContents = char '"' *> manyTill L.charLiteral (char '"')
 
-parseBool :: MVParser Expression
-parseBool = Literal . Bool <$> (parseTrue <|> parseFalse)
+bool :: MVParser Expression
+bool = Literal . Bool <$> (parseTrue <|> parseFalse)
   where
     parseTrue = True <$ rword "true"
     parseFalse = False <$ rword "false"
 
-parseArray :: MVParser Expression
-parseArray = Literal . Array <$> lexeme (char '[' *> sepBy parseExpr (symbol ",") <* char ']')
+array :: MVParser Expression
+array = Literal . Array <$> between (symbol "[") (symbol "]") (sepBy expr (symbol ","))
 
-parseVector :: MVParser Expression
-parseVector = Literal . Vector <$> (rword "Vector" *> symbol "(" *> sepBy parseExpr (symbol ",") <* symbol ")")
+structLikeType :: String -> MVParser a -> MVParser [a]
+structLikeType keyword elementParser =
+  rword keyword *> betweenParentheses (sepBy elementParser (symbol ","))
 
-parsePoint :: MVParser Expression
-parsePoint = Literal . Point <$> (rword "Point" *> symbol "(" *> sepBy parseExpr (symbol ",") <* symbol ")")
+vector :: MVParser Expression
+vector = Literal . Vector <$> structLikeType "Vector" expr
 
-parseMatrix :: MVParser Expression
-parseMatrix = Literal . Matrix <$> (rword "Matrix" *> symbol "(" *> sepBy parseArray (symbol ",") <* symbol ")")
+point :: MVParser Expression
+point = Literal . Point <$> structLikeType "Point" expr
+
+matrix :: MVParser Expression
+matrix = Literal . Matrix <$> structLikeType "Matrix" array
 
 -- VARIABLE PARSERS
-identifierName :: MVParser String
-identifierName = (lexeme . try) $ do
-  name <- (:) <$> (letterChar <|> char '_') <*> many (letterChar <|> char '_' <|> digitChar)
-  if name `elem` reservedKeywords
-    then fail $ "Cannot use reserved keyword '" ++ name ++ "' as an identifier"
-    else return name
+identifier :: MVParser Expression
+identifier =
+  Identifier . T.pack <$> mkIdentifier
+  where
+    firstChar = letterChar <|> char '_'
+    nextChar = firstChar <|> digitChar
+    mkIdentifier = lexeme $ do
+      name <- liftA2 (:) firstChar (many nextChar)
+      if name `elem` reservedKeywords
+        then customFailure (ReservedKeywordUsed name)
+        else return name
 
-parseIdentifier :: MVParser Expression
-parseIdentifier = Identifier . T.pack <$> identifierName
+varDeclaration :: MVParser Statement
+varDeclaration = do
+  name <- rword "let" *> identifier
+  maybeType <- optional (symbol ":" *> typeName)
+  maybeExpr <- optional (symbol "=" *> expr)
+  return (Variable name maybeType maybeExpr)
 
-parseArgIdentifier :: MVParser Expression
-parseArgIdentifier = Identifier . T.pack <$> identifierName
+voidType :: MVParser Type
+voidType = pure VoidT
 
-parseIdentifierDecl :: MVParser Expression
-parseIdentifierDecl = Identifier . T.pack <$> identifierName
-
-parseVarDeclaration :: MVParser Statement
-parseVarDeclaration =
-  Variable
-    <$> (rword "let" *> parseIdentifierDecl)
-    <*> (Just <$> (lexeme (char ':') *> parseType))
-    <*> pure Nothing
-
-parseVoidType :: MVParser Type
-parseVoidType = pure VoidT
-
-parseType :: MVParser Type
-parseType = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parseBoolTName <|> parseVectorTName <|> parseMatrixTName <|> parsePointTName <|> parseArrayTName <|> parseLambdaTName
+typeName :: MVParser Type
+typeName =
+  choice
+    [ parseIntTName,
+      parseStringTName,
+      parseFloatTName,
+      parseBoolTName,
+      parseVectorTName,
+      parseMatrixTName,
+      parsePointTName,
+      parseArrayTName,
+      parseLambdaTName
+    ]
   where
     parseIntTName = IntT <$ rword "int"
     parseFloatTName = FloatT <$ rword "float"
@@ -106,127 +135,125 @@ parseType = parseIntTName <|> parseStringTName <|> parseFloatTName <|> parseBool
     parsePointTName = PointT <$ rword "point"
     parseVectorTName = VectorT <$ rword "vector"
     parseMatrixTName = MatrixT <$ rword "matrix"
-    parseArrayTName = ArrayT <$> try (symbol "[" *> parseType <* symbol "]")
-    parseLambdaTName = try $ LambdaT <$> (symbol "lambda[" *> sepBy parseType (symbol ",") <* symbol "]") <*> (parseType <|> parseVoidType)
-
-parseVarInitialization :: MVParser Statement
-parseVarInitialization =
-  Variable
-    <$> (rword "let" *> parseIdentifierDecl)
-    <*> optional (symbol ":" *> parseType)
-    <*> (symbol "=" *> parseExpr >>= \expr -> return (Just expr))
+    parseArrayTName = ArrayT <$> (symbol "[" *> typeName <* symbol "]")
+    parseLambdaTName = do
+      _ <- symbol "lambda"
+      _ <- symbol "["
+      params <- sepBy typeName (symbol ",")
+      _ <- symbol "]"
+      ret <- typeName <|> voidType
+      return $ LambdaT params ret
 
 -- OPERATION RELATED PARSERS
-parseParens :: MVParser Expression
-parseParens = Parentheses <$> betweenParentheses parseExpr
+parens :: MVParser Expression
+parens = Parentheses <$> betweenParentheses expr
 
-parseUnary :: MVParser Expression
-parseUnary =
-  ( (symbol "-" $> (Operation . Negation))
-      <|> (symbol "!" $> (Operation . Not))
-      <|> (symbol "~" $> (Operation . BitwiseNot))
-  )
-    <*> parseTerm
+unary :: MVParser Expression
+unary =
+  choice
+    [ (symbol "-" $> (Operation . Negation)),
+      (symbol "!" $> (Operation . Not)),
+      (symbol "~" $> (Operation . BitwiseNot))
+    ]
+    <*> term
 
-parseAssign :: MVParser Statement
-parseAssign = do
-  leftTerm <- parseIdentifierDecl
-  op <-
-    try (symbol "//=")
-      $> (\lhs rhs -> Assignment (IntDivAssign lhs rhs))
-        <|> try (symbol "+=")
-      $> (\lhs rhs -> Assignment (AddAssign lhs rhs))
-        <|> try (symbol "-=")
-      $> (\lhs rhs -> Assignment (SubAssign lhs rhs))
-        <|> try (symbol "*=")
-      $> (\lhs rhs -> Assignment (MulAssign lhs rhs))
-        <|> try (symbol "/=")
-      $> (\lhs rhs -> Assignment (DivAssign lhs rhs))
-        <|> try (symbol "%=")
-      $> (\lhs rhs -> Assignment (ModAssign lhs rhs))
-        <|> try (symbol "|=")
-      $> (\lhs rhs -> Assignment (BitwiseOrAssign lhs rhs))
-        <|> try (symbol "&=")
-      $> (\lhs rhs -> Assignment (BitwiseAndAssign lhs rhs))
-        <|> try (symbol "^=")
-      $> (\lhs rhs -> Assignment (BitwiseXorAssign lhs rhs))
-        <|> try (symbol "=")
-      $> (\lhs rhs -> Assignment (Assign lhs rhs))
-  rhs <- parseExpr
-  let decl = op leftTerm rhs
-  return decl
+assignment :: MVParser Statement
+assignment = do
+  leftTerm <- identifier
+  mkOp <- choice (map mkAssignOp assignOps)
+  rhs <- expr
+  return $ Assignment (mkOp leftTerm rhs)
+  where
+    mkAssignOp (sym, ctor) = symbol sym $> ctor
+    assignOps =
+      [ ("//=", IntDivAssign),
+        ("+=", AddAssign),
+        ("-=", SubAssign),
+        ("*=", MulAssign),
+        ("/=", DivAssign),
+        ("%=", ModAssign),
+        ("|=", BitwiseOrAssign),
+        ("&=", BitwiseAndAssign),
+        ("^=", BitwiseXorAssign),
+        ("=", Assign)
+      ]
 
 -- FUNCTION RELATED PARSERS
-parseFunctionIdentifier :: MVParser Expression
-parseFunctionIdentifier = FunctionIdentifier . T.pack <$> identifierName
-
-parseFunctionParameters :: MVParser [(Expression, Type)]
-parseFunctionParameters = sepBy parseFunctionArgument (lexeme $ char ',')
+functionParameters :: MVParser [(Expression, Type)]
+functionParameters = sepBy parseFunctionArgument (lexeme $ char ',')
   where
-    parseFunctionArgument = (,) <$> (parseArgIdentifier <* symbol ":") <*> parseType
+    parseFunctionArgument = do
+      ident <- identifier
+      _ <- symbol ":"
+      typename <- typeName
+      return (ident, typename)
 
-parseFunctionReturnType :: MVParser Type
-parseFunctionReturnType = parseType <|> parseVoidType
+functionReturnType :: MVParser Type
+functionReturnType = typeName <|> voidType
 
-parseFunctionSignature :: MVParser (Expression, [(Expression, Type)], Type)
-parseFunctionSignature =
-  (,,)
-    <$> (rword "func" *> parseFunctionIdentifier)
-    <*> (symbol "(" *> parseFunctionParameters <* symbol ")")
-    <*> parseFunctionReturnType
+functionSignature :: MVParser (Expression, [(Expression, Type)], Type)
+functionSignature = do
+  _ <- rword "func"
+  ident <- identifier
+  _ <- symbol "("
+  params <- functionParameters
+  _ <- symbol ")"
+  ret <- functionReturnType
+  return (ident, params, ret)
 
-parseFunctionForwardDeclaration :: MVParser Statement
-parseFunctionForwardDeclaration =
-    lexeme $
-      symbol "[fwd]" *> parseFunctionSignature
-        >>= \(funcIdentifier, args, returnType') ->
-          return (FunctionDef funcIdentifier args returnType' Nothing)
+functionDeclaration :: MVParser Statement
+functionDeclaration =
+  lexeme $ do
+    (funcIdentifier, args, returnType') <- functionSignature
+    maybeBlock <- optional (block (FunctionBlock returnType'))
+    return $ FunctionDef funcIdentifier args returnType' maybeBlock
 
-parseFunctionDefinition :: MVParser Statement
-parseFunctionDefinition =
-      lexeme $
-        parseFunctionSignature
-          >>= \(funcIdentifier, args, returnType') ->
-            parseBlock (FunctionBlock returnType')
-              >>= return
-                . FunctionDef funcIdentifier args returnType'
-                . Just
+functionCallArguments :: MVParser [Expression]
+functionCallArguments = sepBy expr (lexeme $ char ',')
 
-parseFunctionCallArguments :: MVParser [Expression]
-parseFunctionCallArguments = sepBy parseExpr (lexeme $ char ',')
+functionCall :: MVParser Expression
+functionCall = lexeme $ do
+  ident <- identifier
+  args <- between (symbol "(") (symbol ")") functionCallArguments
+  return $ FunctionCall ident args
 
-parseFunctionCall :: MVParser Expression
-parseFunctionCall = functionCall
-  where
-    functionCall = lexeme $ FunctionCall <$> parseFunctionIdentifier <*> between (symbol "(") (symbol ")") parseFunctionCallArguments
+lambda :: MVParser Expression
+lambda = do
+  params <- betweenParentheses functionParameters
+  _ <- symbol ":"
+  body <- block (FunctionBlock VoidT) <|> topLevel
+  return $ LambdaFunc params body
 
--- TODO: fix lambda return types
-parseLambda :: MVParser Expression
-parseLambda = LambdaFunc <$> betweenParentheses parseFunctionParameters <*> (symbol ":" *> (parseBlock (FunctionBlock VoidT) <|> parseTopLevel))
-
-parseLambdaApplication :: MVParser Expression
-parseLambdaApplication =
+lambdaApplication :: MVParser Expression
+lambdaApplication =
   LambdaApplication
-    <$> betweenParentheses parseLambda
-    <*> betweenParentheses parseExpr
+    <$> betweenParentheses lambda
+    <*> betweenParentheses expr
 
-parseBlock :: BlockType -> MVParser TopLevel
-parseBlock blocktype = do
+block :: BlockType -> MVParser TopLevel
+block blocktype = do
   _ <- symbol "{"
-  stmts <- many (lexeme parseTopLevel)
+  stmts <- many (lexeme topLevel)
   _ <- symbol "}"
-  let block = Block blocktype stmts
-  return block
+  return $ Block blocktype stmts
 
-parseReturn :: MVParser Statement
-parseReturn = lexeme (Return <$> (symbol "return" *> optional parseExpr))
+returnStmt :: MVParser Statement
+returnStmt = lexeme (Return <$> (symbol "return" *> optional expr))
 
 -- CONTROL FLOW PARSERS
-parseElse :: MVParser Statement
-parseElse = lexeme $ ElseStmt <$> (rword "else" *> (parseBlock Else <|> Stmt <$> parseIf))
+elseStmt :: MVParser Statement
+elseStmt = lexeme $ do
+  _ <- rword "else"
+  body <- block Else <|> (Stmt <$> ifStmt)
+  return $ ElseStmt body
 
-parseIf :: MVParser Statement
-parseIf = lexeme (IfStmt <$> (rword "if" *> betweenParentheses (optional parseExpr)) <*> parseBlock If <*> optional (Stmt <$> parseElse))
+ifStmt :: MVParser Statement
+ifStmt = lexeme $ do
+  _ <- rword "if"
+  cond <- betweenParentheses (optional expr)
+  body <- block If
+  maybeElse <- optional (Stmt <$> elseStmt)
+  return $ IfStmt cond body maybeElse
 
 operatorTable :: [[Operator MVParser Expression]]
 operatorTable =

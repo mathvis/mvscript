@@ -32,6 +32,7 @@ library
       Paths_mvscript
   hs-source-dirs:
       lib
+  ghc-options: -Wall -Werror -Wincomplete-patterns
   build-depends:
       base
     , containers
@@ -47,6 +48,7 @@ executable mvscc
       Paths_mvscript
   hs-source-dirs:
       app
+  ghc-options: -Wall -Werror -Wincomplete-patterns
   build-depends:
       base
     , containers
@@ -67,10 +69,12 @@ test-suite mvscript-test
       Paths_mvscript
   hs-source-dirs:
       test
+  ghc-options: -Wall -Werror -Wincomplete-patterns
   build-tool-depends:
       hspec-discover:hspec-discover
   build-depends:
       base
+    , containers
     , hspec
     , hspec-megaparsec
     , megaparsec

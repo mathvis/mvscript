@@ -18,10 +18,10 @@ symbol :: String -> MVParser String
 symbol = L.symbol sc
 
 betweenParentheses :: MVParser a -> MVParser a
-betweenParentheses = between (lexeme $ char '(') (lexeme $ char ')') 
+betweenParentheses = between (symbol "(") (symbol ")") 
 
 rword :: String -> MVParser ()
-rword w = (lexeme . try) (string w *> notFollowedBy (letterChar <|> digitChar))
+rword w = lexeme (string w *> notFollowedBy (letterChar <|> digitChar <|> char '_'))
 
 toInt' :: (Num a, Real a) => a -> Integer
 toInt' x = round (realToFrac x :: Double)

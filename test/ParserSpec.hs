@@ -3,476 +3,457 @@ module ParserSpec (spec) where
 import Control.Monad (forM_)
 import Control.Monad.State (evalState)
 import Data.Text as T
-import Data.Void
 import Parser
 import Test.Hspec
 import Test.Hspec.Megaparsec
 import Text.Megaparsec (ParseErrorBundle, eof, runParserT)
-import Types
+import Types hiding (identifier)
 
-testParse :: MVParser a -> String -> Either (ParseErrorBundle String Void) a
+testParse :: MVParser a -> String -> Either (ParseErrorBundle String MVParseError) a
 testParse p input = evalState (runParserT p "" input) defaultParserState
 
 spec :: Spec
 spec = do
-  describe "parseNumber" $ do
+  describe "number" $ do
     it "parses an int" $ do
-      testParse parseNumber "87"
-        `shouldParse` (Literal (Int 87))
+      testParse number "87"
+        `shouldParse` Literal (Int 87)
     it "parses a float" $ do
-      testParse parseNumber "8.7"
-        `shouldParse` (Literal (Float 8.7))
+      testParse number "8.7"
+        `shouldParse` Literal (Float 8.7)
     it "does not parse letters" $ do
-      testParse parseNumber
+      testParse number
         `shouldFailOn` "string"
-  describe "parseString" $ do
+  describe "stringLiteral" $ do
     it "parses a string" $ do
-      testParse parseString "\"test\""
-        `shouldParse` (Literal (String (T.pack "test")))
+      testParse stringLiteral "\"test\""
+        `shouldParse` Literal (String (T.pack "test"))
     it "does not parse incomplete string" $ do
-      testParse parseString
+      testParse stringLiteral
         `shouldFailOn` "\"test"
-  describe "parseBool" $ do
+  describe "bool" $ do
     it "parses true" $ do
-      testParse parseBool "true"
-        `shouldParse` (Literal (Bool True))
+      testParse bool "true"
+        `shouldParse` Literal (Bool True)
     it "parses false" $ do
-      testParse parseBool "false"
-        `shouldParse` (Literal (Bool False))
-  describe "parseArray" $ do
+      testParse bool "false"
+        `shouldParse` Literal (Bool False)
+  describe "array" $ do
     it "parses an array" $ do
-      testParse parseArray "[0, 1, 2]"
-        `shouldParse` (Literal (Array [Literal (Int 0), Literal (Int 1), Literal (Int 2)]))
+      testParse array "[0, 1, 2]"
+        `shouldParse` Literal (Array [Literal (Int 0), Literal (Int 1), Literal (Int 2)])
     it "does not parse incomplete array" $ do
-      testParse parseArray
+      testParse array
         `shouldFailOn` "[0, 1, "
-  describe "parseVector" $ do
+  describe "vector" $ do
     it "parses a vector" $ do
-      testParse parseVector "Vector(0, 1)"
-        `shouldParse` (Literal (Vector [Literal (Int 0), Literal (Int 1)]))
+      testParse vector "Vector(0, 1)"
+        `shouldParse` Literal (Vector [Literal (Int 0), Literal (Int 1)])
     it "does not parse incomplete vector" $ do
-      testParse parseVector
+      testParse vector
         `shouldFailOn` "Vector(0"
-  describe "parsePoint" $ do
+  describe "point" $ do
     it "parses a point" $ do
-      testParse parsePoint "Point(0, 1)"
-        `shouldParse` (Literal (Point [Literal (Int 0), Literal (Int 1)]))
+      testParse point "Point(0, 1)"
+        `shouldParse` Literal (Point [Literal (Int 0), Literal (Int 1)])
     it "does not parse incomplete point" $ do
-      testParse parsePoint
+      testParse point
         `shouldFailOn` "Point(0"
-  describe "parseMatrix" $ do
+  describe "matrix" $ do
     it "parses a matrix" $ do
-      testParse parseMatrix "Matrix([1, 0], [0, 1])"
-        `shouldParse` (Literal (Matrix [Literal (Array ([Literal (Int 1), Literal (Int 0)])), Literal (Array ([Literal (Int 0), Literal (Int 1)]))]))
+      testParse matrix "Matrix([1, 0], [0, 1])"
+        `shouldParse` Literal (Matrix [Literal (Array [Literal (Int 1), Literal (Int 0)]), Literal (Array [Literal (Int 0), Literal (Int 1)])])
     it "does not parse incomplete matrix" $ do
-      testParse parseMatrix
+      testParse matrix
         `shouldFailOn` "Matrix([0, 1]"
-  describe "parseLiteral" $ do
+  describe "literal" $ do
     it "parses an int" $ do
-      testParse parseLiteral "5"
+      testParse literal "5"
         `parseSatisfies` isIntLiteral
     it "parses a float" $ do
-      testParse parseLiteral "5.5"
+      testParse literal "5.5"
         `parseSatisfies` isFloatLiteral
     it "parses a string" $ do
-      testParse parseLiteral "\"test\""
+      testParse literal "\"test\""
         `parseSatisfies` isStringLiteral
     it "parses a bool" $ do
-      testParse parseLiteral "false"
+      testParse literal "false"
         `parseSatisfies` isBoolLiteral
     it "parses an array" $ do
-      testParse parseLiteral "[0, 1, 2, 3]"
+      testParse literal "[0, 1, 2, 3]"
         `parseSatisfies` isArrayLiteral
     it "parses a vector" $ do
-      testParse parseLiteral "Vector(0, 1, 2)"
+      testParse literal "Vector(0, 1, 2)"
         `parseSatisfies` isVectorLiteral
     it "parses a point" $ do
-      testParse parseLiteral "Point(0, 1, 2)"
+      testParse literal "Point(0, 1, 2)"
         `parseSatisfies` isPointLiteral
     it "parses a matrix" $ do
-      testParse parseLiteral "Matrix([0, 1], [1, 0])"
+      testParse literal "Matrix([0, 1], [1, 0])"
         `parseSatisfies` isMatrixLiteral
-  describe "parseParens" $ do
+  describe "parens" $ do
     it "parses one level of parens" $ do
-      testParse parseParens "(0)"
-        `shouldParse` (Parentheses (Literal (Int 0)))
+      testParse parens "(0)"
+        `shouldParse` Parentheses (Literal (Int 0))
     it "parses multiple levels of parens" $ do
-      testParse parseParens "((0))"
-        `shouldParse` (Parentheses (Parentheses (Literal (Int 0))))
+      testParse parens "((0))"
+        `shouldParse` Parentheses (Parentheses (Literal (Int 0)))
     it "does not parse unclosed parens" $ do
-      testParse parseParens
+      testParse parens
         `shouldFailOn` "(0"
     it "does not parse mismatched parens" $ do
-      testParse parseParens
+      testParse parens
         `shouldFailOn` "(((0))"
-  describe "parseIdentifier" $ do
+  describe "identifier" $ do
     it "parses identifier with only letters" $ do
-      testParse parseIdentifier "id"
-        `shouldParse` (Identifier (T.pack "id"))
+      testParse identifier "id"
+        `shouldParse` Identifier (T.pack "id")
     it "parses identifier starting with underscore" $ do
-      testParse parseIdentifier "_id"
-        `shouldParse` (Identifier (T.pack "_id"))
+      testParse identifier "_id"
+        `shouldParse` Identifier (T.pack "_id")
     it "parses identifier with numbers after first character" $ do
-      testParse parseIdentifier "_id1d"
-        `shouldParse` (Identifier (T.pack "_id1d"))
+      testParse identifier "_id1d"
+        `shouldParse` Identifier (T.pack "_id1d")
     it "does not parse identifiers with starting numbers" $ do
-      testParse parseIdentifier
+      testParse identifier
         `shouldFailOn` "0abc"
     it "does not parse identifiers with starting symbols" $ do
-      testParse parseIdentifier
+      testParse identifier
         `shouldFailOn` "?abc"
     it "does not parse reserved keywords as identifiers" $
       forM_ reservedKeywords $ \kw ->
-        testParse parseIdentifier
+        testParse identifier
           `shouldFailOn` kw
     it "parses identifiers that begin with keywords" $
       forM_ reservedKeywords $ \kw ->
-        testParse parseIdentifier (kw ++ "identifier")
-          `shouldParse` (Identifier (T.pack (kw ++ "identifier")))
-  describe "parseType" $ do
+        testParse identifier (kw ++ "identifier")
+          `shouldParse` Identifier (T.pack (kw ++ "identifier"))
+  describe "typeName" $ do
     it "parses int type" $ do
-      testParse parseType "int"
+      testParse typeName "int"
         `shouldParse` IntT
     it "parses float type" $ do
-      testParse parseType "float"
+      testParse typeName "float"
         `shouldParse` FloatT
     it "parses string type" $ do
-      testParse parseType "string"
+      testParse typeName "string"
         `shouldParse` StringT
     it "parses bool type" $ do
-      testParse parseType "bool"
+      testParse typeName "bool"
         `shouldParse` BoolT
     it "parses vector type" $ do
-      testParse parseType "vector"
+      testParse typeName "vector"
         `shouldParse` VectorT
     it "parses point type" $ do
-      testParse parseType "point"
+      testParse typeName "point"
         `shouldParse` PointT
     it "parses matrix type" $ do
-      testParse parseType "matrix"
+      testParse typeName "matrix"
         `shouldParse` MatrixT
     it "parses array type" $ do
-      testParse parseType "[int]"
+      testParse typeName "[int]"
         `shouldParse` ArrayT IntT
     it "parses nested array type" $ do
-      testParse parseType "[[int]]"
+      testParse typeName "[[int]]"
         `shouldParse` ArrayT (ArrayT IntT)
     it "parses array with lambda" $ do
-      testParse parseType "[lambda[]]"
+      testParse typeName "[lambda[]]"
         `shouldParse` ArrayT (LambdaT [] VoidT)
     it "does not parse incomplete array type" $ do
-      testParse parseType
+      testParse typeName
         `shouldFailOn` "[int"
     it "does not parse mismatched brackets array type" $ do
-      testParse parseType
+      testParse typeName
         `shouldFailOn` "[[int]"
     it "parses empty lambda" $ do
-      testParse parseType "lambda[]"
+      testParse typeName "lambda[]"
         `shouldParse` LambdaT [] VoidT
     it "parses lambda with no arguments" $ do
-      testParse parseType "lambda[]string"
+      testParse typeName "lambda[]string"
         `shouldParse` LambdaT [] StringT
     it "parses lambda with arguments" $ do
-      testParse parseType "lambda[int, bool, float]string"
+      testParse typeName "lambda[int, bool, float]string"
         `shouldParse` LambdaT [IntT, BoolT, FloatT] StringT
     it "parses lambda with nested array argument" $ do
-      testParse parseType "lambda[[[int]]]string"
+      testParse typeName "lambda[[[int]]]string"
         `shouldParse` LambdaT [ArrayT (ArrayT IntT)] StringT
     it "parses lambda with nested array return type" $ do
-      testParse parseType "lambda[][[int]]"
+      testParse typeName "lambda[][[int]]"
         `shouldParse` LambdaT [] (ArrayT (ArrayT IntT))
     it "parses lambda with lambda argument" $ do
-      testParse parseType "lambda[lambda[]]"
+      testParse typeName "lambda[lambda[]]"
         `shouldParse` LambdaT [LambdaT [] VoidT] VoidT
     it "parses lambda with lambda return type" $ do
-      testParse parseType "lambda[]lambda[]string"
+      testParse typeName "lambda[]lambda[]string"
         `shouldParse` LambdaT [] (LambdaT [] StringT)
     it "does not parse incomplete lambda" $ do
-      testParse parseType
+      testParse typeName
         `shouldFailOn` "lambda["
-  describe "parseReturn" $ do
+  describe "returnStmt" $ do
     it "parses empty return" $ do
-      testParse parseReturn "return"
+      testParse returnStmt "return"
         `shouldParse` Return Nothing
     it "parses non-empty return" $ do
-      testParse parseReturn "return 1"
+      testParse returnStmt "return 1"
         `shouldParse` Return (Just (Literal (Int 1)))
     it "parses non-empty return with parens" $ do
-      testParse parseReturn "return (1)"
+      testParse returnStmt "return (1)"
         `shouldParse` Return (Just (Parentheses (Literal (Int 1))))
     it "does not parse non-expression" $ do
-      testParse (parseReturn <* eof)
+      testParse (returnStmt <* eof)
         `shouldFailOn` "return int"
-  describe "parseBlock" $ do
+  describe "block" $ do
     it "parses empty block" $ do
-      testParse (parseBlock NoType) "{}"
+      testParse (block NoType) "{}"
         `shouldParse` Block NoType []
     it "parses block with expression" $ do
-      testParse (parseBlock NoType) "{\n0\n}"
+      testParse (block NoType) "{\n0\n}"
         `shouldParse` Block NoType [Expr (Literal (Int 0))]
     it "parses block with statement" $ do
-      testParse (parseBlock NoType) "{\nreturn\n}"
+      testParse (block NoType) "{\nreturn\n}"
         `shouldParse` Block NoType [Stmt (Return Nothing)]
     it "does not parse unclosed block" $ do
-      testParse (parseBlock NoType)
+      testParse (block NoType)
         `shouldFailOn` "{"
-  describe "parseLambda" $ do
+  describe "lambda" $ do
     it "parses empty lambda" $ do
-      testParse (parseLambda) "():{}"
+      testParse lambda "():{}"
         `shouldParse` LambdaFunc [] (Block (FunctionBlock VoidT) [])
     it "parses empty lambda with args" $ do
-      testParse (parseLambda) "(a: int):{}"
-        `shouldParse` LambdaFunc [((Identifier (T.pack "a")), IntT)] (Block (FunctionBlock VoidT) [])
+      testParse lambda "(a: int):{}"
+        `shouldParse` LambdaFunc [(Identifier (T.pack "a"), IntT)] (Block (FunctionBlock VoidT) [])
     it "parses lambda with expression" $ do
-      testParse (parseLambda) "():0"
+      testParse lambda "():0"
         `shouldParse` LambdaFunc [] (Expr (Literal (Int 0)))
     it "parses lambda with statement" $ do
-      testParse (parseLambda) "():return"
+      testParse lambda "():return"
         `shouldParse` LambdaFunc [] (Stmt (Return Nothing))
     it "does not parse lambda without body" $ do
-      testParse (parseLambda)
+      testParse lambda
         `shouldFailOn` "():"
-  describe "parseLambdaApplication" $ do
+  describe "lambdaApplication" $ do
     it "parses application" $ do
-      testParse parseLambdaApplication "((a:int):a)(0)"
+      testParse lambdaApplication "((a:int):a)(0)"
         `shouldParse` LambdaApplication (LambdaFunc [(Identifier (T.pack "a"), IntT)] (Expr (Identifier (T.pack "a")))) (Literal (Int 0))
     it "does not parse if no application" $ do
-      testParse parseLambdaApplication
+      testParse lambdaApplication
         `shouldFailOn` "((a:int):a)"
     it "does not parse if application is statement" $ do
-      testParse parseLambdaApplication
+      testParse lambdaApplication
         `shouldFailOn` "((a:int):a)(return)"
     it "does not parse if application is not inline lambda" $ do
-      testParse parseLambdaApplication
+      testParse lambdaApplication
         `shouldFailOn` "(a)(return)"
-  describe "parseIf" $ do
+  describe "ifStmt" $ do
     it "parses empty if statement" $ do
-      testParse parseIf "if () {}"
+      testParse ifStmt "if () {}"
         `shouldParse` IfStmt Nothing (Block If []) Nothing
     it "parses if statement with condition" $ do
-      testParse parseIf "if (true) {}"
+      testParse ifStmt "if (true) {}"
         `shouldParse` IfStmt (Just (Literal (Bool True))) (Block If []) Nothing
     it "parses if statement with body" $ do
-      testParse parseIf "if (true) {\nreturn\n}"
+      testParse ifStmt "if (true) {\nreturn\n}"
         `shouldParse` IfStmt (Just (Literal (Bool True))) (Block If [Stmt (Return Nothing)]) Nothing
     it "parses if statement with else" $ do
-      testParse parseIf "if (true) {\nreturn\n} else {}"
+      testParse ifStmt "if (true) {\nreturn\n} else {}"
         `shouldParse` IfStmt (Just (Literal (Bool True))) (Block If [Stmt (Return Nothing)]) (Just (Stmt (ElseStmt (Block Else []))))
     it "parses if statement with else if" $ do
-      testParse parseIf "if (true) {\nreturn\n} else if () {}"
+      testParse ifStmt "if (true) {\nreturn\n} else if () {}"
         `shouldParse` IfStmt (Just (Literal (Bool True))) (Block If [Stmt (Return Nothing)]) (Just (Stmt (ElseStmt (Stmt (IfStmt Nothing (Block If []) Nothing)))))
     it "parses if statement with else if and else" $ do
-      testParse parseIf "if (true) {\nreturn\n} else if () {} else {}"
+      testParse ifStmt "if (true) {\nreturn\n} else if () {} else {}"
         `shouldParse` IfStmt (Just (Literal (Bool True))) (Block If [Stmt (Return Nothing)]) (Just (Stmt (ElseStmt (Stmt (IfStmt Nothing (Block If []) (Just (Stmt (ElseStmt (Block Else [])))))))))
     it "does not parse if with no body" $ do
-      testParse parseIf
+      testParse ifStmt
         `shouldFailOn` "if (true)"
     it "does not parse if with no condition" $ do
-      testParse parseIf
+      testParse ifStmt
         `shouldFailOn` "if {}"
-  describe "parseElse" $ do
+  describe "elseStmt" $ do
     it "parses empty else" $ do
-      testParse parseElse "else {}"
+      testParse elseStmt "else {}"
         `shouldParse` ElseStmt (Block Else [])
     it "parses else with body" $ do
-      testParse parseElse "else {\nreturn\n}"
+      testParse elseStmt "else {\nreturn\n}"
         `shouldParse` ElseStmt (Block Else [Stmt (Return Nothing)])
     it "parses else if" $ do
-      testParse parseElse "else if () {}"
+      testParse elseStmt "else if () {}"
         `shouldParse` ElseStmt (Stmt (IfStmt Nothing (Block If []) Nothing))
     it "parses else if and else" $ do
-      testParse parseElse "else if () {} else {}"
+      testParse elseStmt "else if () {} else {}"
         `shouldParse` ElseStmt (Stmt (IfStmt Nothing (Block If []) (Just (Stmt (ElseStmt (Block Else []))))))
     it "does not parse else with no body" $ do
-      testParse parseElse
+      testParse elseStmt
         `shouldFailOn` "else"
-  describe "parseFunctionParameters" $ do
+  describe "functionParameters" $ do
     it "parses no parameters" $ do
-      testParse parseFunctionParameters ""
+      testParse functionParameters ""
         `shouldParse` []
     it "parses one parameter" $ do
-      testParse parseFunctionParameters "a: int"
+      testParse functionParameters "a: int"
         `shouldParse` [(Identifier (T.pack "a"), IntT)]
     it "parses multiple parameters" $ do
-      testParse parseFunctionParameters "a: int, b: float"
+      testParse functionParameters "a: int, b: float"
         `shouldParse` [(Identifier (T.pack "a"), IntT), (Identifier (T.pack "b"), FloatT)]
     it "does not parse if no type" $ do
-      testParse parseFunctionParameters
+      testParse functionParameters
         `shouldFailOn` "a, b"
     it "does not parse if rhs is not type" $ do
-      testParse parseFunctionParameters
+      testParse functionParameters
         `shouldFailOn` "a: if"
     it "does not parse if lhs is keyword" $ do
-      testParse (parseFunctionParameters <* eof)
+      testParse (functionParameters <* eof)
         `shouldFailOn` "if: int"
-  describe "parseFunctionSignature" $ do
+  describe "functionSignature" $ do
     it "parses signature" $ do
-      testParse (parseFunctionSignature) "func f(a: int) bool"
-        `shouldParse` (FunctionIdentifier (T.pack "f"), [(Identifier (T.pack "a"), IntT)], BoolT)
+      testParse functionSignature "func f(a: int) bool"
+        `shouldParse` (Identifier (T.pack "f"), [(Identifier (T.pack "a"), IntT)], BoolT)
     it "parses signature with void return" $ do
-      testParse (parseFunctionSignature) "func f(a: int)"
-        `shouldParse` (FunctionIdentifier (T.pack "f"), [(Identifier (T.pack "a"), IntT)], VoidT)
+      testParse functionSignature "func f(a: int)"
+        `shouldParse` (Identifier (T.pack "f"), [(Identifier (T.pack "a"), IntT)], VoidT)
     it "does not parse signature with keyword identifier" $ do
-      testParse (parseFunctionSignature <* eof)
+      testParse (functionSignature <* eof)
         `shouldFailOn` "func else(a: int)"
     it "does not parse signature with keyword return type" $ do
-      testParse (parseFunctionSignature <* eof)
+      testParse (functionSignature <* eof)
         `shouldFailOn` "func f(a: int) else"
-  describe "parseFunctionDefinition" $ do
+  describe "functionDeclaration" $ do
     it "parses empty function" $ do
-      testParse parseFunctionDefinition "func f() {}"
-        `shouldParse` FunctionDef (FunctionIdentifier (T.pack "f")) [] VoidT (Just (Block (FunctionBlock VoidT) []))
+      testParse functionDeclaration "func f() {}"
+        `shouldParse` FunctionDef (Identifier (T.pack "f")) [] VoidT (Just (Block (FunctionBlock VoidT) []))
     it "parses function with body" $ do
-      testParse parseFunctionDefinition "func f() {\nreturn\n}"
-        `shouldParse` FunctionDef (FunctionIdentifier (T.pack "f")) [] VoidT (Just (Block (FunctionBlock VoidT) [Stmt (Return Nothing)]))
-    it "does not parse function without body" $ do
-      testParse parseFunctionDefinition
-        `shouldFailOn` "func f()"
-  describe "parseFunctionForwardDeclaration" $ do
+      testParse functionDeclaration "func f() {\nreturn\n}"
+        `shouldParse` FunctionDef (Identifier (T.pack "f")) [] VoidT (Just (Block (FunctionBlock VoidT) [Stmt (Return Nothing)]))
     it "parses forward declaration" $ do
-      testParse parseFunctionForwardDeclaration "[fwd] func f()"
-        `shouldParse` FunctionDef (FunctionIdentifier (T.pack "f")) [] VoidT Nothing
-    it "does not parse forward declaration with body" $ do
-      testParse (parseFunctionForwardDeclaration <* eof)
-        `shouldFailOn` "[fwd] func f() {}"
-    it "does not parse forward declaration without [fwd]" $ do
-      testParse parseFunctionForwardDeclaration
-        `shouldFailOn` "func f()"
-  describe "parseFunctionCallArguments" $ do
+      testParse functionDeclaration "func f()"
+        `shouldParse` FunctionDef (Identifier (T.pack "f")) [] VoidT Nothing
+  describe "functionCallArguments" $ do
     it "parses no args" $ do
-      testParse parseFunctionCallArguments ""
+      testParse functionCallArguments ""
         `shouldParse` []
     it "parses one arg" $ do
-      testParse parseFunctionCallArguments "0"
+      testParse functionCallArguments "0"
         `shouldParse` [Literal (Int 0)]
     it "parses multiple args" $ do
-      testParse parseFunctionCallArguments "0, 1"
+      testParse functionCallArguments "0, 1"
         `shouldParse` [Literal (Int 0), Literal (Int 1)]
     it "does not parse if arg is keyword" $ do
-      testParse (parseFunctionCallArguments <* eof)
+      testParse (functionCallArguments <* eof)
         `shouldFailOn` "if"
-  describe "parseFunctionCall" $ do
+  describe "functionCall" $ do
     it "parses call" $ do
-      testParse parseFunctionCall "f()"
-        `shouldParse` FunctionCall (FunctionIdentifier (T.pack "f")) []
+      testParse functionCall "f()"
+        `shouldParse` FunctionCall (Identifier (T.pack "f")) []
     it "does not parse if identifier is keyword" $ do
-      testParse parseFunctionCall
+      testParse functionCall
         `shouldFailOn` "if()"
-  describe "parseVarDeclaration" $ do
+  describe "varDeclaration" $ do
     it "parses var declaration" $
       do
-        testParse parseVarDeclaration "let a: int"
+        testParse varDeclaration "let a: int"
         `shouldParse` Variable (Identifier (T.pack "a")) (Just IntT) Nothing
-    it "does not parse if given initializer" $
-      do
-        testParse (parseVarDeclaration <* eof)
-        `shouldFailOn` "let a = 0"
     it "does not parse if identifier is keyword" $
       do
-        testParse parseVarDeclaration
+        testParse varDeclaration
         `shouldFailOn` "let if: int"
     it "does not parse if type is keyword" $
       do
-        testParse parseVarDeclaration
+        testParse varDeclaration
         `shouldFailOn` "let a: else"
-  describe "parseVarInitialization" $ do
-    it "parses var initialization" $ do
-      testParse parseVarInitialization "let a: int = 0"
+    it "parses var declaration with initializer" $ do
+      testParse varDeclaration "let a: int = 0"
         `shouldParse` Variable (Identifier (T.pack "a")) (Just IntT) (Just (Literal (Int 0)))
     it "parses var initialization with no type" $ do
-      testParse parseVarInitialization "let a = 3"
+      testParse varDeclaration "let a = 3"
         `shouldParse` Variable (Identifier (T.pack "a")) Nothing (Just (Literal (Int 3)))
-    it "does not parse if not given initializer" $ do
-      testParse (parseVarInitialization <* eof)
-        `shouldFailOn` "let a"
     it "does not parse if identifier is keyword" $ do
-      testParse parseVarInitialization
+      testParse varDeclaration
         `shouldFailOn` "let if: int = 0"
     it "does not parse if type is keyword" $ do
-      testParse parseVarInitialization
+      testParse varDeclaration
         `shouldFailOn` "let a: else = 3"
-  describe "parseAssign" $ do
+  describe "assignment" $ do
     it "parses normal assignment" $ do
-      testParse parseAssign "a = 3"
+      testParse assignment "a = 3"
         `shouldParse` Assignment (Assign (Identifier (T.pack "a")) (Literal (Int 3)))
     it "parses add assignment" $ do
-      testParse parseAssign "a += 3"
+      testParse assignment "a += 3"
         `shouldParse` Assignment (AddAssign (Identifier (T.pack "a")) (Literal (Int 3)))
     it "parses sub assignment" $ do
-      testParse parseAssign "a -= 3"
+      testParse assignment "a -= 3"
         `shouldParse` Assignment (SubAssign (Identifier (T.pack "a")) (Literal (Int 3)))
     it "parses mul assignment" $ do
-      testParse parseAssign "a *= 3"
+      testParse assignment "a *= 3"
         `shouldParse` Assignment (MulAssign (Identifier (T.pack "a")) (Literal (Int 3)))
     it "parses div assignment" $ do
-      testParse parseAssign "a /= 3"
+      testParse assignment "a /= 3"
         `shouldParse` Assignment (DivAssign (Identifier (T.pack "a")) (Literal (Int 3)))
     it "parses int div assignment" $ do
-      testParse parseAssign "a //= 3"
+      testParse assignment "a //= 3"
         `shouldParse` Assignment (IntDivAssign (Identifier (T.pack "a")) (Literal (Int 3)))
     it "parses mod assignment" $ do
-      testParse parseAssign "a %= 3"
+      testParse assignment "a %= 3"
         `shouldParse` Assignment (ModAssign (Identifier (T.pack "a")) (Literal (Int 3)))
     it "parses bitwise or assignment" $ do
-      testParse parseAssign "a |= 3"
+      testParse assignment "a |= 3"
         `shouldParse` Assignment (BitwiseOrAssign (Identifier (T.pack "a")) (Literal (Int 3)))
     it "parses bitwise and assignment" $ do
-      testParse parseAssign "a &= 3"
+      testParse assignment "a &= 3"
         `shouldParse` Assignment (BitwiseAndAssign (Identifier (T.pack "a")) (Literal (Int 3)))
     it "parses bitwise xor assignment" $ do
-      testParse parseAssign "a ^= 3"
+      testParse assignment "a ^= 3"
         `shouldParse` Assignment (BitwiseXorAssign (Identifier (T.pack "a")) (Literal (Int 3)))
     it "does not parse if lhs is keyword" $ do
-      testParse parseAssign
+      testParse assignment
         `shouldFailOn` "if = 4"
     it "does not parse if rhs is keyword" $ do
-      testParse parseAssign
+      testParse assignment
         `shouldFailOn` "a = else"
     it "does not parse if no rhs" $ do
-      testParse parseAssign
+      testParse assignment
         `shouldFailOn` "a = "
-  describe "parseTerm" $ do
+  describe "term" $ do
     it "parses lambda" $ do
-      testParse parseTerm "():{}"
+      testParse term "():{}"
         `parseSatisfies` isLambda
     it "parses lambda application" $ do
-      testParse parseTerm "((a:int):a)(0)"
+      testParse term "((a:int):a)(0)"
         `parseSatisfies` isLambdaApplication
     it "parses function call" $ do
-      testParse parseTerm "a(0)"
+      testParse term "a(0)"
         `parseSatisfies` isFunctionCall
     it "parses literal" $ do
-      testParse parseTerm "5"
+      testParse term "5"
         `parseSatisfies` isLiteral
     it "parses parentheses" $ do
-      testParse parseTerm "(0)"
+      testParse term "(0)"
         `parseSatisfies` isParentheses
     it "parses identifier" $ do
-      testParse parseTerm "a"
+      testParse term "a"
         `parseSatisfies` isIdentifier
-  describe "parseStatement" $ do
+  describe "statement" $ do
     it "parses var initialization" $ do
-      testParse parseStatement "let a = 0"
+      testParse statement "let a = 0"
         `parseSatisfies` isVarInitialization
     it "parses var declaration" $ do
-      testParse parseStatement "let a: int"
+      testParse statement "let a: int"
         `parseSatisfies` isVarDeclaration
     it "parses assignment" $ do
-      testParse parseStatement "a += 1"
+      testParse statement "a += 1"
         `parseSatisfies` isAssignment
     it "parses forward declaration" $ do
-      testParse parseStatement "[fwd] func f()"
+      testParse statement "func f()"
         `parseSatisfies` isForwardDeclaration
     it "parses return" $ do
-      testParse parseStatement "return"
+      testParse statement "return"
         `parseSatisfies` isReturn
     it "parses function definition" $ do
-      testParse parseStatement "func f() {}"
+      testParse statement "func f() {}"
         `parseSatisfies` isFunctionDefinition
     it "parses if statement" $ do
-      testParse parseStatement "if () {}"
+      testParse statement "if () {}"
         `parseSatisfies` isIfStatement
-    describe "parseExpr" $ do
+    describe "expr" $ do
       describe "binary operators" $ do
         let cases =
               [ ("1 + 2", Operation (Add (Literal (Int 1)) (Literal (Int 2))))
@@ -495,7 +476,7 @@ spec = do
               ]
         forM_ cases $ \(input, expected) ->
           it ("parses " ++ input) $
-            testParse parseExpr input `shouldParse` expected
+            testParse expr input `shouldParse` expected
       describe "prefix operators" $ do
         let cases =
               [ ("-1", Operation (Negation (Literal (Int 1))))
@@ -504,46 +485,46 @@ spec = do
               ]
         forM_ cases $ \(input, expected) ->
           it ("parses " ++ input) $
-            testParse parseExpr input `shouldParse` expected
+            testParse expr input `shouldParse` expected
       describe "precedence" $ do
         it "multiplication binds tighter than addition" $
-          testParse parseExpr "1 + 2 * 3"
+          testParse expr "1 + 2 * 3"
             `shouldParse` Operation (Add (Literal (Int 1)) (Operation (Multiply (Literal (Int 2)) (Literal (Int 3)))))
 
         it "addition binds tighter than bitwise and" $
-          testParse parseExpr "1 & 2 + 3"
+          testParse expr "1 & 2 + 3"
             `shouldParse` Operation (BitwiseAnd (Literal (Int 1)) (Operation (Add (Literal (Int 2)) (Literal (Int 3)))))
 
         it "bitwise and binds tighter than bitwise or" $
-          testParse parseExpr "1 | 2 & 3"
+          testParse expr "1 | 2 & 3"
             `shouldParse` Operation (BitwiseOr (Literal (Int 1)) (Operation (BitwiseAnd (Literal (Int 2)) (Literal (Int 3)))))
 
         it "bitwise or binds tighter than comparison" $
-          testParse parseExpr "1 == 2 | 3"
+          testParse expr "1 == 2 | 3"
             `shouldParse` Operation (Equals (Literal (Int 1)) (Operation (BitwiseOr (Literal (Int 2)) (Literal (Int 3)))))
 
         it "comparison binds tighter than &&" $
-          testParse parseExpr "1 && 2 == 3"
+          testParse expr "1 && 2 == 3"
             `shouldParse` Operation (And (Literal (Int 1)) (Operation (Equals (Literal (Int 2)) (Literal (Int 3)))))
 
         it "&& binds tighter than ||" $
-          testParse parseExpr "1 || 2 && 3"
+          testParse expr "1 || 2 && 3"
             `shouldParse` Operation (Or (Literal (Int 1)) (Operation (And (Literal (Int 2)) (Literal (Int 3)))))
       describe "associativity" $ do
         it "subtraction is left-associative" $
-          testParse parseExpr "1 - 2 - 3"
+          testParse expr "1 - 2 - 3"
             `shouldParse` Operation (Subtract (Operation (Subtract (Literal (Int 1)) (Literal (Int 2)))) (Literal (Int 3)))
       describe "operator tokenization disambiguation" $ do
         it "parses >= as one operator, not > followed by =" $
-          testParse parseExpr "1 >= 2"
+          testParse expr "1 >= 2"
             `shouldParse` Operation (GreaterThanEq (Literal (Int 1)) (Literal (Int 2)))
 
         it "parses && as one operator, not & followed by &" $
-          testParse parseExpr "1 && 2"
+          testParse expr "1 && 2"
             `shouldParse` Operation (And (Literal (Int 1)) (Literal (Int 2)))
 
         it "parses // as one operator, not / followed by /" $
-          testParse parseExpr "1 // 2"
+          testParse expr "1 // 2"
             `shouldParse` Operation (IntDivide (Literal (Int 1)) (Literal (Int 2)))
 
   where
@@ -559,13 +540,13 @@ spec = do
     isFunctionDefinition _ = False
     isReturn (Return _) = True
     isReturn _ = False
-    isIfStatement (IfStmt _ _ _) = True
+    isIfStatement (IfStmt {}) = True
     isIfStatement _ = False
-    isLambda (LambdaFunc _ _) = True
+    isLambda (LambdaFunc {}) = True
     isLambda _ = False
-    isLambdaApplication (LambdaApplication _ _) = True
+    isLambdaApplication (LambdaApplication {}) = True
     isLambdaApplication _ = False
-    isFunctionCall (FunctionCall _ _) = True
+    isFunctionCall (FunctionCall {}) = True
     isFunctionCall _ = False
     isLiteral (Literal _) = True
     isLiteral _ = False

@@ -6,7 +6,6 @@ import qualified Data.Map as Map hiding (map)
 import Prelude hiding (fst)
 import Config.ConfigTypes
 import Text.Megaparsec hiding (State)
-import Data.Void
 import Control.Monad.State
 
 data Type
@@ -183,7 +182,15 @@ defaultParserState = ParserState {
     unresolvedFunctionCalls = []
 }
 
-type MVParser = ParsecT Void String (State ParserState) 
+data MVParseError
+  = ReservedKeywordUsed String
+  deriving (Show, Eq, Ord)
+
+instance ShowErrorComponent MVParseError where
+  showErrorComponent (ReservedKeywordUsed name) =
+    "cannot use reserved keyword '" ++ name ++ "' as an identifier"
+
+type MVParser = ParsecT MVParseError String (State ParserState) 
 
 getConfig :: MVParser FlatParsedConfig
 getConfig = gets config 

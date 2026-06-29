@@ -5,6 +5,10 @@ maintainer: joaonovo05@protonmail.com
 
 library:
   source-dirs: lib
+  ghc-options:
+    - -Wall
+    - -Werror
+    - -Wincomplete-patterns
   dependencies:
     - base
     - containers
@@ -32,6 +36,10 @@ executables:
   mvscc:
     main: Main.hs
     source-dirs: app
+    ghc-options:
+      - -Wall
+      - -Werror
+      - -Wincomplete-patterns
     dependencies:
       - base
       - containers
@@ -47,11 +55,16 @@ tests:
   mvscript-test:
     main: Spec.hs
     source-dirs: test
-    build-tool-depends:
+    ghc-options:
+        - -Wall
+        - -Werror
+        - -Wincomplete-patterns
+    build-tools:
       - hspec-discover:hspec-discover
     dependencies:
       - base
       - text
+      - containers
       - mtl
       - mvscript
       - hspec
