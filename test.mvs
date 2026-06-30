@@ -1,1 +1,1 @@
-return 0;
+if (let x = 0)

@@ -13,7 +13,7 @@ import Types hiding (identifier)
 topLevel :: MVParser TopLevel
 topLevel =
   choice
-    [ Stmt <$> try statement <?> "statement",
+    [ Stmt <$> statement <?> "statement",
       Expr <$> expr <?> "expression"
     ]
 
@@ -35,8 +35,8 @@ literal =
 term :: MVParser Expression
 term =
   choice
-    [ try lambda <?> "lambda",
-      try lambdaApplication <?> "lambda application",
+    [ try lambdaApplication <?> "lambda application",
+      try lambda <?> "lambda",
       parens <?> "parentheses",
       try functionCall <?> "function call",
       try identifier <?> "identifier",
@@ -50,7 +50,7 @@ statement =
       functionDeclaration <?> "function declaration",
       returnStmt <?> "return",
       ifStmt <?> "if statement",
-      assignment <?> "assignment"
+      try assignment <?> "assignment"
     ]
 
 -- DATA TYPE PARSERS
