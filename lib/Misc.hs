@@ -1,8 +1,8 @@
 module Misc (module Misc) where
-import Types
+import ParserTypes
 import qualified Data.Text as T
-import Data.Map as Map hiding (empty, map)
-import Error
+-- import Data.Map as Map hiding (empty, map)
+-- import Error
 import Prelude hiding (fst, error)
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -48,22 +48,22 @@ valueToType (Matrix _) = MatrixT
 valueToType (Array ((Literal a):_)) = ArrayT (valueToType a)
 valueToType (Array _) = ArrayT (valueToType (Int 0))
 
-getVariableType :: SourcePos -> ParserState -> T.Text -> Type
-getVariableType pos state name = case Map.lookup name (st state) of
-    Just vData -> case variableType vData of
-        Just typ -> typ
-        Nothing -> error pos state "Variable does not have a type." "Internal error."
-    Nothing -> error pos state "Variable not found." "Internal error."
+-- getVariableType :: SourcePos -> ParserState -> T.Text -> Type
+-- getVariableType pos state name = case Map.lookup name (st state) of
+--     Just vData -> case variableType vData of
+--         Just typ -> typ
+--         Nothing -> error pos state "Variable does not have a type." "Internal error."
+--     Nothing -> error pos state "Variable not found." "Internal error."
 
-getFunctionReturnType :: SourcePos -> ParserState -> T.Text -> Type
-getFunctionReturnType pos state name = case Map.lookup name (fst state) of
-    Just fData -> returnType fData 
-    Nothing -> error pos state "Variable not found." "Internal error."
+-- getFunctionReturnType :: SourcePos -> ParserState -> T.Text -> Type
+-- getFunctionReturnType pos state name = case Map.lookup name (fst state) of
+--     Just fData -> returnType fData 
+--     Nothing -> error pos state "Variable not found." "Internal error."
 
-getFunctionArgTypes :: SourcePos -> ParserState -> T.Text -> [Type]
-getFunctionArgTypes pos state name = case Map.lookup name (fst state) of
-    Just fData -> map snd (arguments fData) 
-    Nothing -> error pos state "Variable not found." "Internal error."
+-- getFunctionArgTypes :: SourcePos -> ParserState -> T.Text -> [Type]
+-- getFunctionArgTypes pos state name = case Map.lookup name (fst state) of
+--     Just fData -> map snd (arguments fData) 
+--     Nothing -> error pos state "Variable not found." "Internal error."
 
 
 intercalateStr :: String -> [String] -> String

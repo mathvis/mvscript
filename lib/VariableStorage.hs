@@ -1,142 +1,142 @@
-module VariableStorage (module VariableStorage) where
+module VariableStorage where
 
-import Data.List as List
-import Data.Map as Map hiding (foldl)
-import Data.Text as T hiding (foldl, show)
-import Error
-import FunctionStorage
-import Misc
-import Text.Megaparsec
-import TypeCheck
-import Types
-import Prelude hiding (error, fst)
+-- import Data.List as List
+-- import Data.Map as Map hiding (foldl)
+-- import Data.Text as T hiding (foldl, show)
+-- import Error
+-- import FunctionStorage
+-- import Misc
+-- import Text.Megaparsec
+-- import TypeCheck
+-- import Types
+-- import Prelude hiding (error, fst)
 
-initialized :: Maybe Expression -> Bool
-initialized Nothing = False
-initialized (Just _) = True
+-- initialized :: Maybe Expression -> Bool
+-- initialized Nothing = False
+-- initialized (Just _) = True
 
-createVariableData :: Maybe Type -> Maybe Expression -> VariableData
-createVariableData typename value = defaultVariableData {isInitialized = initialized value, variableType = typename}
+-- createVariableData :: Maybe Type -> Maybe Expression -> VariableData
+-- createVariableData typename value = defaultVariableData {isInitialized = initialized value, variableType = typename}
 
-createVariableRecord :: Statement -> ParserState -> (T.Text, VariableData)
-createVariableRecord (Variable (Identifier name) typename val) _ = (,) name (createVariableData typename val)
-createVariableRecord _ state = error defaultSourcePos state "Could not create variable record." "Internal error."
+-- createVariableRecord :: Statement -> ParserState -> (T.Text, VariableData)
+-- createVariableRecord (Variable (Identifier name) typename val) _ = (,) name (createVariableData typename val)
+-- createVariableRecord _ state = error defaultSourcePos state "Could not create variable record." "Internal error."
 
-createArgumentVariableRecord :: (Expression, Type) -> ParserState -> (T.Text, VariableData)
-createArgumentVariableRecord (Identifier name, typename) _ = (,) name (createVariableData (Just typename) (Just (Literal (Int 0))))
-createArgumentVariableRecord _ state = error defaultSourcePos state "Could not create argument record." "Internal error."
+-- createArgumentVariableRecord :: (Expression, Type) -> ParserState -> (T.Text, VariableData)
+-- createArgumentVariableRecord (Identifier name, typename) _ = (,) name (createVariableData (Just typename) (Just (Literal (Int 0))))
+-- createArgumentVariableRecord _ state = error defaultSourcePos state "Could not create argument record." "Internal error."
 
-addVariableToTable :: Statement -> ParserState -> ParserState
-addVariableToTable varDeclaration state = state {st = Map.insert name varData currentSt}
-  where
-    (name, varData) = createVariableRecord varDeclaration state
-    currentSt = st state
+-- addVariableToTable :: Statement -> ParserState -> ParserState
+-- addVariableToTable varDeclaration state = state {st = Map.insert name varData currentSt}
+--   where
+--     (name, varData) = createVariableRecord varDeclaration state
+--     currentSt = st state
 
-addArgumentToTable :: (Expression, Type) -> ParserState -> ParserState
-addArgumentToTable arg state = state {st = Map.insert name argData currentSt}
-  where
-    (name, argData) = createArgumentVariableRecord arg state
-    currentSt = st state
+-- addArgumentToTable :: (Expression, Type) -> ParserState -> ParserState
+-- addArgumentToTable arg state = state {st = Map.insert name argData currentSt}
+--   where
+--     (name, argData) = createArgumentVariableRecord arg state
+--     currentSt = st state
 
-addArgumentsToTable :: [(Expression, Type)] -> ParserState -> ParserState
-addArgumentsToTable args state = foldl (flip addArgumentToTable) state args
+-- addArgumentsToTable :: [(Expression, Type)] -> ParserState -> ParserState
+-- addArgumentsToTable args state = foldl (flip addArgumentToTable) state args
 
-removeArgumentFromTable :: (Expression, Type) -> ParserState -> ParserState
-removeArgumentFromTable (Identifier name, _) state = state {st = Map.delete name (st state)}
-removeArgumentFromTable _ state = error defaultSourcePos state "" "Internal error."
+-- removeArgumentFromTable :: (Expression, Type) -> ParserState -> ParserState
+-- removeArgumentFromTable (Identifier name, _) state = state {st = Map.delete name (st state)}
+-- removeArgumentFromTable _ state = error defaultSourcePos state "" "Internal error."
 
-removeArgumentsFromTable :: Statement -> ParserState -> ParserState
-removeArgumentsFromTable (FunctionDef name (arg : args) return' stmts) state = removeArgumentsFromTable (FunctionDef name args return' stmts) (removeArgumentFromTable arg state)
-removeArgumentsFromTable (FunctionDef _ [] _ _) state = state
-removeArgumentsFromTable _ state = error defaultSourcePos state "" "Internal error."
+-- removeArgumentsFromTable :: Statement -> ParserState -> ParserState
+-- removeArgumentsFromTable (FunctionDef name (arg : args) return' stmts) state = removeArgumentsFromTable (FunctionDef name args return' stmts) (removeArgumentFromTable arg state)
+-- removeArgumentsFromTable (FunctionDef _ [] _ _) state = state
+-- removeArgumentsFromTable _ state = error defaultSourcePos state "" "Internal error."
 
-removeArgumentsFromTableLambda :: Expression -> ParserState -> ParserState
-removeArgumentsFromTableLambda (LambdaFunc (arg : args) stmts) state = removeArgumentsFromTableLambda (LambdaFunc args stmts) (removeArgumentFromTable arg state)
-removeArgumentsFromTableLambda (LambdaFunc [] _) state = state
-removeArgumentsFromTableLambda _ state = error defaultSourcePos state "" "Internal error."
+-- removeArgumentsFromTableLambda :: Expression -> ParserState -> ParserState
+-- removeArgumentsFromTableLambda (LambdaFunc (arg : args) stmts) state = removeArgumentsFromTableLambda (LambdaFunc args stmts) (removeArgumentFromTable arg state)
+-- removeArgumentsFromTableLambda (LambdaFunc [] _) state = state
+-- removeArgumentsFromTableLambda _ state = error defaultSourcePos state "" "Internal error."
 
-updateVariableUninitialized :: SourcePos -> Statement -> ParserState -> ParserState
-updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Literal lit))) state =
-  case currentVData of
-    Just vData -> case variableType vData of
-      Nothing -> state {st = Map.insert name vData {variableType = Just (valueToType lit), isInitialized = True} currentSt}
-      Just vType ->
-        if vType == valueToType lit
-          then state {st = Map.insert name vData {isInitialized = True} currentSt}
-          else error pos state ("Expected " ++ show vType ++ " but got " ++ show (valueToType lit)) "Consider changing the variable type or declaring a new variable."
-    Nothing -> error pos state ("Variable" ++ show name ++ " was not declared.") "Consider using the let keyword."
-  where
-    currentSt = st state
-    currentVData = Map.lookup name currentSt
-updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Operation op))) state =
-  case currentVData of
-    Just vData -> case variableType vData of
-      Nothing -> state {st = Map.insert name vData {variableType = Just typ, isInitialized = True} currentSt}
-      Just vType ->
-        if vType == typ
-          then state {st = Map.insert name vData {isInitialized = True} currentSt}
-          else error pos state ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
-    Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
-  where
-    currentSt = st state
-    currentVData = Map.lookup name currentSt
-    typ = checkTypeExpression pos state (Operation op)
-updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Identifier _))) state =
-  case currentVData of
-    Just vData -> case variableType vData of
-      Nothing -> state {st = Map.insert name vData {variableType = Just typ, isInitialized = True} currentSt}
-      Just vType ->
-        if vType == typ
-          then state {st = Map.insert name vData {isInitialized = True} currentSt}
-          else error pos state ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
-    Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
-  where
-    currentSt = st state
-    currentVData = Map.lookup name currentSt
-    typ = getVariableType pos state name
-updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Parentheses op))) state =
-  updateVariableUninitialized pos (Assignment (Assign (Identifier name) op)) state
-updateVariableUninitialized pos (Assignment (Assign (Identifier vName) (FunctionCall (FunctionIdentifier fName) _))) state =
-  case currentVData of
-    Just vData -> case variableType vData of
-      Nothing -> state {st = Map.insert vName vData {variableType = Just typ, isInitialized = True} currentSt}
-      Just vType ->
-        if vType == typ
-          then state {st = Map.insert vName vData {isInitialized = True} currentSt}
-          else error pos state ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
-    Nothing -> error pos state ("Variable " ++ show vName ++ " was not initialized.") "Consider using the let keyword."
-  where
-    currentSt = st state
-    currentVData = Map.lookup vName currentSt
-    typ = getFunctionReturnType pos state fName
-updateVariableUninitialized _ _ state = state
+-- updateVariableUninitialized :: SourcePos -> Statement -> ParserState -> ParserState
+-- updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Literal lit))) state =
+--   case currentVData of
+--     Just vData -> case variableType vData of
+--       Nothing -> state {st = Map.insert name vData {variableType = Just (valueToType lit), isInitialized = True} currentSt}
+--       Just vType ->
+--         if vType == valueToType lit
+--           then state {st = Map.insert name vData {isInitialized = True} currentSt}
+--           else error pos state ("Expected " ++ show vType ++ " but got " ++ show (valueToType lit)) "Consider changing the variable type or declaring a new variable."
+--     Nothing -> error pos state ("Variable" ++ show name ++ " was not declared.") "Consider using the let keyword."
+--   where
+--     currentSt = st state
+--     currentVData = Map.lookup name currentSt
+-- updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Operation op))) state =
+--   case currentVData of
+--     Just vData -> case variableType vData of
+--       Nothing -> state {st = Map.insert name vData {variableType = Just typ, isInitialized = True} currentSt}
+--       Just vType ->
+--         if vType == typ
+--           then state {st = Map.insert name vData {isInitialized = True} currentSt}
+--           else error pos state ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
+--     Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
+--   where
+--     currentSt = st state
+--     currentVData = Map.lookup name currentSt
+--     typ = checkTypeExpression pos state (Operation op)
+-- updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Identifier _))) state =
+--   case currentVData of
+--     Just vData -> case variableType vData of
+--       Nothing -> state {st = Map.insert name vData {variableType = Just typ, isInitialized = True} currentSt}
+--       Just vType ->
+--         if vType == typ
+--           then state {st = Map.insert name vData {isInitialized = True} currentSt}
+--           else error pos state ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
+--     Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
+--   where
+--     currentSt = st state
+--     currentVData = Map.lookup name currentSt
+--     typ = getVariableType pos state name
+-- updateVariableUninitialized pos (Assignment (Assign (Identifier name) (Parentheses op))) state =
+--   updateVariableUninitialized pos (Assignment (Assign (Identifier name) op)) state
+-- updateVariableUninitialized pos (Assignment (Assign (Identifier vName) (FunctionCall (FunctionIdentifier fName) _))) state =
+--   case currentVData of
+--     Just vData -> case variableType vData of
+--       Nothing -> state {st = Map.insert vName vData {variableType = Just typ, isInitialized = True} currentSt}
+--       Just vType ->
+--         if vType == typ
+--           then state {st = Map.insert vName vData {isInitialized = True} currentSt}
+--           else error pos state ("Expected " ++ show vType ++ " but got " ++ show typ) "Consider changing the variable type or declaring a new variable."
+--     Nothing -> error pos state ("Variable " ++ show vName ++ " was not initialized.") "Consider using the let keyword."
+--   where
+--     currentSt = st state
+--     currentVData = Map.lookup vName currentSt
+--     typ = getFunctionReturnType pos state fName
+-- updateVariableUninitialized _ _ state = state
 
-checkScope :: Expression -> SourcePos -> ParserState -> ParserState
-checkScope (Identifier name) pos state = case Map.lookup name (st state) of
-  Just varData ->
-    if inScope varData
-      then state
-      else error pos state ("Variable " ++ show name ++ " is out of scope.") "Variable might have been initialized in a stricter scope."
-  Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
-checkScope (FunctionCall (FunctionIdentifier name) _) pos state =
-  case Map.lookup name (fst state) of
-    Just funcData ->
-      if hasBody funcData
-        then
-          state
-        else
-          addUnresolvedCall name pos state
-    Nothing -> error pos state ("Function " ++ show name ++ " was not declared.") "Consider declaring a function."
-checkScope _ pos state = error pos state "Could not check scope." "Internal error."
+-- checkScope :: Expression -> SourcePos -> ParserState -> ParserState
+-- checkScope (Identifier name) pos state = case Map.lookup name (st state) of
+--   Just varData ->
+--     if inScope varData
+--       then state
+--       else error pos state ("Variable " ++ show name ++ " is out of scope.") "Variable might have been initialized in a stricter scope."
+--   Nothing -> error pos state ("Variable " ++ show name ++ " was not initialized.") "Consider using the let keyword."
+-- checkScope (FunctionCall (FunctionIdentifier name) _) pos state =
+--   case Map.lookup name (fst state) of
+--     Just funcData ->
+--       if hasBody funcData
+--         then
+--           state
+--         else
+--           addUnresolvedCall name pos state
+--     Nothing -> error pos state ("Function " ++ show name ++ " was not declared.") "Consider declaring a function."
+-- checkScope _ pos state = error pos state "Could not check scope." "Internal error."
 
-removeScope :: VariableData -> VariableData
-removeScope varData = varData {inScope = False}
+-- removeScope :: VariableData -> VariableData
+-- removeScope varData = varData {inScope = False}
 
-removeScopeVarBlock :: TopLevel -> ParserState -> ParserState
-removeScopeVarBlock (Stmt (Variable (Identifier name) _ _)) state = state {st = Map.adjust removeScope name (st state)}
-removeScopeVarBlock _ state = state
+-- removeScopeVarBlock :: TopLevel -> ParserState -> ParserState
+-- removeScopeVarBlock (Stmt (Variable (Identifier name) _ _)) state = state {st = Map.adjust removeScope name (st state)}
+-- removeScopeVarBlock _ state = state
 
-removeScopeVariables :: TopLevel -> ParserState -> ParserState
-removeScopeVariables (Block _ (stmt : _)) state = removeScopeVarBlock stmt state
-removeScopeVariables (Block _ []) state = state
-removeScopeVariables _ state = state
+-- removeScopeVariables :: TopLevel -> ParserState -> ParserState
+-- removeScopeVariables (Block _ (stmt : _)) state = removeScopeVarBlock stmt state
+-- removeScopeVariables (Block _ []) state = state
+-- removeScopeVariables _ state = state

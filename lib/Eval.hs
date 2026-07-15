@@ -4,7 +4,7 @@ module Eval (module Eval) where
 
 import Data.Bits (Bits (complement, xor), (.&.), (.|.))
 import Misc
-import Types
+import ParserTypes
 
 compareValues :: (forall a. Ord a => a -> a -> Bool) -> Expression -> Expression -> Expression
 compareValues op (Literal val1) (Literal val2) = Literal (Bool (compareValuesTyped op val1 val2))

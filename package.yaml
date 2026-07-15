@@ -17,10 +17,6 @@ library:
     - megaparsec
     - parser-combinators
   exposed-modules:
-    - Config.ConfigParser
-    - Config.ConfigTypes
-    - Config.ConfigHandler
-    - Config.ConfigValidator
     - Context
     - Error
     - Eval
@@ -28,7 +24,7 @@ library:
     - Misc
     - Parser
     - TypeCheck
-    - Types
+    - ParserTypes
     - VariableStorage
     - PrettyPrint
 

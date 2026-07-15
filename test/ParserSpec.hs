@@ -1,16 +1,15 @@
 module ParserSpec (spec) where
 
 import Control.Monad (forM_)
-import Control.Monad.State (evalState)
 import Data.Text as T
 import Parser
 import Test.Hspec
 import Test.Hspec.Megaparsec
-import Text.Megaparsec (ParseErrorBundle, eof, runParserT)
-import Types hiding (identifier)
+import Text.Megaparsec (ParseErrorBundle, eof, runParser)
+import ParserTypes
 
 testParse :: MVParser a -> String -> Either (ParseErrorBundle String MVParseError) a
-testParse p input = evalState (runParserT p "" input) defaultParserState
+testParse p input = runParser p "" input
 
 spec :: Spec
 spec = do
