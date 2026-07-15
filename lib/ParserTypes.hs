@@ -6,7 +6,7 @@ import Prelude hiding (fst)
 import Text.Megaparsec hiding (State)
 
 
-data Type
+data ParserType
     = StringT
     | IntT
     | FloatT
@@ -14,12 +14,12 @@ data Type
     | VectorT
     | PointT
     | MatrixT
-    | ArrayT Type
+    | ArrayT ParserType
     | VoidT
-    | LambdaT [Type] Type
+    | LambdaT [ParserType] ParserType
     deriving Eq
 
-instance Show Type where
+instance Show ParserType where
     show typename = case typename of
         StringT -> "string"        
         IntT -> "int"        
@@ -32,7 +32,6 @@ instance Show Type where
         VoidT -> "void"
         LambdaT args ret -> "lambda[" ++ T.unpack (intercalate (T.pack ", ") (map (T.pack . show) args)) ++ "]" ++ show ret
 
-
 data Literal
     = String T.Text
     | Int Integer
@@ -42,7 +41,7 @@ data Literal
     | Vector [Expression]
     | Point [Expression]
     | Matrix [Expression]
-    deriving (Eq, Show)
+    deriving (Show, Eq)
 
 data Operation
     -- BINARY ARITHMETIC
@@ -80,38 +79,59 @@ data Operation
     | BitwiseAndAssign Expression Expression
     | BitwiseXorAssign Expression Expression
     | Assign Expression Expression
-    deriving (Eq, Show)
+    deriving (Show, Eq)
 
 data Expression
-    = Literal Literal
-    | Parentheses Expression
-    | Operation Operation
-    | Identifier T.Text
-    | FunctionIdentifier T.Text
-    | FunctionCall Expression [Expression]
-    | LambdaFunc [(Expression, Type)] TopLevel
-    | LambdaApplication Expression Expression
-    deriving (Eq, Show)
+    = Literal SourcePos Literal
+    | Parentheses SourcePos Expression
+    | Operation SourcePos Operation
+    | Identifier SourcePos T.Text
+    | FunctionCall SourcePos Expression [Expression]
+    | LambdaFunc SourcePos [(Expression, ParserType)] TopLevel
+    | LambdaApplication SourcePos Expression Expression
+    deriving Show
+
+instance Eq Expression where
+    Literal _ a == Literal _ b = a == b
+    Parentheses _ a == Parentheses _ b = a == b
+    Operation _ a == Operation _ b = a == b
+    Identifier _ a == Identifier _ b = a == b
+    FunctionCall _ f1 a1 == FunctionCall _ f2 a2 = f1 == f2 && a1 == a2
+    LambdaFunc _ a b == LambdaFunc _ c d = a == c && b == d
+    LambdaApplication _ a b == LambdaApplication _ c d = a == c && b == d
+    _ == _ = False
+    
+
 
 data Statement
-    = Variable Expression (Maybe Type) (Maybe Expression)
-    | Constant Expression Type Expression
-    | Assignment Operation
-    | FunctionDef Expression [(Expression, Type)] Type (Maybe TopLevel)
-    | IfStmt (Maybe Expression) TopLevel (Maybe TopLevel)
-    | ElseStmt TopLevel
-    | Return (Maybe Expression)
-    | CollapsedControlFlow TopLevel
-    deriving (Eq, Show)
+    = Variable SourcePos Expression (Maybe ParserType) (Maybe Expression)
+    | Constant SourcePos Expression ParserType Expression
+    | Assignment SourcePos Operation
+    | FunctionDef SourcePos Expression [(Expression, ParserType)] ParserType (Maybe TopLevel)
+    | IfStmt SourcePos (Maybe Expression) TopLevel (Maybe TopLevel)
+    | ElseStmt SourcePos TopLevel
+    | Return SourcePos (Maybe Expression)
+    deriving Show
 
-data BlockType = NoType | If | Else | FunctionBlock Type deriving (Eq, Show)
+instance Eq Statement where
+    Variable _ a1 b1 c1 == Variable _ a2 b2 c2 = a1 == a2 && b1 == b2 && c1 == c2
+    Constant _ a1 b1 c1 == Constant _ a2 b2 c2 = a1 == a2 && b1 == b2 && c1 == c2 
+    Assignment _ a == Assignment _ b = a == b
+    FunctionDef _ a1 b1 c1 d1 == FunctionDef _ a2 b2 c2 d2 = a1 == a2 && b1 == b2 && c1 == c2 && d1 == d2
+    IfStmt _ a1 b1 c1 == IfStmt _ a2 b2 c2 = a1 == a2 && b1 == b2 && c1 == c2
+    ElseStmt _ a == ElseStmt _ b = a == b
+    Return _ a == Return _ b = a == b
+    _ == _ = False
 
-data TopLevel = Stmt Statement | Expr Expression | Block BlockType [TopLevel] deriving (Eq, Show)
+
+data BlockType = NoType | If | Else | FunctionBlock ParserType deriving (Show, Eq)
+
+data TopLevel = Stmt Statement | Expr Expression | Block BlockType [TopLevel] deriving (Show, Eq)
 
 reservedKeywords :: [String]
 reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix","true", "false", "func", "const", "fwd", "int", "bool", "float", "string", "vector", "point", "matrix"]
 
-data MVParseError
+newtype MVParseError
   = ReservedKeywordUsed String
   deriving (Show, Eq, Ord)
 

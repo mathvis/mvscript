@@ -25,6 +25,7 @@ library
       VariableStorage
       PrettyPrint
   other-modules:
+      SemanticAnalysisTypes
       Paths_mvscript
   hs-source-dirs:
       lib

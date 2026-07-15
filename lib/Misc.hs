@@ -37,7 +37,7 @@ boolToInt :: Bool -> Integer
 boolToInt True = 1
 boolToInt False = 0
 
-valueToType :: Literal -> Type
+valueToType :: Literal -> ParserType
 valueToType (String _) = StringT
 valueToType (Int _) = IntT
 valueToType (Float _) = FloatT
@@ -45,7 +45,7 @@ valueToType (Bool _) = BoolT
 valueToType (Vector _) = VectorT
 valueToType (Point _) = PointT
 valueToType (Matrix _) = MatrixT
-valueToType (Array ((Literal a):_)) = ArrayT (valueToType a)
+valueToType (Array ((Literal _ a):_)) = ArrayT (valueToType a)
 valueToType (Array _) = ArrayT (valueToType (Int 0))
 
 -- getVariableType :: SourcePos -> ParserState -> T.Text -> Type
