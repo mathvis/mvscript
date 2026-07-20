@@ -206,24 +206,24 @@ spec = do
         `shouldFailOn` "return int"
   describe "block" $ do
     it "parses empty block" $ do
-      testParse (block NoType) "{}"
-        `shouldParse` Block NoType []
+      testParse block "{}"
+        `shouldParse` Block dummyPos []
     it "parses block with expression" $ do
-      testParse (block NoType) "{\n0\n}"
-        `shouldParse` Block NoType [Expr (Literal dummyPos (Int 0))]
+      testParse block "{\n0\n}"
+        `shouldParse` Block dummyPos [Expr (Literal dummyPos (Int 0))]
     it "parses block with statement" $ do
-      testParse (block NoType) "{\nreturn\n}"
-        `shouldParse` Block NoType [Stmt (Return dummyPos Nothing)]
+      testParse block "{\nreturn\n}"
+        `shouldParse` Block dummyPos [Stmt (Return dummyPos Nothing)]
     it "does not parse unclosed block" $ do
-      testParse (block NoType)
+      testParse block
         `shouldFailOn` "{"
   describe "lambda" $ do
     it "parses empty lambda" $ do
       testParse lambda "():{}"
-        `shouldParse` LambdaFunc dummyPos [] (Block (FunctionBlock VoidT) [])
+        `shouldParse` LambdaFunc dummyPos [] (Block dummyPos [])
     it "parses empty lambda with args" $ do
       testParse lambda "(a: int):{}"
-        `shouldParse` LambdaFunc dummyPos [(Identifier dummyPos (T.pack "a"), IntT)] (Block (FunctionBlock VoidT) [])
+        `shouldParse` LambdaFunc dummyPos [(Identifier dummyPos (T.pack "a"), IntT)] (Block dummyPos [])
     it "parses lambda with expression" $ do
       testParse lambda "():0"
         `shouldParse` LambdaFunc dummyPos [] (Expr (Literal dummyPos (Int 0)))
@@ -249,22 +249,22 @@ spec = do
   describe "ifStmt" $ do
     it "parses empty if statement" $ do
       testParse ifStmt "if () {}"
-        `shouldParse` IfStmt dummyPos Nothing (Block If []) Nothing
+        `shouldParse` IfStmt dummyPos Nothing (Block dummyPos []) Nothing
     it "parses if statement with condition" $ do
       testParse ifStmt "if (true) {}"
-        `shouldParse` IfStmt dummyPos (Just (Literal dummyPos (Bool True))) (Block If []) Nothing
+        `shouldParse` IfStmt dummyPos (Just (Literal dummyPos (Bool True))) (Block dummyPos []) Nothing
     it "parses if statement with body" $ do
       testParse ifStmt "if (true) {\nreturn\n}"
-        `shouldParse` IfStmt dummyPos (Just (Literal dummyPos (Bool True))) (Block If [Stmt (Return dummyPos Nothing)]) Nothing
+        `shouldParse` IfStmt dummyPos (Just (Literal dummyPos (Bool True))) (Block dummyPos [Stmt (Return dummyPos Nothing)]) Nothing
     it "parses if statement with else" $ do
       testParse ifStmt "if (true) {\nreturn\n} else {}"
-        `shouldParse` IfStmt dummyPos (Just (Literal dummyPos (Bool True))) (Block If [Stmt (Return dummyPos Nothing)]) (Just (Stmt (ElseStmt dummyPos (Block Else []))))
+        `shouldParse` IfStmt dummyPos (Just (Literal dummyPos (Bool True))) (Block dummyPos [Stmt (Return dummyPos Nothing)]) (Just (Stmt (ElseStmt dummyPos (Block dummyPos []))))
     it "parses if statement with else if" $ do
       testParse ifStmt "if (true) {\nreturn\n} else if () {}"
-        `shouldParse` IfStmt dummyPos (Just (Literal dummyPos (Bool True))) (Block If [Stmt (Return dummyPos Nothing)]) (Just (Stmt (ElseStmt dummyPos (Stmt (IfStmt dummyPos Nothing (Block If []) Nothing)))))
+        `shouldParse` IfStmt dummyPos (Just (Literal dummyPos (Bool True))) (Block dummyPos [Stmt (Return dummyPos Nothing)]) (Just (Stmt (ElseStmt dummyPos (Stmt (IfStmt dummyPos Nothing (Block dummyPos []) Nothing)))))
     it "parses if statement with else if and else" $ do
       testParse ifStmt "if (true) {\nreturn\n} else if () {} else {}"
-        `shouldParse` IfStmt dummyPos (Just (Literal dummyPos (Bool True))) (Block If [Stmt (Return dummyPos Nothing)]) (Just (Stmt (ElseStmt dummyPos (Stmt (IfStmt dummyPos Nothing (Block If []) (Just (Stmt (ElseStmt dummyPos (Block Else [])))))))))
+        `shouldParse` IfStmt dummyPos (Just (Literal dummyPos (Bool True))) (Block dummyPos [Stmt (Return dummyPos Nothing)]) (Just (Stmt (ElseStmt dummyPos (Stmt (IfStmt dummyPos Nothing (Block dummyPos []) (Just (Stmt (ElseStmt dummyPos (Block dummyPos [])))))))))
     it "does not parse if with no body" $ do
       testParse ifStmt
         `shouldFailOn` "if (true)"
@@ -274,16 +274,16 @@ spec = do
   describe "elseStmt" $ do
     it "parses empty else" $ do
       testParse elseStmt "else {}"
-        `shouldParse` ElseStmt dummyPos (Block Else [])
+        `shouldParse` ElseStmt dummyPos (Block dummyPos [])
     it "parses else with body" $ do
       testParse elseStmt "else {\nreturn\n}"
-        `shouldParse` ElseStmt dummyPos (Block Else [Stmt (Return dummyPos Nothing)])
+        `shouldParse` ElseStmt dummyPos (Block dummyPos [Stmt (Return dummyPos Nothing)])
     it "parses else if" $ do
       testParse elseStmt "else if () {}"
-        `shouldParse` ElseStmt dummyPos (Stmt (IfStmt dummyPos Nothing (Block If []) Nothing))
+        `shouldParse` ElseStmt dummyPos (Stmt (IfStmt dummyPos Nothing (Block dummyPos []) Nothing))
     it "parses else if and else" $ do
       testParse elseStmt "else if () {} else {}"
-        `shouldParse` ElseStmt dummyPos (Stmt (IfStmt dummyPos Nothing (Block If []) (Just (Stmt (ElseStmt dummyPos (Block Else []))))))
+        `shouldParse` ElseStmt dummyPos (Stmt (IfStmt dummyPos Nothing (Block dummyPos []) (Just (Stmt (ElseStmt dummyPos (Block dummyPos []))))))
     it "does not parse else with no body" $ do
       testParse elseStmt
         `shouldFailOn` "else"
@@ -322,10 +322,10 @@ spec = do
   describe "functionDeclaration" $ do
     it "parses empty function" $ do
       testParse functionDeclaration "func f() {}"
-        `shouldParse` FunctionDef dummyPos (Identifier dummyPos (T.pack "f")) [] VoidT (Just (Block (FunctionBlock VoidT) []))
+        `shouldParse` FunctionDef dummyPos (Identifier dummyPos (T.pack "f")) [] VoidT (Just (Block dummyPos []))
     it "parses function with body" $ do
       testParse functionDeclaration "func f() {\nreturn\n}"
-        `shouldParse` FunctionDef dummyPos (Identifier dummyPos (T.pack "f")) [] VoidT (Just (Block (FunctionBlock VoidT) [Stmt (Return dummyPos Nothing)]))
+        `shouldParse` FunctionDef dummyPos (Identifier dummyPos (T.pack "f")) [] VoidT (Just (Block dummyPos [Stmt (Return dummyPos Nothing)]))
     it "parses forward declaration" $ do
       testParse functionDeclaration "func f()"
         `shouldParse` FunctionDef dummyPos (Identifier dummyPos (T.pack "f")) [] VoidT Nothing

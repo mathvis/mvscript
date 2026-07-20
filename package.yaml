@@ -18,6 +18,8 @@ library:
     - parser-combinators
   exposed-modules:
     - Context
+    - SemanticAnalysisTypes
+    - SemanticAnalysis
     - Error
     - Eval
     - FunctionStorage

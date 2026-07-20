@@ -224,7 +224,7 @@ functionDeclaration =
   lexeme $ do
     pos <- getSourcePos
     (funcIdentifier, args, returnType') <- functionSignature
-    maybeBlock <- optional (block (FunctionBlock returnType'))
+    maybeBlock <- optional block
     return $ FunctionDef pos funcIdentifier args returnType' maybeBlock
 
 functionCallArguments :: MVParser [Expression]
@@ -242,7 +242,7 @@ lambda = do
   pos <- getSourcePos
   params <- betweenParentheses functionParameters
   _ <- symbol ":"
-  body <- block (FunctionBlock VoidT) <|> topLevel
+  body <- block <|> topLevel
   return $ LambdaFunc pos params body
 
 lambdaApplication :: MVParser Expression
@@ -252,12 +252,13 @@ lambdaApplication = do
     <$> betweenParentheses lambda
     <*> betweenParentheses expr
 
-block :: BlockType -> MVParser TopLevel
-block blocktype = do
+block :: MVParser TopLevel
+block = do
+  pos <- getSourcePos
   _ <- symbol "{"
   stmts <- many (lexeme topLevel)
   _ <- symbol "}"
-  return $ Block blocktype stmts
+  return $ Block pos stmts
 
 returnStmt :: MVParser Statement
 returnStmt = do
@@ -269,7 +270,7 @@ elseStmt :: MVParser Statement
 elseStmt = lexeme $ do
   pos <- getSourcePos
   _ <- rword "else"
-  body <- block Else <|> (Stmt <$> ifStmt)
+  body <- block <|> (Stmt <$> ifStmt)
   return $ ElseStmt pos body
 
 ifStmt :: MVParser Statement
@@ -277,7 +278,7 @@ ifStmt = lexeme $ do
   pos <- getSourcePos
   _ <- rword "if"
   cond <- betweenParentheses (optional expr)
-  body <- block If
+  body <- block 
   maybeElse <- optional (Stmt <$> elseStmt)
   return $ IfStmt pos cond body maybeElse
 

@@ -1,8 +1,23 @@
-module SemanticAnalysisTypes (Check, TypedTopLevel (..), TypedExpression (..), ResolvedStatement (..), TypedOperation (..), Env(..)) where
+module SemanticAnalysisTypes
+  ( Check,
+    TypedTopLevel (..),
+    TypedExpression (..),
+    ResolvedStatement (..),
+    TypedOperation (..),
+    Env (..),
+    SemanticError (..),
+    lookupFunc,
+    lookupVar,
+    insertVar,
+    insertFunc,
+    scope,
+  )
+where
 
 import Control.Monad.Reader (ReaderT)
 import Control.Monad.Writer (Writer)
 import Data.Map (Map)
+import qualified Data.Map as Map
 import Data.Text (Text)
 import ParserTypes (Literal)
 import Text.Megaparsec
@@ -17,10 +32,11 @@ data ElaboratedType
   | MatrixT
   | ArrayT ElaboratedType
   | VoidT
+  | ErrorT
   | LambdaT [ElaboratedType] ElaboratedType
   deriving (Show, Eq)
 
-data SemanticError
+data SemanticError = Foo
 
 data Env = Env
   { variables :: Map Text ElaboratedType,
@@ -28,9 +44,30 @@ data Env = Env
     parent :: Maybe Env
   }
 
+lookupVar :: Text -> Env -> Maybe ElaboratedType
+lookupVar name env =
+  case Map.lookup name (variables env) of
+    Just t -> Just t
+    Nothing -> parent env >>= lookupVar name
+
+lookupFunc :: Text -> Env -> Maybe ([ElaboratedType], ElaboratedType)
+lookupFunc name env =
+  case Map.lookup name (functions env) of
+    Just sig -> Just sig
+    Nothing -> parent env >>= lookupFunc name
+
+insertVar :: Text -> ElaboratedType -> Env -> Env
+insertVar name t env = env {variables = Map.insert name t (variables env)}
+
+insertFunc :: Text -> ([ElaboratedType], ElaboratedType) -> Env -> Env
+insertFunc name sig env = env {functions = Map.insert name sig (functions env)}
+
+scope :: Env -> Env
+scope parentEnv = Env Map.empty Map.empty (Just parentEnv)
+
 type Check = ReaderT Env (Writer [SemanticError])
 
-data TypedTopLevel = Expr TypedExpression | Stmt ResolvedStatement deriving (Show, Eq)
+data TypedTopLevel = Expr TypedExpression | Stmt ResolvedStatement | Block SourcePos [TypedTopLevel] deriving (Show, Eq)
 
 data TypedOperation = TypedOperation
   { topType :: ElaboratedType,
