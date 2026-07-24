@@ -49,25 +49,25 @@ spec = do
         `shouldFailOn` "[0, 1, "
   describe "vector" $ do
     it "parses a vector" $ do
-      testParse vector "Vector(0, 1)"
+      testParse vector "vector(0, 1)"
         `shouldParse` Literal dummyPos (Vector [Literal dummyPos (Int 0), Literal dummyPos (Int 1)])
     it "does not parse incomplete vector" $ do
       testParse vector
-        `shouldFailOn` "Vector(0"
+        `shouldFailOn` "vector(0"
   describe "point" $ do
     it "parses a point" $ do
-      testParse point "Point(0, 1)"
+      testParse point "point(0, 1)"
         `shouldParse` Literal dummyPos (Point [Literal dummyPos (Int 0), Literal dummyPos (Int 1)])
     it "does not parse incomplete point" $ do
       testParse point
-        `shouldFailOn` "Point(0"
+        `shouldFailOn` "point(0"
   describe "matrix" $ do
     it "parses a matrix" $ do
-      testParse matrix "Matrix([1, 0], [0, 1])"
+      testParse matrix "matrix([1, 0], [0, 1])"
         `shouldParse` Literal dummyPos (Matrix [Literal dummyPos (Array [Literal dummyPos (Int 1), Literal dummyPos (Int 0)]), Literal dummyPos (Array [Literal dummyPos (Int 0), Literal dummyPos (Int 1)])])
     it "does not parse incomplete matrix" $ do
       testParse matrix
-        `shouldFailOn` "Matrix([0, 1]"
+        `shouldFailOn` "matrix([0, 1]"
   describe "literal" $ do
     it "parses an int" $ do
       testParse literal "5"
@@ -85,13 +85,13 @@ spec = do
       testParse literal "[0, 1, 2, 3]"
         `parseSatisfies` isArrayLiteral
     it "parses a vector" $ do
-      testParse literal "Vector(0, 1, 2)"
+      testParse literal "vector(0, 1, 2)"
         `parseSatisfies` isVectorLiteral
     it "parses a point" $ do
-      testParse literal "Point(0, 1, 2)"
+      testParse literal "point(0, 1, 2)"
         `parseSatisfies` isPointLiteral
     it "parses a matrix" $ do
-      testParse literal "Matrix([0, 1], [1, 0])"
+      testParse literal "matrix([0, 1], [1, 0])"
         `parseSatisfies` isMatrixLiteral
   describe "parens" $ do
     it "parses one level of parens" $ do

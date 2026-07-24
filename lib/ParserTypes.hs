@@ -130,7 +130,7 @@ data BlockType = NoType | If | Else | FunctionBlock ParserType deriving (Show, E
 data TopLevel = Stmt Statement | Expr Expression | Block SourcePos [TopLevel] deriving (Show)
 
 reservedKeywords :: [String]
-reservedKeywords = ["if", "else", "let", "return", "Vector", "Point", "Matrix", "true", "false", "func", "const", "fwd", "int", "bool", "float", "string", "vector", "point", "matrix"]
+reservedKeywords = ["if", "else", "let", "return", "true", "false", "func", "const", "int", "bool", "float", "string", "vector", "point", "matrix"]
 
 newtype MVParseError
   = ReservedKeywordUsed String

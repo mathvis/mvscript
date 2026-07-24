@@ -4,7 +4,7 @@ import Parser
 import System.Environment
 import ParserTypes
 import Text.Megaparsec
-import SemanticAnalysisTypes (TypedTopLevel, Env, SemanticError)
+import SemanticAnalysisTypes (TypedTopLevel, SemanticError, globalEnv)
 import SemanticAnalysis (checkTopLevel)
 import Control.Monad.Writer (runWriter)
 import Control.Monad.Reader (runReaderT)
@@ -15,8 +15,8 @@ parseFile filename file =
         Left e -> error ("Error while parsing: " ++ errorBundlePretty e)
         Right parsed -> parsed
 
-runCheck :: Env -> [TopLevel] -> ([TypedTopLevel], [SemanticError])
-runCheck globalEnv program = runWriter (runReaderT (traverse checkTopLevel program) globalEnv)
+runCheck :: [TopLevel] -> ([TypedTopLevel], [SemanticError])
+runCheck program = runWriter (runReaderT (traverse checkTopLevel program) globalEnv)
 
 main :: IO ()
 main =
@@ -24,5 +24,6 @@ main =
         (filename : _) <- getArgs
         fileContents <- readFile filename
         let parsed = parseFile filename fileContents
-        mapM_ print parsed
+        let checked = runCheck parsed
+        mapM_ print (fst checked)
             

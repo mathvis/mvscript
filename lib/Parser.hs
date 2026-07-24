@@ -91,17 +91,17 @@ structLikeType keyword elementParser =
 vector :: MVParser Expression
 vector = do
   pos <- getSourcePos
-  Literal pos . Vector <$> structLikeType "Vector" expr
+  Literal pos . Vector <$> structLikeType "vector" expr
 
 point :: MVParser Expression
 point = do
   pos <- getSourcePos
-  Literal pos . Point <$> structLikeType "Point" expr
+  Literal pos . Point <$> structLikeType "point" expr
 
 matrix :: MVParser Expression
 matrix = do
   pos <- getSourcePos
-  Literal pos . Matrix <$> structLikeType "Matrix" array
+  Literal pos . Matrix <$> structLikeType "matrix" array
 
 -- VARIABLE PARSERS
 identifier :: MVParser Expression

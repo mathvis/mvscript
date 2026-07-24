@@ -11,6 +11,7 @@ module SemanticAnalysisTypes
     insertVar,
     insertFunc,
     scope,
+    globalEnv
   )
 where
 
@@ -43,6 +44,9 @@ data Env = Env
     functions :: Map Text ([ElaboratedType], ElaboratedType),
     parent :: Maybe Env
   }
+
+globalEnv :: Env
+globalEnv = Env Map.empty Map.empty Nothing
 
 lookupVar :: Text -> Env -> Maybe ElaboratedType
 lookupVar name env =
