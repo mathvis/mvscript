@@ -1,35 +1,37 @@
-func rotate(p: vector, theta: float) vector {
-  let x: float = p * cos(theta)
-  let y: float = p * sin(theta)
-  return vector(x, y)
-}
+# func rotate(p: vector, theta: float) vector {
+#   let x: float = p * cos(theta)
+#   let y: float = p * sin(theta)
+#   return vector(x, y)
+# }
 
-func spiral_point(t: float) point {
-  let radius: float = 2 * t
-  let angle: float = t * 4
-  return point(radius, angle)
-}
+# func spiral_point(t: float) point {
+#   let radius: float = 2 * t
+#   let angle: float = t * 4
+#   return point(radius, angle)
+# }
 
-let scale: float = 1.5
-let origin: point = point(0, 0)
-let colors: [vector] = [vector(1, 0, 0), vector(0, 1, 0), vector(0, 0, 1)]
+# let scale: float = 1.5
+# let origin: point = point(0, 0)
+# let colors: [vector] = [vector(1, 0, 0), vector(0, 1, 0), vector(0, 0, 1)]
 
-let make_adder = (n: int, m: int): m + n
+# let make_adder = (n: int, m: int): m + n
 
-let add5 = make_adder(5)
-let result: int = add5(10)
+# let add5 = make_adder(5)
+# let result: int = add5(10)
 
-func classify(x: int) string {
-  if (x > 0) {
-    return "positive"
-  } else if (x == 0) {
-    return "zero"
-  } else {
-    return "negative"
-  }
-}
+# func classify(x: int) string {
+#   if (x > 0) {
+#     return "positive"
+#   } else if (x == 0) {
+#     return "zero"
+#   } else {
+#     return "negative"
+#   }
+# }
 
-let i: int = 0
-i += 1
+# let i: int = 0
+# i += 1
 
-let matrix_id: matrix = matrix([1, 0], [0, 1])
+# let matrix_id: matrix = matrix([1, 0], [0, 1])
+
+5

@@ -6,13 +6,11 @@ import Parser
 import ParserTypes
 import Test.Hspec
 import Test.Hspec.Megaparsec
-import Text.Megaparsec (ParseErrorBundle, SourcePos, eof, initialPos, runParser)
+import Text.Megaparsec (ParseErrorBundle, eof, runParser)
+import SpecUtils (dummyPos)
 
 testParse :: MVParser a -> String -> Either (ParseErrorBundle String MVParseError) a
 testParse p input = runParser p "" input
-
-dummyPos :: SourcePos
-dummyPos = initialPos ""
 
 spec :: Spec
 spec = do

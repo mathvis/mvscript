@@ -8,10 +8,11 @@ import SemanticAnalysisTypes (TypedTopLevel, SemanticError, globalEnv)
 import SemanticAnalysis (checkTopLevel)
 import Control.Monad.Writer (runWriter)
 import Control.Monad.Reader (runReaderT)
+import Misc (sc)
 
 parseFile :: String -> String -> [TopLevel]
 parseFile filename file =
-    case runParser (many topLevel <* eof) filename file of
+    case runParser (sc *> many topLevel <* eof) filename file of
         Left e -> error ("Error while parsing: " ++ errorBundlePretty e)
         Right parsed -> parsed
 

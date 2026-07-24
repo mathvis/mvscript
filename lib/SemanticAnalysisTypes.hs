@@ -1,11 +1,14 @@
 module SemanticAnalysisTypes
   ( Check,
     TypedTopLevel (..),
+    ResolvedExpression (..),
     TypedExpression (..),
     ResolvedStatement (..),
     TypedOperation (..),
     Env (..),
     SemanticError (..),
+    ElaboratedType (..),
+    ResolvedLiteral (..),
     lookupFunc,
     lookupVar,
     insertVar,
@@ -20,8 +23,8 @@ import Control.Monad.Writer (Writer)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Text (Text)
-import ParserTypes (Literal)
 import Text.Megaparsec
+import qualified Data.Text as T
 
 data ElaboratedType
   = StringT
@@ -37,7 +40,7 @@ data ElaboratedType
   | LambdaT [ElaboratedType] ElaboratedType
   deriving (Show, Eq)
 
-data SemanticError = Foo
+data SemanticError = Foo deriving (Show, Eq)
 
 data Env = Env
   { variables :: Map Text ElaboratedType,
@@ -70,6 +73,7 @@ scope :: Env -> Env
 scope parentEnv = Env Map.empty Map.empty (Just parentEnv)
 
 type Check = ReaderT Env (Writer [SemanticError])
+
 
 data TypedTopLevel = Expr TypedExpression | Stmt ResolvedStatement | Block SourcePos [TypedTopLevel] deriving (Show, Eq)
 
@@ -112,8 +116,19 @@ data ResolvedOperation
   | Assign TypedExpression TypedExpression
   deriving (Show, Eq)
 
+data ResolvedLiteral
+  = String T.Text
+  | Int Integer
+  | Float Float
+  | Bool Bool
+  | Array [TypedExpression]
+  | Vector [TypedExpression]
+  | Point [TypedExpression]
+  | Matrix [TypedExpression]
+  deriving (Show, Eq)
+
 data ResolvedExpression
-  = Literal SourcePos Literal
+  = LiteralExpr SourcePos ResolvedLiteral
   | Parentheses SourcePos TypedExpression
   | Identifier SourcePos Text
   | Operation SourcePos TypedOperation
