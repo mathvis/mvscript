@@ -37,10 +37,11 @@ data ElaboratedType
   | ArrayT ElaboratedType
   | VoidT
   | ErrorT
+  | UnknownT
   | LambdaT [ElaboratedType] ElaboratedType
   deriving (Show, Eq)
 
-data SemanticError = Foo deriving (Show, Eq)
+data SemanticError = EmptyMVContainer | TypeMismatch [ElaboratedType] ElaboratedType deriving (Show, Eq)
 
 data Env = Env
   { variables :: Map Text ElaboratedType,
