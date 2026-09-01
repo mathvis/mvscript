@@ -127,7 +127,7 @@ module TypeCheck where
 --     _ -> error pos state "Not a valid operation" "Internal error."
 -- checkTypeExpression pos state (Parentheses op) = checkTypeExpression pos state op
 -- checkTypeExpression pos state (Literal lit) = convertToType pos state (Literal lit)
--- checkTypeExpression pos state (FunctionCall name _) = convertToType pos state name 
+-- checkTypeExpression pos state (FunctionCall name _) = convertToType pos state name
 -- checkTypeExpression pos state (Identifier name) = convertToType pos state (Identifier name)
 -- checkTypeExpression pos state _ = error pos state "" "Internal error."
 
@@ -148,7 +148,7 @@ module TypeCheck where
 -- checkArguments (FunctionCall (FunctionIdentifier name) args) pos state =
 --     if expectedLength /= actualLength
 --         then error pos state ("Expected " ++ show expectedLength ++ " arguments but got " ++ show actualLength) "Consider adding or removing arguments, or checking the function signature."
---     else 
+--     else
 --         case mapM checkArgumentType (zip argTypes expectedArgTypes) of
 --             Left err -> uncurry (error pos state) err
 --             Right _ -> state
@@ -156,21 +156,21 @@ module TypeCheck where
 --         expectedArgTypes = getFunctionArgTypes pos state name
 --         expectedLength = length expectedArgTypes
 --         argTypes = map (checkTypeExpression pos state) args
---         actualLength = length argTypes    
+--         actualLength = length argTypes
 -- checkArguments _ _ state = state
 
 -- checkArgumentType :: (Type, Type) -> Either (String, String) ()
 -- checkArgumentType (actual, expected) = if actual == expected
 --     then Right ()
 --     else Left ("Expected " ++ show expected ++ " but got " ++ show actual, "Try changing the argument type.")
-   
+
 -- checkForReturn :: Statement -> SourcePos -> ParserState -> ParserState
 -- checkForReturn (FunctionDef _ _ returnType' (Just (Block (FunctionBlock _) stmts))) pos state =
 --     if not (hasReturn stmts) && returnType' /= VoidT
 --         then error pos state ("Function must return a value of type " ++ show returnType') "Try adding a return statement."
 --         else state
 -- checkForReturn _ pos state = error pos state "" "Internal error."
-    
+
 -- hasReturn :: [TopLevel] -> Bool
 -- hasReturn = any isReturnStmt
 
@@ -180,7 +180,7 @@ module TypeCheck where
 
 -- compareFunctionSignatureToForwardDecl :: Statement -> SourcePos -> ParserState -> ParserState
 -- compareFunctionSignatureToForwardDecl (FunctionDef (FunctionIdentifier name) args returnType' (Just _)) pos state
---     | not (hasForwardDecl name state) = state 
+--     | not (hasForwardDecl name state) = state
 --     | expectedLength /= actualLength =
 --         error pos state ("Expected " ++ show expectedLength ++ " arguments but got " ++ show actualLength) "Consider adding or removing arguments, or checking the function signature."
 --     | returnType' /= expectedReturnType =
@@ -196,4 +196,3 @@ module TypeCheck where
 --         argTypes = map snd args
 --         actualLength = length argTypes
 -- compareFunctionSignatureToForwardDecl _ pos state = error pos state "" "Internal error."
-

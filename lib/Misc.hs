@@ -1,12 +1,15 @@
 module Misc (module Misc) where
-import ParserTypes
+
 import qualified Data.Text as T
+import ParserTypes
+
 -- import Data.Map as Map hiding (empty, map)
 -- import Error
-import Prelude hiding (fst, error)
+
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
+import Prelude hiding (error, fst)
 
 sc :: MVParser ()
 sc = L.space space1 (L.skipLineComment "#") empty
@@ -18,7 +21,7 @@ symbol :: String -> MVParser String
 symbol = L.symbol sc
 
 betweenParentheses :: MVParser a -> MVParser a
-betweenParentheses = between (symbol "(") (symbol ")") 
+betweenParentheses = between (symbol "(") (symbol ")")
 
 rword :: String -> MVParser ()
 rword w = lexeme (string w *> notFollowedBy (letterChar <|> digitChar <|> char '_'))
@@ -29,7 +32,7 @@ toInt' x = round (realToFrac x :: Double)
 intDiv :: (Num a, Real a) => a -> a -> Integer
 intDiv x y = div (toInt' x) (toInt' y)
 
-realToBool :: Real a => a -> Bool
+realToBool :: (Real a) => a -> Bool
 realToBool 0 = False
 realToBool _ = True
 
@@ -45,7 +48,7 @@ valueToType (Bool _) = BoolT
 valueToType (Vector _) = VectorT
 valueToType (Point _) = PointT
 valueToType (Matrix _) = MatrixT
-valueToType (Array ((Literal _ a):_)) = ArrayT (valueToType a)
+valueToType (Array ((Literal _ a) : _)) = ArrayT (valueToType a)
 valueToType (Array _) = ArrayT (valueToType (Int 0))
 
 -- getVariableType :: SourcePos -> ParserState -> T.Text -> Type
@@ -57,15 +60,13 @@ valueToType (Array _) = ArrayT (valueToType (Int 0))
 
 -- getFunctionReturnType :: SourcePos -> ParserState -> T.Text -> Type
 -- getFunctionReturnType pos state name = case Map.lookup name (fst state) of
---     Just fData -> returnType fData 
+--     Just fData -> returnType fData
 --     Nothing -> error pos state "Variable not found." "Internal error."
 
 -- getFunctionArgTypes :: SourcePos -> ParserState -> T.Text -> [Type]
 -- getFunctionArgTypes pos state name = case Map.lookup name (fst state) of
---     Just fData -> map snd (arguments fData) 
+--     Just fData -> map snd (arguments fData)
 --     Nothing -> error pos state "Variable not found." "Internal error."
 
-
 intercalateStr :: String -> [String] -> String
-intercalateStr delim lst = T.unpack (T.intercalate (T.pack delim) (Prelude.map T.pack lst)) 
-
+intercalateStr delim lst = T.unpack (T.intercalate (T.pack delim) (Prelude.map T.pack lst))

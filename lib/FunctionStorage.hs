@@ -53,11 +53,11 @@ module FunctionStorage where
 --         error (position call) state "Function has a forward declaration but does not have a body." "Consider adding a body to the function."
 
 -- addUnresolvedCall :: T.Text -> SourcePos -> ParserState -> ParserState
--- addUnresolvedCall name pos state = state {unresolvedFunctionCalls = newCalls}    
+-- addUnresolvedCall name pos state = state {unresolvedFunctionCalls = newCalls}
 --     where
---         functionCallData = (FunctionCallData {position=pos, identifier=name}) 
+--         functionCallData = (FunctionCallData {position=pos, identifier=name})
 --         calls = unresolvedFunctionCalls state
---         newCalls = functionCallData:calls             
+--         newCalls = functionCallData:calls
 
 -- hasForwardDecl :: T.Text -> ParserState -> Bool
 -- hasForwardDecl name state = case Map.lookup name (fst state) of

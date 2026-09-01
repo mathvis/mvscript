@@ -1,4 +1,5 @@
 module Context where
+
 -- import Types
 -- import Error
 -- import Prelude hiding (error)
@@ -8,13 +9,13 @@ module Context where
 
 -- isFunction :: BlockType -> Bool
 -- isFunction (FunctionBlock _) = True
--- isFunction _ = False 
+-- isFunction _ = False
 
 -- findFunction :: [BlockType] -> Maybe BlockType
 -- findFunction = find isFunction
 
 -- changeContext :: BlockType -> ParserState -> ParserState
--- changeContext blocktype state = state{context = newContext} 
+-- changeContext blocktype state = state{context = newContext}
 --     where
 --         previousContext = context state
 --         newContext = blocktype:previousContext
@@ -46,5 +47,3 @@ module Context where
 --         else state
 --     where
 --         ctx = context state
-
-    

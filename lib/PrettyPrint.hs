@@ -1,5 +1,6 @@
 -- {-# LANGUAGE FlexibleInstances #-}
 module PrettyPrint where
+
 -- import Types
 -- import qualified Data.Text as T
 -- import qualified Data.Map as Map
@@ -18,12 +19,12 @@ module PrettyPrint where
 --     putStrLn $ yellow state ("\t\tIs initialized: " ++ show (isInitialized vData))
 --     putStrLn $ yellow state ("\t\tIs constant: " ++ show (isConstant vData))
 --     where
---         vType = fromMaybe VoidT (variableType vData) 
+--         vType = fromMaybe VoidT (variableType vData)
 
 -- printArgument :: ParserState -> (T.Text, Type) -> IO ()
 -- printArgument state (name, typename) =
 --     putStrLn $ yellow state ("\t\t\t" ++ T.unpack name ++ ": " ++ show typename)
-        
+
 -- printFunctionSymbolTableEntry :: ParserState -> (T.Text, FunctionData) -> IO ()
 -- printFunctionSymbolTableEntry state (name, fData) = do
 --     putStrLn $ blue state ("\tFunction name: " ++ T.unpack name)
@@ -31,7 +32,6 @@ module PrettyPrint where
 --     putStrLn $ yellow state "\t\tArguments: "
 --     mapM_ (printArgument state) (arguments fData)
 --     putStrLn $ yellow state ("\t\tHas body: " ++ show (hasBody fData))
-
 
 -- instance PrettyPrint SymbolTable where
 --     pprint st' state = do
@@ -46,6 +46,3 @@ module PrettyPrint where
 -- instance PrettyPrint ContextStack where
 --     pprint ctx state = do
 --         putStrLn $ (bold state . darkerBlue state) ("Context: " ++ intercalateStr "::" (map (reverse . show) ctx))
-
-    
-

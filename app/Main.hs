@@ -1,14 +1,14 @@
 module Main where
 
-import Parser
-import System.Environment
-import ParserTypes
-import Text.Megaparsec
-import SemanticAnalysisTypes (TypedTopLevel, SemanticError, globalEnv)
-import SemanticAnalysis (checkTopLevel)
-import Control.Monad.Writer (runWriter)
 import Control.Monad.Reader (runReaderT)
+import Control.Monad.Writer (runWriter)
 import Misc (sc)
+import Parser
+import ParserTypes
+import SemanticAnalysis (checkTopLevel)
+import SemanticAnalysisTypes (SemanticError, TypedTopLevel, globalEnv)
+import System.Environment
+import Text.Megaparsec
 
 parseFile :: String -> String -> [TopLevel]
 parseFile filename file =
@@ -27,4 +27,3 @@ main =
         let parsed = parseFile filename fileContents
         let checked = runCheck parsed
         mapM_ print (fst checked)
-            
