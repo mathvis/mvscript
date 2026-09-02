@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.39.1.
+-- This file has been generated from package.yaml by hpack version 0.39.6.
 --
 -- see: https://github.com/sol/hpack
 
@@ -14,18 +14,11 @@ build-type:     Simple
 
 library
   exposed-modules:
-      Context
       SemanticAnalysisTypes
       SemanticAnalysis
-      Error
-      Eval
-      FunctionStorage
       Misc
       Parser
-      TypeCheck
       ParserTypes
-      VariableStorage
-      PrettyPrint
   other-modules:
       Paths_mvscript
   hs-source-dirs:

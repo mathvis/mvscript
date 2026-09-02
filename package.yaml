@@ -17,18 +17,11 @@ library:
     - megaparsec
     - parser-combinators
   exposed-modules:
-    - Context
     - SemanticAnalysisTypes
     - SemanticAnalysis
-    - Error
-    - Eval
-    - FunctionStorage
     - Misc
     - Parser
-    - TypeCheck
     - ParserTypes
-    - VariableStorage
-    - PrettyPrint
 
 executables:
   mvscc:
