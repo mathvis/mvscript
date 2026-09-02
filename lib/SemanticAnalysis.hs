@@ -125,7 +125,12 @@ checkExpression (P.Literal pos literal) =
     typeOfLiteral = getTypeOfLiteral <$> resolvedLiteral
 checkExpression P.Operation{} = undefined
 checkExpression P.FunctionCall{} = undefined
-checkExpression P.Parentheses{} = undefined
+checkExpression (P.Parentheses pos expr) =
+    TypedExpression <$> exprType <*> resolvedExpr
+  where
+    resolvedInnerExpr = checkExpression expr
+    resolvedExpr = (Parentheses pos) <$> resolvedInnerExpr
+    exprType = texprType <$> resolvedInnerExpr
 checkExpression P.Identifier{} = undefined
 checkExpression P.LambdaFunc{} = undefined
 checkExpression P.LambdaApplication{} = undefined

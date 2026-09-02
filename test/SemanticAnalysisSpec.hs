@@ -169,5 +169,24 @@ spec = do
                     (P.Literal dummyPos (P.Matrix [P.Literal dummyPos (P.Array [P.Literal dummyPos (P.Int 1)])]))
                 )
                 `shouldSatisfy` exprIsTyped S.MatrixT
+        it "types a vector literal correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    (P.Literal dummyPos (P.Array [P.Literal dummyPos (P.Int 0), P.Literal dummyPos (P.Int 1)]))
+                )
+                `shouldSatisfy` exprIsTyped (S.ArrayT S.IntT)
+        it "types a parenthesized expression correctly" $
+            runCheck
+                globalEnv
+                (checkExpression (P.Parentheses dummyPos (P.Literal dummyPos (P.Int 0))))
+                `shouldSatisfy` exprIsTyped S.IntT
+        it "types a parenthesized expression correctly 2" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    (P.Parentheses dummyPos (P.Literal dummyPos (P.Array [P.Literal dummyPos (P.Int 0)])))
+                )
+                `shouldSatisfy` exprIsTyped (S.ArrayT S.IntT)
   where
     exprIsTyped typ (expr, _) = texprType expr == typ
