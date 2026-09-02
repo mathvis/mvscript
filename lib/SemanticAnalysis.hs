@@ -1,17 +1,26 @@
-module SemanticAnalysis (checkTopLevel, checkLiteral, checkExpression, unifyTypesMVContainers) where
+module SemanticAnalysis (checkTopLevel, checkLiteral, checkExpression, checkOperation) where
 
 import Control.Monad
 import Control.Monad.Writer (tell)
-import qualified ParserTypes as P (Expression (..), Literal (..), Statement (..), TopLevel (..))
+import qualified ParserTypes as P (
+    Expression (..),
+    Literal (..),
+    Operation (..),
+    Statement (..),
+    TopLevel (..),
+ )
 import SemanticAnalysisTypes (
     Check,
     ElaboratedType (..),
     ResolvedExpression (..),
     ResolvedLiteral,
+    ResolvedOperation (..),
     ResolvedStatement,
     SemanticError (..),
     TypedExpression (..),
+    TypedOperation (..),
     TypedTopLevel (..),
+    fromLiteral,
  )
 import qualified SemanticAnalysisTypes as S (ResolvedLiteral (..))
 import Text.Megaparsec
@@ -24,17 +33,6 @@ checkStatement P.FunctionDef{} = undefined
 checkStatement P.IfStmt{} = undefined
 checkStatement P.ElseStmt{} = undefined
 checkStatement P.Return{} = undefined
-
-getTypeOfLiteral :: ResolvedLiteral -> ElaboratedType
-getTypeOfLiteral (S.Array []) = ArrayT UnknownT
-getTypeOfLiteral (S.Array (expr : _)) = ArrayT (texprType expr)
-getTypeOfLiteral (S.Vector{}) = VectorT
-getTypeOfLiteral (S.Point{}) = PointT
-getTypeOfLiteral (S.Matrix{}) = MatrixT
-getTypeOfLiteral (S.Int{}) = IntT
-getTypeOfLiteral (S.Float{}) = FloatT
-getTypeOfLiteral (S.String{}) = StringT
-getTypeOfLiteral (S.Bool{}) = BoolT
 
 unifyTypesMVContainers :: [ElaboratedType] -> Either SemanticError ElaboratedType
 unifyTypesMVContainers [] = Left EmptyMVContainer
@@ -54,15 +52,15 @@ unifyTypesMVContainers (t : ts)
 unifyTypesMatrix :: [ElaboratedType] -> Either SemanticError ElaboratedType
 unifyTypesMatrix [] = Left EmptyMVContainer
 unifyTypesMatrix (t : ts)
-    | not (isArray t) = Left (TypeMismatch [(ArrayT IntT), (ArrayT FloatT)] t)
+    | not (isArray t) = Left (TypeMismatch [ArrayT IntT, ArrayT FloatT] t)
     | otherwise = foldM combine t ts
   where
     isArray (ArrayT IntT) = True
     isArray (ArrayT FloatT) = True
     isArray _ = False
     combine a b
-        | not $ isArray a = Left (TypeMismatch [(ArrayT IntT), (ArrayT FloatT)] a)
-        | not $ isArray b = Left (TypeMismatch [(ArrayT IntT), (ArrayT FloatT)] b)
+        | not $ isArray a = Left (TypeMismatch [ArrayT IntT, ArrayT FloatT] a)
+        | not $ isArray b = Left (TypeMismatch [ArrayT IntT, ArrayT FloatT] b)
         | a == b = Right a
         | otherwise = Left (TypeMismatch [a] b)
 
@@ -73,6 +71,45 @@ unifyArrayTypes (t : ts) = foldM combine t ts
     combine a b
         | a == b = Right a
         | otherwise = Left (TypeMismatch [a] b)
+
+checkOperation :: SourcePos -> P.Operation -> Check TypedOperation
+checkOperation pos op
+    | isUnary op = checkOperationUnary pos op
+    | otherwise = undefined
+  -- \| isBinaryArithmetic = checkOperationBinary pos op
+  where
+    isUnary P.Negation{} = True
+    isUnary P.Not{} = True
+    isUnary _ = False
+
+-- checkOperationBinary :: SourcePos -> P.Operation -> CheckTypedOperation
+
+checkOperationUnary :: SourcePos -> P.Operation -> Check TypedOperation
+checkOperationUnary _ (P.Negation x) = do
+    typedX <- checkExpression x
+    let xType = texprType typedX
+    resultType <-
+        if isNumber xType
+            then
+                pure xType
+            else do
+                tell [TypeMismatch [IntT, FloatT] xType]
+                pure ErrorT
+    pure $ TypedOperation{topType = resultType, topNode = Negation typedX}
+  where
+    isNumber IntT = True
+    isNumber FloatT = True
+    isNumber _ = False
+checkOperationUnary _ (P.Not x) = do
+    typedX <- checkExpression x
+    let xType = texprType typedX
+    resultType <- case xType of
+        BoolT -> pure BoolT
+        _ -> do
+            tell [TypeMismatch [BoolT] xType]
+            pure ErrorT
+    pure $ TypedOperation{topType = resultType, topNode = Not typedX}
+checkOperationUnary _ _ = error "binary operation found in unary context"
 
 checkLiteral :: SourcePos -> P.Literal -> Check ResolvedLiteral
 checkLiteral _ (P.Array exprs) = do
@@ -121,15 +158,20 @@ checkExpression (P.Literal pos literal) =
     TypedExpression <$> typeOfLiteral <*> resolvedLiteralExpr
   where
     resolvedLiteral = checkLiteral pos literal
-    resolvedLiteralExpr = (LiteralExpr pos) <$> resolvedLiteral
-    typeOfLiteral = getTypeOfLiteral <$> resolvedLiteral
-checkExpression P.Operation{} = undefined
+    resolvedLiteralExpr = LiteralExpr pos <$> resolvedLiteral
+    typeOfLiteral = fromLiteral <$> resolvedLiteral
+checkExpression (P.Operation pos operation) =
+    TypedExpression <$> exprType <*> resolvedExpr
+  where
+    resolvedOperation = checkOperation pos operation
+    resolvedExpr = Operation pos <$> resolvedOperation
+    exprType = topType <$> resolvedOperation
 checkExpression P.FunctionCall{} = undefined
 checkExpression (P.Parentheses pos expr) =
     TypedExpression <$> exprType <*> resolvedExpr
   where
     resolvedInnerExpr = checkExpression expr
-    resolvedExpr = (Parentheses pos) <$> resolvedInnerExpr
+    resolvedExpr = Parentheses pos <$> resolvedInnerExpr
     exprType = texprType <$> resolvedInnerExpr
 checkExpression P.Identifier{} = undefined
 checkExpression P.LambdaFunc{} = undefined

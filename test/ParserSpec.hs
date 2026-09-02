@@ -10,7 +10,7 @@ import Test.Hspec.Megaparsec
 import Text.Megaparsec (ParseErrorBundle, eof, runParser)
 
 testParse :: MVParser a -> String -> Either (ParseErrorBundle String MVParseError) a
-testParse p input = runParser p "" input
+testParse p = runParser p ""
 
 spec :: Spec
 spec = do

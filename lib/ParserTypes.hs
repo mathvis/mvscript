@@ -17,6 +17,16 @@ data ParserType
     | LambdaT [ParserType] ParserType
     deriving (Eq)
 
+fromLiteral :: Literal -> ParserType
+fromLiteral String{} = StringT
+fromLiteral Int{} = IntT
+fromLiteral Float{} = FloatT
+fromLiteral Bool{} = BoolT
+fromLiteral Array{} = ArrayT IntT
+fromLiteral Vector{} = VectorT
+fromLiteral Point{} = PointT
+fromLiteral Matrix{} = MatrixT
+
 instance Show ParserType where
     show typename = case typename of
         StringT -> "string"

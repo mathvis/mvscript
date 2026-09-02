@@ -5,6 +5,7 @@ module SemanticAnalysisTypes (
     TypedExpression (..),
     ResolvedStatement (..),
     TypedOperation (..),
+    ResolvedOperation (..),
     Env (..),
     SemanticError (..),
     ElaboratedType (..),
@@ -15,6 +16,7 @@ module SemanticAnalysisTypes (
     insertFunc,
     scope,
     globalEnv,
+    fromLiteral,
 )
 where
 
@@ -40,6 +42,17 @@ data ElaboratedType
     | UnknownT
     | LambdaT [ElaboratedType] ElaboratedType
     deriving (Show, Eq)
+
+fromLiteral :: ResolvedLiteral -> ElaboratedType
+fromLiteral (Array []) = ArrayT UnknownT
+fromLiteral (Array (expr : _)) = ArrayT (texprType expr)
+fromLiteral Vector{} = VectorT
+fromLiteral Point{} = PointT
+fromLiteral Matrix{} = MatrixT
+fromLiteral Int{} = IntT
+fromLiteral Float{} = FloatT
+fromLiteral String{} = StringT
+fromLiteral Bool{} = BoolT
 
 data SemanticError = EmptyMVContainer | TypeMismatch [ElaboratedType] ElaboratedType
     deriving (Show, Eq)
