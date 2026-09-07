@@ -75,12 +75,130 @@ unifyArrayTypes (t : ts) = foldM combine t ts
 checkOperation :: SourcePos -> P.Operation -> Check TypedOperation
 checkOperation pos op
     | isUnary op = checkOperationUnary pos op
+    | isBinaryLogic op = checkOperationBinaryLogic pos op
+    -- \| isAssignment op = checkOperationAssignment pos op
+    | isComparison op = checkOperationComparison pos op
     | otherwise = undefined
-  -- \| isBinaryArithmetic = checkOperationBinary pos op
+  -- \| otherwise = checkOperationBinaryArithmetic pos op
   where
     isUnary P.Negation{} = True
     isUnary P.Not{} = True
     isUnary _ = False
+    isBinaryLogic P.Or{} = True
+    isBinaryLogic P.And{} = True
+    isBinaryLogic P.BitwiseAnd{} = True
+    isBinaryLogic P.BitwiseOr{} = True
+    isBinaryLogic P.BitwiseXor{} = True
+    isBinaryLogic _ = False
+    -- isAssignment P.Assign{} = True
+    -- isAssignment P.AddAssign{} = True
+    -- isAssignment P.SubAssign{} = True
+    -- isAssignment P.MulAssign{} = True
+    -- isAssignment P.DivAssign{} = True
+    -- isAssignment P.IntDivAssign{} = True
+    -- isAssignment P.ModAssign{} = True
+    -- isAssignment P.BitwiseAndAssign{} = True
+    -- isAssignment P.BitwiseOrAssign{} = True
+    -- isAssignment P.BitwiseXorAssign{} = True
+    -- isAssignment _ = False
+    isComparison P.Equals{} = True
+    isComparison P.NotEquals{} = True
+    isComparison P.GreaterThan{} = True
+    isComparison P.GreaterThanEq{} = True
+    isComparison P.LessThan{} = True
+    isComparison P.LessThanEq{} = True
+    isComparison _ = False
+
+checkOperationComparison :: SourcePos -> P.Operation -> Check TypedOperation
+checkOperationComparison _ (P.Equals x y) = do
+    typedX <- checkExpression x
+    typedY <- checkExpression y
+    let xType = texprType typedX
+    let yType = texprType typedY
+    resultType <-
+        if xType == yType
+            then
+                pure BoolT
+            else
+                tell [TypeMismatch [xType] yType] >> pure ErrorT
+    pure $ mkTypedOp (P.Equals x y) resultType typedX typedY
+checkOperationComparison _ (P.NotEquals x y) = do
+    typedX <- checkExpression x
+    typedY <- checkExpression y
+    let xType = texprType typedX
+    let yType = texprType typedY
+    resultType <-
+        if xType == yType
+            then
+                pure BoolT
+            else
+                tell [TypeMismatch [xType] yType] >> pure ErrorT
+    pure $ mkTypedOp (P.NotEquals x y) resultType typedX typedY
+checkOperationComparison _ op = do
+    let (x, y) = case op of
+            P.GreaterThan x' y' -> (x', y')
+            P.GreaterThanEq x' y' -> (x', y')
+            P.LessThan x' y' -> (x', y')
+            P.LessThanEq x' y' -> (x', y')
+            _ -> error "not a binary comparison operator"
+    typedX <- checkExpression x
+    typedY <- checkExpression y
+    let xType = texprType typedX
+    let yType = texprType typedY
+    resultType <-
+        if isNumber xType
+            then
+                if isNumber yType && yType == xType
+                    then
+                        pure BoolT
+                    else
+                        tell [TypeMismatch [xType] yType] >> pure ErrorT
+            else
+                tell [TypeMismatch [IntT, FloatT] xType] >> pure ErrorT
+    pure $ mkTypedOp op resultType typedX typedY
+  where
+    isNumber IntT = True
+    isNumber FloatT = True
+    isNumber _ = False
+
+mkTypedOpUnary :: P.Operation -> ElaboratedType -> TypedExpression -> TypedOperation
+mkTypedOpUnary P.Negation{} t x = TypedOperation t (Negation x)
+mkTypedOpUnary P.Not{} t x = TypedOperation t (Not x)
+mkTypedOpUnary _ _ _ = error "binary operation found in unary context"
+
+mkTypedOp :: P.Operation -> ElaboratedType -> TypedExpression -> TypedExpression -> TypedOperation
+mkTypedOp P.Or{} t x y = TypedOperation t (Or x y)
+mkTypedOp P.And{} t x y = TypedOperation t (And x y)
+mkTypedOp P.BitwiseAnd{} t x y = TypedOperation t (BitwiseAnd x y)
+mkTypedOp P.BitwiseXor{} t x y = TypedOperation t (BitwiseXor x y)
+mkTypedOp P.BitwiseOr{} t x y = TypedOperation t (BitwiseOr x y)
+mkTypedOp P.GreaterThan{} t x y = TypedOperation t (GreaterThan x y)
+mkTypedOp P.GreaterThanEq{} t x y = TypedOperation t (GreaterThanEq x y)
+mkTypedOp P.LessThan{} t x y = TypedOperation t (LessThan x y)
+mkTypedOp P.LessThanEq{} t x y = TypedOperation t (LessThanEq x y)
+mkTypedOp P.Equals{} t x y = TypedOperation t (Equals x y)
+mkTypedOp P.NotEquals{} t x y = TypedOperation t (NotEquals x y)
+mkTypedOp _ _ _ _ = undefined
+
+checkOperationBinaryLogic :: SourcePos -> P.Operation -> Check TypedOperation
+checkOperationBinaryLogic _ op = do
+    let (x, y, expected) = case op of
+            P.Or x' y' -> (x', y', BoolT)
+            P.And x' y' -> (x', y', BoolT)
+            P.BitwiseOr x' y' -> (x', y', IntT)
+            P.BitwiseAnd x' y' -> (x', y', IntT)
+            P.BitwiseXor x' y' -> (x', y', IntT)
+            _ -> error "not a binary logic operator"
+    typedX <- checkExpression x
+    typedY <- checkExpression y
+    let xType = texprType typedX
+    let yType = texprType typedY
+    resultType <- case xType of
+        t | t == expected -> case yType of
+            t' | t' == expected -> pure expected
+            _ -> tell [TypeMismatch [expected] yType] >> pure ErrorT
+        _ -> tell [TypeMismatch [expected] xType] >> pure ErrorT
+    pure $ mkTypedOp op resultType typedX typedY
 
 -- checkOperationBinary :: SourcePos -> P.Operation -> CheckTypedOperation
 
@@ -95,7 +213,7 @@ checkOperationUnary _ (P.Negation x) = do
             else do
                 tell [TypeMismatch [IntT, FloatT] xType]
                 pure ErrorT
-    pure $ TypedOperation{topType = resultType, topNode = Negation typedX}
+    pure $ mkTypedOpUnary (P.Negation x) resultType typedX
   where
     isNumber IntT = True
     isNumber FloatT = True
@@ -108,7 +226,7 @@ checkOperationUnary _ (P.Not x) = do
         _ -> do
             tell [TypeMismatch [BoolT] xType]
             pure ErrorT
-    pure $ TypedOperation{topType = resultType, topNode = Not typedX}
+    pure $ mkTypedOpUnary (P.Not x) resultType typedX
 checkOperationUnary _ _ = error "binary operation found in unary context"
 
 checkLiteral :: SourcePos -> P.Literal -> Check ResolvedLiteral

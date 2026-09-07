@@ -25,6 +25,7 @@ import qualified SemanticAnalysisTypes as S (
     ResolvedExpression (..),
     ResolvedLiteral (..),
     ResolvedOperation (..),
+    fromParserLiteral,
  )
 import SpecUtils (dummyPos)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
@@ -220,6 +221,466 @@ spec = do
                             (checkOperation dummyPos (P.Not (P.Literal dummyPos lit)))
                         )
                         `shouldSatisfy` isTypeMismatch [S.BoolT]
+        it "resolves a bool and" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.And (P.Literal dummyPos (P.Bool True)) (P.Literal dummyPos (P.Bool True)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.BoolT,
+                                  topNode =
+                                    S.And
+                                        (TypedExpression{texprType = S.BoolT, texprNode = S.LiteralExpr dummyPos (S.Bool True)})
+                                        (TypedExpression{texprType = S.BoolT, texprNode = S.LiteralExpr dummyPos (S.Bool True)})
+                                }
+                           )
+        describe "does not resolve a non bool and" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.BoolT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.And (P.Literal dummyPos lit) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.BoolT]
+        describe "does not resolve a mixed type and" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.BoolT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.And (P.Literal dummyPos (P.Bool True)) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.BoolT]
+        it "resolves a bool or" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.Or (P.Literal dummyPos (P.Bool True)) (P.Literal dummyPos (P.Bool True)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.BoolT,
+                                  topNode =
+                                    S.Or
+                                        (TypedExpression{texprType = S.BoolT, texprNode = S.LiteralExpr dummyPos (S.Bool True)})
+                                        (TypedExpression{texprType = S.BoolT, texprNode = S.LiteralExpr dummyPos (S.Bool True)})
+                                }
+                           )
+        describe "does not resolve a non bool or" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.BoolT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.Or (P.Literal dummyPos lit) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.BoolT]
+        describe "does not resolve a mixed type or" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.BoolT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.Or (P.Literal dummyPos (P.Bool True)) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.BoolT]
+        it "resolves a int bitwise and" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.BitwiseAnd (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.IntT,
+                                  topNode =
+                                    S.BitwiseAnd
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                }
+                           )
+        describe "does not resolve a non int bitwise and" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.BitwiseAnd (P.Literal dummyPos lit) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT]
+        describe "does not resolve a mixed type bitwise and" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.BitwiseAnd (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT]
+        it "resolves a int bitwise xor" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.BitwiseXor (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.IntT,
+                                  topNode =
+                                    S.BitwiseXor
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                }
+                           )
+        describe "does not resolve a non int bitwise xor" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.BitwiseXor (P.Literal dummyPos lit) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT]
+        describe "does not resolve a mixed type bitwise xor" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.BitwiseXor (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT]
+        it "resolves a int bitwise or" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.BitwiseOr (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.IntT,
+                                  topNode =
+                                    S.BitwiseOr
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                }
+                           )
+        describe "does not resolve a non int bitwise or" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.BitwiseOr (P.Literal dummyPos lit) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT]
+        describe "does not resolve a mixed type bitwise or" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.BitwiseOr (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT]
+        it "resolves a int greater than" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.GreaterThan (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.BoolT,
+                                  topNode =
+                                    S.GreaterThan
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                }
+                           )
+        it "resolves a float greater than" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.GreaterThan (P.Literal dummyPos (P.Float 0.5)) (P.Literal dummyPos (P.Float 0.5)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.BoolT,
+                                  topNode =
+                                    S.GreaterThan
+                                        (TypedExpression{texprType = S.FloatT, texprNode = S.LiteralExpr dummyPos (S.Float 0.5)})
+                                        (TypedExpression{texprType = S.FloatT, texprNode = S.LiteralExpr dummyPos (S.Float 0.5)})
+                                }
+                           )
+        describe "does not resolve a non numeric greater than" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.FloatT, P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.GreaterThan (P.Literal dummyPos lit) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT, S.FloatT]
+        describe "does not resolve a mixed type greater than" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit) <> " with int") $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.GreaterThan (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT]
+            forM_ (createLiteralsForErrorTestExcept [P.FloatT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit) <> " with float") $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.GreaterThan (P.Literal dummyPos (P.Float 0.5)) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.FloatT]
+        it "resolves a int greater than eq" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.GreaterThanEq (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.BoolT,
+                                  topNode =
+                                    S.GreaterThanEq
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                }
+                           )
+        it "resolves a float greater than eq" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.GreaterThanEq (P.Literal dummyPos (P.Float 0.5)) (P.Literal dummyPos (P.Float 0.5)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.BoolT,
+                                  topNode =
+                                    S.GreaterThanEq
+                                        (TypedExpression{texprType = S.FloatT, texprNode = S.LiteralExpr dummyPos (S.Float 0.5)})
+                                        (TypedExpression{texprType = S.FloatT, texprNode = S.LiteralExpr dummyPos (S.Float 0.5)})
+                                }
+                           )
+        describe "does not resolve a non numeric greater than eq" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.FloatT, P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.GreaterThanEq (P.Literal dummyPos lit) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT, S.FloatT]
+        describe "does not resolve a mixed type greater than eq" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit) <> " with int") $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.GreaterThanEq (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT]
+            forM_ (createLiteralsForErrorTestExcept [P.FloatT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit) <> " with float") $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            ( checkOperation
+                                dummyPos
+                                (P.GreaterThanEq (P.Literal dummyPos (P.Float 0.5)) (P.Literal dummyPos lit))
+                            )
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.FloatT]
+        it "resolves a int less than" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.LessThan (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.BoolT,
+                                  topNode =
+                                    S.LessThan
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                }
+                           )
+        it "resolves a float less than" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.LessThan (P.Literal dummyPos (P.Float 0.5)) (P.Literal dummyPos (P.Float 0.5)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.BoolT,
+                                  topNode =
+                                    S.LessThan
+                                        (TypedExpression{texprType = S.FloatT, texprNode = S.LiteralExpr dummyPos (S.Float 0.5)})
+                                        (TypedExpression{texprType = S.FloatT, texprNode = S.LiteralExpr dummyPos (S.Float 0.5)})
+                                }
+                           )
+        describe "does not resolve a non numeric less than" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.FloatT, P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.LessThan (P.Literal dummyPos lit) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT, S.FloatT]
+        describe "does not resolve a mixed type less than" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit) <> " with int") $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.LessThan (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT]
+            forM_ (createLiteralsForErrorTestExcept [P.FloatT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit) <> " with float") $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.LessThan (P.Literal dummyPos (P.Float 0.5)) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.FloatT]
+        it "resolves a int less than eq" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.LessThanEq (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.BoolT,
+                                  topNode =
+                                    S.LessThanEq
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                        (TypedExpression{texprType = S.IntT, texprNode = S.LiteralExpr dummyPos (S.Int 0)})
+                                }
+                           )
+        it "resolves a float less than eq" $ do
+            fst
+                ( runCheck
+                    globalEnv
+                    ( checkOperation
+                        dummyPos
+                        (P.LessThanEq (P.Literal dummyPos (P.Float 0.5)) (P.Literal dummyPos (P.Float 0.5)))
+                    )
+                )
+                `shouldBe` ( TypedOperation
+                                { topType = S.BoolT,
+                                  topNode =
+                                    S.LessThanEq
+                                        (TypedExpression{texprType = S.FloatT, texprNode = S.LiteralExpr dummyPos (S.Float 0.5)})
+                                        (TypedExpression{texprType = S.FloatT, texprNode = S.LiteralExpr dummyPos (S.Float 0.5)})
+                                }
+                           )
+        describe "does not resolve a non numeric less than eq" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.FloatT, P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.LessThanEq (P.Literal dummyPos lit) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT, S.FloatT]
+        describe "does not resolve a mixed type less than eq" $ do
+            forM_ (createLiteralsForErrorTestExcept [P.IntT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit) <> " with int") $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.LessThanEq (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.IntT]
+            forM_ (createLiteralsForErrorTestExcept [P.FloatT]) $ \lit ->
+                it ("rejects " <> show (P.fromLiteral lit) <> " with float") $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            ( checkOperation
+                                dummyPos
+                                (P.LessThanEq (P.Literal dummyPos (P.Float 0.5)) (P.Literal dummyPos lit))
+                            )
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.FloatT]
+    describe "resolves an equals for matching types" $
+        forM_ (createLiteralsForErrorTestExcept []) $ \lit ->
+            it ("accepts two " <> show (P.fromLiteral lit)) $
+                fst
+                    ( runCheck
+                        globalEnv
+                        (checkOperation dummyPos (P.Equals (P.Literal dummyPos lit) (P.Literal dummyPos lit)))
+                    )
+                    `shouldSatisfy` \top -> topType top == S.BoolT
+
+    describe "resolves a not equals for matching types" $
+        forM_ (createLiteralsForErrorTestExcept []) $ \lit ->
+            it ("accepts two " <> show (P.fromLiteral lit)) $
+                fst
+                    ( runCheck
+                        globalEnv
+                        (checkOperation dummyPos (P.NotEquals (P.Literal dummyPos lit) (P.Literal dummyPos lit)))
+                    )
+                    `shouldSatisfy` \top -> topType top == S.BoolT
+    describe "does not resolve an equals with mismatched types" $
+        forM_ (createLiteralsForErrorTestExcept []) $ \lit1 ->
+            forM_ (createLiteralsForErrorTestExcept [P.fromLiteral lit1]) $ \lit2 ->
+                it ("rejects " <> show (P.fromLiteral lit1) <> " vs " <> show (P.fromLiteral lit2)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.Equals (P.Literal dummyPos lit1) (P.Literal dummyPos lit2)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.fromParserLiteral lit1]
+    describe "does not resolve a not equals with mismatched types" $
+        forM_ (createLiteralsForErrorTestExcept []) $ \lit1 ->
+            forM_ (createLiteralsForErrorTestExcept [P.fromLiteral lit1]) $ \lit2 ->
+                it ("rejects " <> show (P.fromLiteral lit1) <> " vs " <> show (P.fromLiteral lit2)) $
+                    snd
+                        ( runCheck
+                            globalEnv
+                            (checkOperation dummyPos (P.NotEquals (P.Literal dummyPos lit1) (P.Literal dummyPos lit2)))
+                        )
+                        `shouldSatisfy` isTypeMismatch [S.fromParserLiteral lit1]
 
     describe "checkExpression typing" $ do
         it "types an int literal correctly" $
@@ -289,6 +750,127 @@ spec = do
                 globalEnv
                 (checkExpression (P.Operation dummyPos (P.Not (P.Literal dummyPos (P.Bool True)))))
                 `shouldSatisfy` exprIsTyped S.BoolT
+        it "types a bool and correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    (P.Operation dummyPos (P.And (P.Literal dummyPos (P.Bool True)) (P.Literal dummyPos (P.Bool True))))
+                )
+                `shouldSatisfy` exprIsTyped S.BoolT
+        it "types a bool or correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    (P.Operation dummyPos (P.Or (P.Literal dummyPos (P.Bool True)) (P.Literal dummyPos (P.Bool True))))
+                )
+                `shouldSatisfy` exprIsTyped S.BoolT
+        it "types a int bitwise or correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    (P.Operation dummyPos (P.BitwiseOr (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0))))
+                )
+                `shouldSatisfy` exprIsTyped S.IntT
+        it "types a int bitwise and correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    (P.Operation dummyPos (P.BitwiseAnd (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0))))
+                )
+                `shouldSatisfy` exprIsTyped S.IntT
+        it "types a int bitwise xor correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    (P.Operation dummyPos (P.BitwiseXor (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0))))
+                )
+                `shouldSatisfy` exprIsTyped S.IntT
+        it "types a int greater than correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    (P.Operation dummyPos (P.GreaterThan (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0))))
+                )
+                `shouldSatisfy` exprIsTyped S.BoolT
+        it "types a float greater than correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    ( P.Operation
+                        dummyPos
+                        (P.GreaterThan (P.Literal dummyPos (P.Float 0.5)) (P.Literal dummyPos (P.Float 0.5)))
+                    )
+                )
+                `shouldSatisfy` exprIsTyped S.BoolT
+        it "types a int greater than eq correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    (P.Operation dummyPos (P.GreaterThanEq (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0))))
+                )
+                `shouldSatisfy` exprIsTyped S.BoolT
+        it "types a float greater than eq correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    ( P.Operation
+                        dummyPos
+                        (P.GreaterThanEq (P.Literal dummyPos (P.Float 0.5)) (P.Literal dummyPos (P.Float 0.5)))
+                    )
+                )
+                `shouldSatisfy` exprIsTyped S.BoolT
+        it "types a int less than correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    (P.Operation dummyPos (P.LessThan (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0))))
+                )
+                `shouldSatisfy` exprIsTyped S.BoolT
+        it "types a float less than correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    ( P.Operation
+                        dummyPos
+                        (P.LessThan (P.Literal dummyPos (P.Float 0.5)) (P.Literal dummyPos (P.Float 0.5)))
+                    )
+                )
+                `shouldSatisfy` exprIsTyped S.BoolT
+        it "types a int less than eq correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    (P.Operation dummyPos (P.LessThanEq (P.Literal dummyPos (P.Int 0)) (P.Literal dummyPos (P.Int 0))))
+                )
+                `shouldSatisfy` exprIsTyped S.BoolT
+        it "types a float less than eq correctly" $
+            runCheck
+                globalEnv
+                ( checkExpression
+                    ( P.Operation
+                        dummyPos
+                        (P.LessThanEq (P.Literal dummyPos (P.Float 0.5)) (P.Literal dummyPos (P.Float 0.5)))
+                    )
+                )
+                `shouldSatisfy` exprIsTyped S.BoolT
+        describe "types a equals correctly" $
+            forM_ (createLiteralsForErrorTestExcept []) $ \lit ->
+                it ("arguments of type " <> show (P.fromLiteral lit)) $
+                    runCheck
+                        globalEnv
+                        (checkExpression (P.Operation dummyPos (P.Equals (P.Literal dummyPos lit) (P.Literal dummyPos lit))))
+                        `shouldSatisfy` exprIsTyped
+                            S.BoolT
+        describe "types a not equals correctly" $
+            forM_ (createLiteralsForErrorTestExcept []) $ \lit ->
+                it ("arguments of type " <> show (P.fromLiteral lit)) $
+                    runCheck
+                        globalEnv
+                        ( checkExpression
+                            (P.Operation dummyPos (P.NotEquals (P.Literal dummyPos lit) (P.Literal dummyPos lit)))
+                        )
+                        `shouldSatisfy` exprIsTyped
+                            S.BoolT
   where
     exprIsTyped typ (expr, _) = texprType expr == typ
     isTypeMismatch expected [TypeMismatch e _] = e == expected

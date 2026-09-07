@@ -17,6 +17,7 @@ module SemanticAnalysisTypes (
     scope,
     globalEnv,
     fromLiteral,
+    fromParserLiteral,
 )
 where
 
@@ -26,6 +27,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified ParserTypes as P (Literal (..))
 import Text.Megaparsec
 
 data ElaboratedType
@@ -42,6 +44,16 @@ data ElaboratedType
     | UnknownT
     | LambdaT [ElaboratedType] ElaboratedType
     deriving (Show, Eq)
+
+fromParserLiteral :: P.Literal -> ElaboratedType
+fromParserLiteral P.Array{} = ArrayT IntT
+fromParserLiteral P.Vector{} = VectorT
+fromParserLiteral P.Point{} = PointT
+fromParserLiteral P.Matrix{} = MatrixT
+fromParserLiteral P.Int{} = IntT
+fromParserLiteral P.Float{} = FloatT
+fromParserLiteral P.String{} = StringT
+fromParserLiteral P.Bool{} = BoolT
 
 fromLiteral :: ResolvedLiteral -> ElaboratedType
 fromLiteral (Array []) = ArrayT UnknownT
