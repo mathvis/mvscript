@@ -66,7 +66,11 @@ fromLiteral Float{} = FloatT
 fromLiteral String{} = StringT
 fromLiteral Bool{} = BoolT
 
-data SemanticError = EmptyMVContainer | TypeMismatch [ElaboratedType] ElaboratedType
+data SemanticError
+    = EmptyMVContainer
+    | TypeMismatch [ElaboratedType] ElaboratedType
+    | UseOfUndeclaredIdentifier T.Text
+    | InvalidArguments T.Text [ElaboratedType] [ElaboratedType]
     deriving (Show, Eq)
 
 data Env = Env

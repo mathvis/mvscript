@@ -1,6 +1,7 @@
-module SemanticAnalysis (checkTopLevel, checkLiteral, checkExpression, checkOperation) where
+module SemanticAnalysis (checkTopLevel, checkLiteral, checkExpression, checkOperation, checkFunctionCall) where
 
 import Control.Monad
+import Control.Monad.RWS (MonadReader (ask))
 import Control.Monad.Writer (tell)
 import qualified ParserTypes as P (
     Expression (..),
@@ -21,6 +22,7 @@ import SemanticAnalysisTypes (
     TypedOperation (..),
     TypedTopLevel (..),
     fromLiteral,
+    lookupFunc,
  )
 import qualified SemanticAnalysisTypes as S (ResolvedLiteral (..))
 import Text.Megaparsec
@@ -324,7 +326,11 @@ checkExpression (P.Operation pos operation) =
     resolvedOperation = checkOperation pos operation
     resolvedExpr = Operation pos <$> resolvedOperation
     exprType = topType <$> resolvedOperation
-checkExpression P.FunctionCall{} = undefined
+checkExpression (P.FunctionCall pos name args) = do
+    (resolvedName, resolvedArgs) <- checkFunctionCall name args
+    let resolvedExpr = FunctionCall pos resolvedName resolvedArgs
+        exprType = texprType resolvedName
+    return (TypedExpression exprType resolvedExpr)
 checkExpression (P.Parentheses pos expr) =
     TypedExpression <$> exprType <*> resolvedExpr
   where
@@ -335,7 +341,27 @@ checkExpression P.Identifier{} = undefined
 checkExpression P.LambdaFunc{} = undefined
 checkExpression P.LambdaApplication{} = undefined
 
+checkFunctionCall :: P.Expression -> [P.Expression] -> Check (TypedExpression, [TypedExpression])
+checkFunctionCall name args = do
+    env <- ask
+    resolvedArgs <- traverse checkExpression args
+    resolvedNameExpr <- checkExpression name
+    let resolvedName = case resolvedNameExpr of
+            TypedExpression _ (Identifier _ n) -> n
+            _ -> error "found non-identifier in function call identifier position"
+    _ <- case lookupFunc resolvedName env of
+        Nothing ->
+            tell [UseOfUndeclaredIdentifier resolvedName] >> pure ErrorT
+        Just (argTypes, returnType) -> do
+            if argTypes /= map texprType resolvedArgs
+                then
+                    tell [InvalidArguments resolvedName argTypes (map texprType resolvedArgs)] >> pure ErrorT
+                else
+                    pure returnType
+    return (resolvedNameExpr, resolvedArgs)
+
 checkTopLevel :: P.TopLevel -> Check TypedTopLevel
 checkTopLevel (P.Stmt s) = Stmt <$> checkStatement s
 checkTopLevel (P.Expr e) = Expr <$> checkExpression e
 checkTopLevel (P.Block pos stmts) = Block pos <$> traverse checkTopLevel stmts
+

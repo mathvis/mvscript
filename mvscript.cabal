@@ -58,6 +58,7 @@ test-suite mvscript-test
   other-modules:
       ParserSpec
       SemanticAnalysis.ExpressionSpec
+      SemanticAnalysis.FunctionCallSpec
       SemanticAnalysis.LiteralSpec
       SemanticAnalysis.OperationSpec
       SpecUtils

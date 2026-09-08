@@ -1,12 +1,13 @@
-module SpecUtils (dummyPos, createLiteralsForErrorTestExcept, runCheck) where
+module SpecUtils (dummyPos, createLiteralsForErrorTestExcept, runCheck, mkEnv, ident, intLit, boolLit) where
 
 import Control.Monad.Reader (runReaderT)
 import Control.Monad.Writer (runWriter)
 import qualified Data.Text as T
 import qualified ParserTypes as P (Expression (..), Literal (..), ParserType (..))
-import SemanticAnalysisTypes (Check, Env, SemanticError)
+import SemanticAnalysisTypes (Check, Env (..), SemanticError, ElaboratedType)
 import Text.Megaparsec (SourcePos)
 import Text.Megaparsec.Pos (initialPos)
+import qualified Data.Map as Map
 
 dummyPos :: SourcePos
 dummyPos = initialPos ""
@@ -32,3 +33,17 @@ createLiteralsForErrorTestExcept toExclude = map createLiteral types
 
 runCheck :: Env -> Check a -> (a, [SemanticError])
 runCheck env m = runWriter (runReaderT m env)
+
+
+mkEnv :: [(T.Text, ([ElaboratedType], ElaboratedType))] -> Env
+mkEnv fns = Env Map.empty (Map.fromList fns) Nothing
+
+ident :: T.Text -> P.Expression
+ident = P.Identifier dummyPos
+
+intLit :: Integer -> P.Expression
+intLit n = P.Literal dummyPos (P.Int n)
+
+boolLit :: Bool -> P.Expression
+boolLit b = P.Literal dummyPos (P.Bool b)
+
