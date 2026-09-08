@@ -78,8 +78,7 @@ checkOperation pos op
     | isBinaryLogic op = checkOperationBinaryLogic pos op
     -- \| isAssignment op = checkOperationAssignment pos op
     | isComparison op = checkOperationComparison pos op
-    | otherwise = undefined
-  -- \| otherwise = checkOperationBinaryArithmetic pos op
+    | otherwise = checkOperationBinaryArithmetic pos op
   where
     isUnary P.Negation{} = True
     isUnary P.Not{} = True
@@ -108,6 +107,41 @@ checkOperation pos op
     isComparison P.LessThan{} = True
     isComparison P.LessThanEq{} = True
     isComparison _ = False
+
+checkOperationBinaryArithmetic :: SourcePos -> P.Operation -> Check TypedOperation
+checkOperationBinaryArithmetic _ op = do
+    let (x, y) = case op of
+            P.Add x' y' -> (x', y')
+            P.Subtract x' y' -> (x', y')
+            P.Multiply x' y' -> (x', y')
+            P.Divide x' y' -> (x', y')
+            P.IntDivide x' y' -> (x', y')
+            P.Modulo x' y' -> (x', y')
+            _ -> error "not a binary arithmetic operator"
+    typedX <- checkExpression x
+    typedY <- checkExpression y
+    let xType = texprType typedX
+    let yType = texprType typedY
+    resultType <-
+        if xType `elem` validTypes op
+            then
+                if xType == yType
+                    then pure (resultTypeFor op xType)
+                    else tell [TypeMismatch [xType] yType] >> pure ErrorT
+            else
+                tell [TypeMismatch (validTypes op) xType] >> pure ErrorT
+    pure $ mkTypedOp op resultType typedX typedY
+  where
+    validTypes P.Add{} = [IntT, FloatT, StringT]
+    validTypes P.Subtract{} = [IntT, FloatT]
+    validTypes P.Multiply{} = [IntT, FloatT]
+    validTypes P.Divide{} = [IntT, FloatT]
+    validTypes P.IntDivide{} = [IntT, FloatT]
+    validTypes P.Modulo{} = [IntT, FloatT]
+    validTypes _ = error "not a binary arithmetic operator"
+
+    resultTypeFor P.Divide{} _ = FloatT
+    resultTypeFor _ t = t
 
 checkOperationComparison :: SourcePos -> P.Operation -> Check TypedOperation
 checkOperationComparison _ (P.Equals x y) = do
@@ -178,6 +212,12 @@ mkTypedOp P.LessThan{} t x y = TypedOperation t (LessThan x y)
 mkTypedOp P.LessThanEq{} t x y = TypedOperation t (LessThanEq x y)
 mkTypedOp P.Equals{} t x y = TypedOperation t (Equals x y)
 mkTypedOp P.NotEquals{} t x y = TypedOperation t (NotEquals x y)
+mkTypedOp P.Add{} t x y = TypedOperation t (Add x y)
+mkTypedOp P.Subtract{} t x y = TypedOperation t (Subtract x y)
+mkTypedOp P.Multiply{} t x y = TypedOperation t (Multiply x y)
+mkTypedOp P.Divide{} t x y = TypedOperation t (Divide x y)
+mkTypedOp P.IntDivide{} t x y = TypedOperation t (IntDivide x y)
+mkTypedOp P.Modulo{} t x y = TypedOperation t (Modulo x y)
 mkTypedOp _ _ _ _ = undefined
 
 checkOperationBinaryLogic :: SourcePos -> P.Operation -> Check TypedOperation

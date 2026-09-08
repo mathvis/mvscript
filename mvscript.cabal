@@ -57,7 +57,9 @@ test-suite mvscript-test
   main-is: Spec.hs
   other-modules:
       ParserSpec
-      SemanticAnalysisSpec
+      SemanticAnalysis.ExpressionSpec
+      SemanticAnalysis.LiteralSpec
+      SemanticAnalysis.OperationSpec
       SpecUtils
       Paths_mvscript
   hs-source-dirs:
